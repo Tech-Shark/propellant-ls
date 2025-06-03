@@ -1,32 +1,56 @@
 
+import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TalentSidebar } from "@/components/TalentSidebar";
 import { TalentMetrics } from "@/components/talent/TalentMetrics";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Upload, FileText, Download, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Bell, Upload, FileText, Download, MessageSquare, Zap, Award, Users } from "lucide-react";
 
 const TalentDashboard = () => {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen onboarding
+    const hasSeenOnboarding = localStorage.getItem('propellant-talent-onboarding');
+    if (!hasSeenOnboarding) {
+      setTimeout(() => setShowOnboarding(true), 1000);
+    }
+  }, []);
+
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('propellant-talent-onboarding', 'true');
+  };
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-slate-950">
         <TalentSidebar />
         <main className="flex-1 overflow-auto">
-          <div className="sticky top-0 z-40 bg-background border-b border-border">
-            <div className="flex items-center justify-between p-4">
+          {/* Header */}
+          <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
+            <div className="flex items-center justify-between p-6">
               <div className="flex items-center gap-4">
-                <SidebarTrigger />
+                <SidebarTrigger className="text-slate-400 hover:text-white" />
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Talent Dashboard</h1>
-                  <p className="text-muted-foreground">Manage your profile and career growth</p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-white">Talent Dashboard</h1>
+                  </div>
+                  <p className="text-slate-400">Propel your career with verified skills</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-800">
                   <Bell className="w-4 h-4" />
                 </Button>
-                <Button size="sm">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Credential
                 </Button>
@@ -34,73 +58,122 @@ const TalentDashboard = () => {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Manage your career development</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <FileText className="w-6 h-6" />
-                    Generate CV
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Upload className="w-6 h-6" />
-                    Upload Credentials
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Download className="w-6 h-6" />
-                    Download CV
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <MessageSquare className="w-6 h-6" />
-                    View Messages
+          <div className="p-6 space-y-8">
+            {/* Welcome Banner */}
+            <Card className="bg-gradient-to-r from-blue-600/20 to-emerald-600/20 border-blue-600/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-white mb-2">
+                      Welcome back! Ready to propel your career? 🚀
+                    </h2>
+                    <p className="text-slate-300">
+                      Complete your profile to unlock AI-powered CV generation and verification features.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowOnboarding(true)}
+                    className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white"
+                  >
+                    Take Tour
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Quick Actions */}
+            <div id="quick-actions">
+              <Card className="bg-slate-900 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-blue-400" />
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Manage your career development
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <Button 
+                      variant="outline" 
+                      className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-blue-500"
+                    >
+                      <FileText className="w-6 h-6 text-blue-400" />
+                      <span className="text-sm">Generate CV</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"
+                    >
+                      <Upload className="w-6 h-6 text-emerald-400" />
+                      <span className="text-sm">Upload Credentials</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-orange-500"
+                    >
+                      <Download className="w-6 h-6 text-orange-400" />
+                      <span className="text-sm">Download CV</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-purple-500"
+                    >
+                      <MessageSquare className="w-6 h-6 text-purple-400" />
+                      <span className="text-sm">View Messages</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Metrics Section */}
-            <TalentMetrics />
+            <div id="metrics">
+              <TalentMetrics />
+            </div>
 
             {/* Recent Activity */}
-            <Card>
+            <Card className="bg-slate-900 border-slate-700">
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest platform activities</CardDescription>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-400" />
+                  Recent Activity
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Your latest platform activities
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">CV generation completed</span>
+                  {[
+                    { status: 'success', message: 'CV generation completed', time: '2 min ago', color: 'bg-emerald-500' },
+                    { status: 'info', message: 'New message from TechCorp', time: '15 min ago', color: 'bg-blue-500' },
+                    { status: 'warning', message: 'Credential verification pending', time: '1 hour ago', color: 'bg-orange-500' },
+                    { status: 'success', message: 'NFT skill badge earned: React', time: '2 hours ago', color: 'bg-emerald-500' }
+                  ].map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>
+                        <span className="text-slate-300">{activity.message}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs text-slate-400">
+                        {activity.time}
+                      </Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">2 min ago</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">New message from TechCorp</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">15 min ago</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm">Credential verification pending</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">1 hour ago</span>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
         </main>
       </div>
+
+      <OnboardingTour 
+        isOpen={showOnboarding} 
+        onClose={handleOnboardingClose} 
+      />
     </SidebarProvider>
   );
 };
