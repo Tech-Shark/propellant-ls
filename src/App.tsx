@@ -12,7 +12,15 @@ import CVBuilder from "./pages/talent/CVBuilder";
 import Credentials from "./pages/talent/Credentials";
 import Profile from "./pages/talent/Profile";
 import Settings from "./pages/talent/Settings";
+import Payment from "./pages/talent/Payment";
 import OrganizationDashboard from "./pages/organization/OrganizationDashboard";
+import JobPosts from "./pages/organization/JobPosts";
+import TalentPool from "./pages/organization/TalentPool";
+import Messages from "./pages/organization/Messages";
+import Analytics from "./pages/organization/Analytics";
+import CompanyProfile from "./pages/organization/CompanyProfile";
+import OrganizationSettings from "./pages/organization/OrganizationSettings";
+import OrganizationPayment from "./pages/organization/OrganizationPayment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +68,8 @@ function AppRoutes() {
           )
         } 
       />
+      
+      {/* Talent Routes */}
       <Route 
         path="/talent" 
         element={
@@ -111,7 +121,19 @@ function AppRoutes() {
         } 
       />
       <Route 
-        path="/organization/*" 
+        path="/talent/payment" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <Payment />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Organization Routes */}
+      <Route 
+        path="/organization" 
         element={
           <ProtectedRoute>
             <RoleBasedRoute allowedRoles={['organization']}>
@@ -120,6 +142,77 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/organization/jobs" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <JobPosts />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/talent" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <TalentPool />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/messages" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <Messages />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/analytics" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <Analytics />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/profile" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <CompanyProfile />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/settings" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <OrganizationSettings />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/organization/payment" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['organization']}>
+              <OrganizationPayment />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
