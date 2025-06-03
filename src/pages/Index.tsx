@@ -1,126 +1,118 @@
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { DashboardMetrics, DetailedMetrics } from "@/components/DashboardMetrics";
-import { DashboardCharts } from "@/components/DashboardCharts";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Plus, Upload, Search } from "lucide-react";
+import { Badge, Users, Building2, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <main className="flex-1 overflow-auto">
-          <div className="sticky top-0 z-40 bg-background border-b border-border">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-                  <p className="text-muted-foreground">Welcome to SkillVerse Platform</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Search className="w-4 h-4 mr-2" />
-                  Search
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Bell className="w-4 h-4" />
-                </Button>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Credential
-                </Button>
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Badge className="w-5 h-5 text-primary-foreground" />
             </div>
+            <h1 className="text-2xl font-bold">SkillVerse</h1>
           </div>
+          <Link to="/login">
+            <Button>Sign In</Button>
+          </Link>
+        </div>
+      </header>
 
-          <div className="p-6 space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Get started with common tasks</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-4">
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Upload className="w-6 h-6" />
-                    Upload Credential
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Badge className="w-6 h-6" />
-                    View Badges
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Search className="w-6 h-6" />
-                    Find Talent
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col gap-2">
-                    <Plus className="w-6 h-6" />
-                    Create Job
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-4xl font-bold mb-4">
+          Verify Skills, Build Trust, Connect Talent
+        </h2>
+        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          The blockchain-powered platform for credential verification, NFT badges, 
+          and connecting verified talent with organizations.
+        </p>
+        <Link to="/login">
+          <Button size="lg" className="text-lg px-8 py-3">
+            Get Started
+          </Button>
+        </Link>
+      </section>
 
-            {/* Metrics Section */}
-            <DashboardMetrics />
-            
-            {/* Detailed Metrics */}
-            <DetailedMetrics />
-            
-            {/* Charts Section */}
-            <DashboardCharts />
+      {/* Features for Different User Types */}
+      <section className="container mx-auto px-4 py-16">
+        <h3 className="text-3xl font-bold text-center mb-12">Choose Your Journey</h3>
+        <div className="grid gap-8 md:grid-cols-3">
+          <Card className="text-center">
+            <CardHeader>
+              <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
+              <CardTitle>For Talent</CardTitle>
+              <CardDescription>
+                Build your verified professional profile
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-left space-y-2 mb-6">
+                <li>• Generate AI-optimized CVs</li>
+                <li>• Upload and verify credentials</li>
+                <li>• Earn NFT skill badges</li>
+                <li>• Connect with employers</li>
+              </ul>
+              <Link to="/login">
+                <Button variant="outline" className="w-full">
+                  Join as Talent
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest platform activities</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">New credential verified for John Doe</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">2 min ago</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">TechCorp posted a new job opening</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">15 min ago</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm">NFT badge minted for Data Science certification</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">1 hour ago</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm">New organization registered: StartupXYZ</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">3 hours ago</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+          <Card className="text-center">
+            <CardHeader>
+              <Building2 className="w-12 h-12 mx-auto mb-4 text-primary" />
+              <CardTitle>For Organizations</CardTitle>
+              <CardDescription>
+                Find and connect with verified talent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-left space-y-2 mb-6">
+                <li>• Post jobs with skill requirements</li>
+                <li>• Get AI-matched talent suggestions</li>
+                <li>• Message verified professionals</li>
+                <li>• Track recruitment metrics</li>
+              </ul>
+              <Link to="/login">
+                <Button variant="outline" className="w-full">
+                  Join as Organization
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <Shield className="w-12 h-12 mx-auto mb-4 text-primary" />
+              <CardTitle>For Admins</CardTitle>
+              <CardDescription>
+                Manage platform and verification
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-left space-y-2 mb-6">
+                <li>• Oversee credential verification</li>
+                <li>• Manage platform users</li>
+                <li>• Add additional admins</li>
+                <li>• Monitor platform metrics</li>
+              </ul>
+              <Link to="/login">
+                <Button variant="outline" className="w-full">
+                  Admin Access
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+    </div>
   );
 };
 
