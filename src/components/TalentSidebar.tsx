@@ -10,7 +10,8 @@ import {
   Upload,
   Download,
   User,
-  MessageSquare
+  MessageSquare,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,8 +38,8 @@ const navigationItems = [
     icon: User,
   },
   {
-    title: "CV Generator",
-    url: "/talent/cv-generator",
+    title: "CV Builder",
+    url: "/talent/cv-builder",
     icon: FileText,
   },
   {
@@ -61,6 +62,11 @@ const navigationItems = [
     url: "/talent/analytics",
     icon: BarChart3,
   },
+  {
+    title: "Payment",
+    url: "/talent/payment",
+    icon: CreditCard,
+  },
 ];
 
 const settingsItems = [
@@ -80,7 +86,7 @@ export function TalentSidebar() {
             <Badge className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-bold text-sidebar-foreground">SkillVerse</h2>
+            <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
             <p className="text-xs text-sidebar-foreground/70">Talent Portal</p>
           </div>
         </div>

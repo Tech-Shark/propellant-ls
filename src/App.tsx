@@ -8,6 +8,10 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import TalentDashboard from "./pages/talent/TalentDashboard";
+import CVBuilder from "./pages/talent/CVBuilder";
+import Credentials from "./pages/talent/Credentials";
+import Profile from "./pages/talent/Profile";
+import Settings from "./pages/talent/Settings";
 import OrganizationDashboard from "./pages/organization/OrganizationDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -57,11 +61,51 @@ function AppRoutes() {
         } 
       />
       <Route 
-        path="/talent/*" 
+        path="/talent" 
         element={
           <ProtectedRoute>
             <RoleBasedRoute allowedRoles={['talent']}>
               <TalentDashboard />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/talent/cv-builder" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <CVBuilder />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/talent/credentials" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <Credentials />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/talent/profile" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <Profile />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/talent/settings" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <Settings />
             </RoleBasedRoute>
           </ProtectedRoute>
         } 
