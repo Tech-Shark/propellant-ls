@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSidebar } from "@/components/OrganizationSidebar";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Filter, MapPin, Star, MessageSquare, Award, Calendar, Building2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TalentPool = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const talents = [
     {
@@ -51,6 +55,23 @@ const TalentPool = () => {
       verified: true
     }
   ];
+
+  const handleMessageTalent = (talent: any) => {
+    // Store the talent info for the conversation
+    localStorage.setItem('selectedTalent', JSON.stringify(talent));
+    toast({
+      title: "Opening conversation",
+      description: `Starting conversation with ${talent.name}`,
+    });
+    navigate('/organization/messages');
+  };
+
+  const handleViewProfile = (talent: any) => {
+    toast({
+      title: "Profile View",
+      description: `Viewing ${talent.name}'s full profile`,
+    });
+  };
 
   return (
     <SidebarProvider>
@@ -189,11 +210,20 @@ const TalentPool = () => {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <Button size="sm" className="flex-1 bg-orange-600 hover:bg-orange-700 text-white">
+                      <Button 
+                        size="sm" 
+                        className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                        onClick={() => handleMessageTalent(talent)}
+                      >
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Message
                       </Button>
-                      <Button size="sm" variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                        onClick={() => handleViewProfile(talent)}
+                      >
                         View Profile
                       </Button>
                     </div>

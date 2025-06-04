@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSidebar } from "@/components/OrganizationSidebar";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Send, MoreVertical, Paperclip, Star } from "lucide-react";
+import { Search, Send, MoreVertical, Paperclip, Star, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState("1");
   const [newMessage, setNewMessage] = useState("");
-
-  const conversations = [
+  const [conversations, setConversations] = useState([
     {
       id: "1",
       name: "Sarah Chen",
@@ -42,9 +42,9 @@ const Messages = () => {
       unread: 1,
       online: true
     }
-  ];
+  ]);
 
-  const messages = [
+  const [messages, setMessages] = useState([
     {
       id: "1",
       sender: "organization",
@@ -69,14 +69,78 @@ const Messages = () => {
       content: "That sounds perfect! I have extensive experience with all those technologies. What's the next step?",
       timestamp: "3:45 PM"
     }
-  ];
+  ]);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if there's a selected talent from talent pool
+    const selectedTalent = localStorage.getItem('selectedTalent');
+    if (selectedTalent) {
+      const talent = JSON.parse(selectedTalent);
+      
+      // Check if conversation already exists
+      const existingConversation = conversations.find(conv => conv.name === talent.name);
+      
+      if (!existingConversation) {
+        // Add new conversation
+        const newConversation = {
+          id: (conversations.length + 1).toString(),
+          name: talent.name,
+          title: talent.title,
+          lastMessage: "New conversation started",
+          timestamp: "Now",
+          unread: 0,
+          online: true
+        };
+        
+        setConversations(prev => [newConversation, ...prev]);
+        setSelectedConversation(newConversation.id);
+        
+        // Clear the selected talent from storage
+        localStorage.removeItem('selectedTalent');
+        
+        toast({
+          title: "New Conversation",
+          description: `Conversation started with ${talent.name}`,
+        });
+      } else {
+        setSelectedConversation(existingConversation.id);
+        localStorage.removeItem('selectedTalent');
+      }
+    }
+  }, []);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      // Add message logic here
+      const messageId = (messages.length + 1).toString();
+      const newMsg = {
+        id: messageId,
+        sender: "organization",
+        content: newMessage,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
       setNewMessage("");
+      
+      // Update conversation last message
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === selectedConversation 
+            ? { ...conv, lastMessage: newMessage, timestamp: "Now" }
+            : conv
+        )
+      );
+      
+      toast({
+        title: "Message Sent",
+        description: "Your message has been delivered successfully.",
+      });
     }
   };
+
+  const selectedConversationData = conversations.find(conv => conv.id === selectedConversation);
 
   return (
     <SidebarProvider>
@@ -93,6 +157,10 @@ const Messages = () => {
                   <p className="text-slate-400">Connect with talented professionals</p>
                 </div>
               </div>
+              <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                New Message
+              </Button>
             </div>
           </div>
 
@@ -148,7 +216,7 @@ const Messages = () => {
 
             {/* Message Thread */}
             <div className="flex-1 flex flex-col">
-              {selectedConversation ? (
+              {selectedConversation && selectedConversationData ? (
                 <>
                   {/* Conversation Header */}
                   <div className="p-4 border-b border-slate-800 bg-slate-900/50">
@@ -156,12 +224,12 @@ const Messages = () => {
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-orange-600 text-white">
-                            SC
+                            {selectedConversationData.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium text-white">Sarah Chen</p>
-                          <p className="text-sm text-slate-400">Senior React Developer</p>
+                          <p className="font-medium text-white">{selectedConversationData.name}</p>
+                          <p className="text-sm text-slate-400">{selectedConversationData.title}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -231,6 +299,7 @@ const Messages = () => {
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <p className="text-slate-400 text-lg">Select a conversation to start messaging</p>
+                    <p className="text-slate-500 text-sm mt-2">Or browse talent pool to start new conversations</p>
                   </div>
                 </div>
               )}

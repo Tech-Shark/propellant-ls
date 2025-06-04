@@ -62,11 +62,6 @@ const navigationItems = [
     url: "/talent/analytics",
     icon: BarChart3,
   },
-  {
-    title: "Payment",
-    url: "/talent/payment",
-    icon: CreditCard,
-  },
 ];
 
 const settingsItems = [
@@ -75,6 +70,11 @@ const settingsItems = [
     url: "/talent/settings",
     icon: Settings,
   },
+  {
+    title: "Payment",
+    url: "/talent/payment",
+    icon: CreditCard,
+  },
 ];
 
 export function TalentSidebar() {
@@ -82,8 +82,8 @@ export function TalentSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Badge className="w-5 h-5 text-primary-foreground" />
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-slate-800 rounded-lg flex items-center justify-center">
+            <Badge className="w-5 h-5 text-white" />
           </div>
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
