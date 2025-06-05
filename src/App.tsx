@@ -10,9 +10,11 @@ import Login from "./pages/Login";
 import TalentDashboard from "./pages/talent/TalentDashboard";
 import CVBuilder from "./pages/talent/CVBuilder";
 import Credentials from "./pages/talent/Credentials";
+import Verification from "./pages/talent/Verification";
 import Profile from "./pages/talent/Profile";
 import Settings from "./pages/talent/Settings";
 import Payment from "./pages/talent/Payment";
+import TalentAnalytics from "./pages/talent/Analytics";
 import OrganizationDashboard from "./pages/organization/OrganizationDashboard";
 import JobPosts from "./pages/organization/JobPosts";
 import TalentPool from "./pages/organization/TalentPool";
@@ -101,6 +103,16 @@ function AppRoutes() {
         } 
       />
       <Route 
+        path="/talent/verification" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <Verification />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/talent/profile" 
         element={
           <ProtectedRoute>
@@ -126,6 +138,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <RoleBasedRoute allowedRoles={['talent']}>
               <Payment />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/talent/analytics" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['talent']}>
+              <TalentAnalytics />
             </RoleBasedRoute>
           </ProtectedRoute>
         } 
