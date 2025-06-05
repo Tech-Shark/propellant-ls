@@ -13,6 +13,8 @@ import Analytics from './pages/talent/Analytics';
 import CVBuilder from './pages/talent/CVBuilder';
 import Payment from './pages/talent/Payment';
 import Settings from './pages/talent/Settings';
+import Referrals from './pages/talent/Referrals';
+import Wallet from './pages/talent/Wallet';
 
 // Organization pages
 import OrganizationDashboard from './pages/organization/OrganizationDashboard';
@@ -49,6 +51,8 @@ function App() {
             <Route path="/talent/cv-builder" element={<CVBuilder />} />
             <Route path="/talent/payment" element={<Payment />} />
             <Route path="/talent/settings" element={<Settings />} />
+            <Route path="/talent/referrals" element={<Referrals />} />
+            <Route path="/talent/wallet" element={<Wallet />} />
             
             {/* Organization routes */}
             <Route path="/organization/dashboard" element={<OrganizationDashboard />} />
