@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const mockData = [
   { month: "Jan", users: 1200, orgs: 45, badges: 340 },
@@ -52,29 +52,38 @@ const MetricCard = ({
   onClick?: () => void;
   isSelected?: boolean;
 }) => {
+  const isMobile = useIsMobile();
+  
   const colorClasses = {
-    primary: "text-blue-500",
-    secondary: "text-orange-500",
-    accent: "text-green-500",
-    destructive: "text-red-500"
+    primary: "text-blue-500 border-l-blue-500",
+    secondary: "text-orange-500 border-l-orange-500",
+    accent: "text-emerald-500 border-l-emerald-500",
+    destructive: "text-red-500 border-l-red-500"
+  };
+
+  const gradientClasses = {
+    primary: "from-blue-500/10 to-blue-600/5",
+    secondary: "from-orange-500/10 to-orange-600/5",
+    accent: "from-emerald-500/10 to-emerald-600/5",
+    destructive: "from-red-500/10 to-red-600/5"
   };
 
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      className={`cursor-pointer transition-all hover:shadow-lg border-l-4 bg-gradient-to-br ${gradientClasses[color]} ${colorClasses[color]} ${isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''} ${isMobile ? 'h-auto' : ''}`}
       onClick={onClick}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${colorClasses[color]}`} />
+      <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? 'pb-2' : 'pb-2'}`}>
+        <CardTitle className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium`}>{title}</CardTitle>
+        <Icon className={`h-5 w-5 ${colorClasses[color].split(' ')[0]}`} />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
+      <CardContent className={isMobile ? 'pt-0' : ''}>
+        <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>{value}</div>
+        <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-1`}>{description}</p>
         {trend && (
           <div className="flex items-center mt-2">
-            <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-            <span className="text-xs text-green-500">{trend}</span>
+            <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
+            <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-emerald-600 font-medium`}>{trend}</span>
           </div>
         )}
       </CardContent>
@@ -88,6 +97,8 @@ interface AdminMetricsProps {
 }
 
 export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProps) {
+  const isMobile = useIsMobile();
+  
   const metrics = [
     {
       id: "users",
@@ -162,8 +173,8 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-4 lg:space-y-6">
+      <div className={`grid gap-3 lg:gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         {metrics.map((metric) => (
           <MetricCard
             key={metric.id}
@@ -180,39 +191,41 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
       </div>
 
       {selectedMetric && (
-        <Card>
+        <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-purple-50/30">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
               {metrics.find(m => m.id === selectedMetric)?.title} - Detailed View
             </CardTitle>
-            <CardDescription>
+            <CardDescription className={isMobile ? 'text-sm' : ''}>
               6-month trend analysis
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[250px]' : 'h-[300px]'}`}>
               {selectedMetric === 'users' || selectedMetric === 'organizations' || selectedMetric === 'badges' ? (
                 <BarChart data={mockData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
+                  <YAxis fontSize={isMobile ? 10 : 12} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar 
                     dataKey={selectedMetric === 'users' ? 'users' : selectedMetric === 'organizations' ? 'orgs' : 'badges'} 
                     fill={selectedMetric === 'users' ? '#3B82F6' : selectedMetric === 'organizations' ? '#10B981' : '#F59E0B'} 
+                    radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               ) : (
                 <LineChart data={mockData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
+                  <YAxis fontSize={isMobile ? 10 : 12} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
                     dataKey="users" 
                     stroke="#3B82F6" 
-                    strokeWidth={2} 
+                    strokeWidth={3}
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                   />
                 </LineChart>
               )}

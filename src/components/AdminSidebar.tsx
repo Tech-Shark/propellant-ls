@@ -79,14 +79,14 @@ const settingsItems = [
 export function AdminSidebar() {
   return (
     <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
+      <SidebarHeader className="border-b border-sidebar-border p-4 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
             <Badge className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
-            <p className="text-xs text-sidebar-foreground/70">Admin Portal</p>
+            <h2 className="font-bold text-white">Propellant</h2>
+            <p className="text-xs text-blue-100">Admin Portal</p>
           </div>
         </div>
       </SidebarHeader>
@@ -97,7 +97,7 @@ export function AdminSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="/" className="flex items-center gap-3 text-red-400 hover:text-red-300">
+                  <a href="/" className="flex items-center gap-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Home</span>
                   </a>
@@ -108,15 +108,15 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-blue-700 font-semibold">Admin Panel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                    <a href={item.url} className="flex items-center gap-3 hover:bg-blue-50 rounded-lg transition-colors group">
+                      <item.icon className="w-4 h-4 text-gray-600 group-hover:text-blue-600" />
+                      <span className="group-hover:text-blue-700">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -126,15 +126,15 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>System</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-600 font-semibold">System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                    <a href={item.url} className="flex items-center gap-3 hover:bg-gray-50 rounded-lg transition-colors group">
+                      <item.icon className="w-4 h-4 text-gray-600 group-hover:text-gray-800" />
+                      <span className="group-hover:text-gray-800">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -144,9 +144,10 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="text-xs text-sidebar-foreground/50">
-          v1.0.0 - Admin Dashboard
+      <SidebarFooter className="border-t border-sidebar-border p-4 bg-gray-50">
+        <div className="text-xs text-gray-500 flex items-center justify-between">
+          <span>v1.0.0 - Admin Dashboard</span>
+          <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
         </div>
       </SidebarFooter>
     </Sidebar>
