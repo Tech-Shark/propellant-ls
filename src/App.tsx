@@ -56,24 +56,28 @@ function AppRoutes() {
   
   return (
     <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
+      
+      {/* Auto-redirect based on user role */}
       <Route 
-        path="/" 
+        path="/dashboard" 
         element={
           user ? (
-            user.role === 'talent' ? <Navigate to="/talent" replace /> :
-            user.role === 'organization' ? <Navigate to="/organization" replace /> :
-            user.role === 'admin' ? <Navigate to="/admin" replace /> :
+            user.role === 'talent' ? <Navigate to="/talent/dashboard" replace /> :
+            user.role === 'organization' ? <Navigate to="/organization/dashboard" replace /> :
+            user.role === 'admin' ? <Navigate to="/admin/dashboard" replace /> :
             <Navigate to="/login" replace />
           ) : (
-            <Index />
+            <Navigate to="/login" replace />
           )
         } 
       />
       
-      {/* Talent Routes */}
+      {/* Talent Subdomain Routes */}
       <Route 
-        path="/talent" 
+        path="/talent/dashboard" 
         element={
           <ProtectedRoute>
             <RoleBasedRoute allowedRoles={['talent']}>
@@ -153,9 +157,9 @@ function AppRoutes() {
         } 
       />
 
-      {/* Organization Routes */}
+      {/* Organization Subdomain Routes */}
       <Route 
-        path="/organization" 
+        path="/organization/dashboard" 
         element={
           <ProtectedRoute>
             <RoleBasedRoute allowedRoles={['organization']}>
@@ -234,6 +238,10 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+
+      {/* Legacy redirects for backward compatibility */}
+      <Route path="/talent" element={<Navigate to="/talent/dashboard" replace />} />
+      <Route path="/organization" element={<Navigate to="/organization/dashboard" replace />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>

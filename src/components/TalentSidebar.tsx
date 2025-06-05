@@ -11,7 +11,8 @@ import {
   Download,
   User,
   MessageSquare,
-  CreditCard
+  CreditCard,
+  ArrowLeft
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +30,7 @@ import {
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/talent",
+    url: "/talent/dashboard",
     icon: Home,
   },
   {
@@ -93,6 +94,21 @@ export function TalentSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/" className="flex items-center gap-3 text-blue-400 hover:text-blue-300">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Home</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>

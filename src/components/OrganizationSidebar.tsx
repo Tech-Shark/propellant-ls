@@ -9,7 +9,8 @@ import {
   Building2,
   MessageSquare,
   Plus,
-  CreditCard
+  CreditCard,
+  ArrowLeft
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,7 +28,7 @@ import {
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/organization",
+    url: "/organization/dashboard",
     icon: Home,
   },
   {
@@ -86,6 +87,21 @@ export function OrganizationSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/" className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Home</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
