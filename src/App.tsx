@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,7 @@ import CompanyProfile from "./pages/organization/CompanyProfile";
 import OrganizationSettings from "./pages/organization/OrganizationSettings";
 import OrganizationPayment from "./pages/organization/OrganizationPayment";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -239,9 +239,22 @@ function AppRoutes() {
         } 
       />
 
+      {/* Admin Subdomain Routes */}
+      <Route 
+        path="/admin/dashboard" 
+        element={
+          <ProtectedRoute>
+            <RoleBasedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </RoleBasedRoute>
+          </ProtectedRoute>
+        } 
+      />
+
       {/* Legacy redirects for backward compatibility */}
       <Route path="/talent" element={<Navigate to="/talent/dashboard" replace />} />
       <Route path="/organization" element={<Navigate to="/organization/dashboard" replace />} />
+      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
