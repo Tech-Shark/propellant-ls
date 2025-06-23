@@ -1,22 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '@/types/user';
-import axiosInstance from "@/api/AxiosInstance.ts";
-import axios from "axios";
-import {toast} from "sonner";
-import {setCookie} from "@/utils/CookieManagement";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
-  register: (
-      name: string,
-      phone: string,
-      email: string,
-      password: string,
-      termsAndConditionsAccepted: boolean,
-      role: UserRole
-  ) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -38,67 +26,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string, role: UserRole) => {
     setIsLoading(true);
-
-    try {
-      toast.promise(axiosInstance.post('auth/login', { email, password }), {
-        loading: 'Loading...',
-        success: (response) => {
-          console.log(response?.data);
-          localStorage.setItem('user', JSON.stringify(response?.data.data));
-          setUser(response?.data.data);
-          setCookie("accessToken", response?.data.data.accessToken);
-          return response?.data.message;
-        },
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return error.response?.data.message;
-          }
-          else {
-            return "Something went wrong. Please try again later.";
-          }
-        },
-      });
-    } finally {
-      setIsLoading(false);
-    }
-
-    // setUser(mockUser);
-    // localStorage.setItem('user', JSON.stringify(mockUser));
+    // Simulate API call
+    const mockUser: User = {
+      id: '1',
+      email,
+      name: email.split('@')[0],
+      role,
+      createdAt: new Date().toISOString()
+    };
+    setUser(mockUser);
+    localStorage.setItem('user', JSON.stringify(mockUser));
     setIsLoading(false);
   };
-
-  const register = async (
-      name: string,
-      phone: string,
-      email: string,
-      password: string,
-      termsAndConditionsAccepted: boolean,
-      role: UserRole
-  ) => {
-    setIsLoading(true);
-
-    try {
-      toast.promise(axiosInstance.post('auth/register', { name, phone, email, password, termsAndConditionsAccepted, role }), {
-        loading: 'Loading...',
-        success: (response) => {
-          console.log(response?.data);
-          return response?.data.message;
-        },
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return error.response?.data.message;
-          }
-          else {
-            return "Something went wrong. Please try again later.";
-          }
-        },
-      });
-
-      return true;
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   const logout = () => {
     setUser(null);
@@ -106,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
