@@ -12,7 +12,9 @@ import {
   User,
   MessageSquare,
   CreditCard,
-  ArrowLeft
+  ArrowLeft,
+  Wallet,
+  UserPlus
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,6 +54,16 @@ const navigationItems = [
     title: "Verification",
     url: "/talent/verification",
     icon: Award,
+  },
+  {
+    title: "Referrals",
+    url: "/talent/referrals",
+    icon: UserPlus,
+  },
+  {
+    title: "Wallet",
+    url: "/talent/wallet",
+    icon: Wallet,
   },
   {
     title: "Messages",

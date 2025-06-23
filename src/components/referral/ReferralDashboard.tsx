@@ -1,244 +1,220 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Copy, Share2, Trophy, Users, Gift, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Copy, Users, Trophy, Gift, Share2, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { ReferralData, ReferralStats, LeaderboardEntry } from "@/types/referral";
 
-const mockReferralStats: ReferralStats = {
-  totalReferrals: 12,
-  completedReferrals: 8,
-  pendingReferrals: 4,
-  totalRewards: 240,
-  rank: 3
-};
-
-const mockReferrals: ReferralData[] = [
-  {
-    id: "1",
-    referrerId: "user1",
-    referredUserId: "user2",
-    referredUserEmail: "john@example.com",
-    referredUserName: "John Doe",
-    status: "completed",
-    createdAt: "2024-05-15",
-    completedAt: "2024-05-16",
-    reward: 30
-  },
-  {
-    id: "2",
-    referrerId: "user1",
-    referredUserId: "user3",
-    referredUserEmail: "jane@example.com",
-    referredUserName: "Jane Smith",
-    status: "pending",
-    createdAt: "2024-06-01"
-  }
-];
-
-const mockLeaderboard: LeaderboardEntry[] = [
-  {
-    userId: "user1",
-    userName: "Alex Johnson",
-    userEmail: "alex@example.com",
-    totalReferrals: 25,
-    completedReferrals: 20,
-    totalRewards: 600,
-    rank: 1
-  },
-  {
-    userId: "user2",
-    userName: "Sarah Wilson",
-    userEmail: "sarah@example.com",
-    totalReferrals: 18,
-    completedReferrals: 15,
-    totalRewards: 450,
-    rank: 2
-  }
-];
-
 export function ReferralDashboard() {
   const { toast } = useToast();
-  const [referralLink] = useState("https://propellant.com/ref/alex-johnson-123");
+  const [referralLink] = useState("https://propellant.com/invite/user123");
+  
+  const [stats] = useState<ReferralStats>({
+    totalReferrals: 12,
+    completedReferrals: 8,
+    pendingReferrals: 4,
+    totalRewards: 240,
+    rank: 5
+  });
+
+  const [referrals] = useState<ReferralData[]>([
+    {
+      id: '1',
+      referrerId: 'user123',
+      referredUserId: 'user456',
+      referredUserEmail: 'john@example.com',
+      referredUserName: 'John Doe',
+      status: 'completed',
+      createdAt: '2024-01-15',
+      completedAt: '2024-01-20',
+      reward: 25
+    },
+    {
+      id: '2',
+      referrerId: 'user123',
+      referredUserId: 'user789',
+      referredUserEmail: 'jane@example.com',
+      referredUserName: 'Jane Smith',
+      status: 'pending',
+      createdAt: '2024-01-18'
+    }
+  ]);
+
+  const [leaderboard] = useState<LeaderboardEntry[]>([
+    {
+      userId: 'top1',
+      userName: 'Alice Johnson',
+      userEmail: 'alice@example.com',
+      totalReferrals: 45,
+      completedReferrals: 42,
+      totalRewards: 1050,
+      rank: 1
+    },
+    {
+      userId: 'top2',
+      userName: 'Bob Wilson',
+      userEmail: 'bob@example.com',
+      totalReferrals: 38,
+      completedReferrals: 35,
+      totalRewards: 875,
+      rank: 2
+    }
+  ]);
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
     toast({
       title: "Link Copied!",
-      description: "Your referral link has been copied to clipboard.",
+      description: "Your referral link has been copied to clipboard."
     });
-  };
-
-  const shareReferralLink = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Join Propellant',
-        text: 'Join me on Propellant and get rewarded!',
-        url: referralLink,
-      });
-    } else {
-      copyReferralLink();
-    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Referral Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-slate-900 border-slate-700">
           <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-blue-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700">Total Referrals</p>
-                <p className="text-2xl font-bold text-blue-900">{mockReferralStats.totalReferrals}</p>
+                <p className="text-slate-400 text-sm">Total Referrals</p>
+                <p className="text-2xl font-bold text-white">{stats.totalReferrals}</p>
               </div>
+              <Users className="w-8 h-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-slate-900 border-slate-700">
           <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Gift className="w-8 h-8 text-green-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-700">Total Rewards</p>
-                <p className="text-2xl font-bold text-green-900">${mockReferralStats.totalRewards}</p>
+                <p className="text-slate-400 text-sm">Completed</p>
+                <p className="text-2xl font-bold text-white">{stats.completedReferrals}</p>
               </div>
+              <Trophy className="w-8 h-8 text-emerald-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-slate-900 border-slate-700">
           <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-purple-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-700">Leaderboard Rank</p>
-                <p className="text-2xl font-bold text-purple-900">#{mockReferralStats.rank}</p>
+                <p className="text-slate-400 text-sm">Total Rewards</p>
+                <p className="text-2xl font-bold text-white">${stats.totalRewards}</p>
               </div>
+              <Gift className="w-8 h-8 text-purple-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+        <Card className="bg-slate-900 border-slate-700">
           <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-orange-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-700">Pending</p>
-                <p className="text-2xl font-bold text-orange-900">{mockReferralStats.pendingReferrals}</p>
+                <p className="text-slate-400 text-sm">Your Rank</p>
+                <p className="text-2xl font-bold text-white">#{stats.rank}</p>
               </div>
+              <Crown className="w-8 h-8 text-yellow-400" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Referral Link */}
-      <Card>
+      <Card className="bg-slate-900 border-slate-700">
         <CardHeader>
-          <CardTitle>Your Referral Link</CardTitle>
-          <CardDescription>Share this link to earn rewards for each successful referral</CardDescription>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-blue-400" />
+            Your Referral Link
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Share this link with friends to earn rewards
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input value={referralLink} readOnly className="flex-1" />
-            <Button onClick={copyReferralLink} variant="outline">
+            <Input
+              value={referralLink}
+              readOnly
+              className="bg-slate-800 border-slate-600 text-white"
+            />
+            <Button onClick={copyReferralLink} variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-500/10">
               <Copy className="w-4 h-4" />
-            </Button>
-            <Button onClick={shareReferralLink}>
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* My Referrals */}
-      <Card>
-        <CardHeader>
-          <CardTitle>My Referrals</CardTitle>
-          <CardDescription>Track the status of people you've referred</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date Referred</TableHead>
-                <TableHead>Reward</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockReferrals.map((referral) => (
-                <TableRow key={referral.id}>
-                  <TableCell className="font-medium">{referral.referredUserName}</TableCell>
-                  <TableCell>{referral.referredUserEmail}</TableCell>
-                  <TableCell>
-                    <Badge variant={referral.status === 'completed' ? 'default' : 'secondary'}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* My Referrals */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">My Referrals</CardTitle>
+            <CardDescription className="text-slate-400">
+              People you've referred to the platform
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {referrals.map((referral) => (
+                <div key={referral.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">{referral.referredUserName}</p>
+                    <p className="text-slate-400 text-sm">{referral.referredUserEmail}</p>
+                    <p className="text-slate-500 text-xs">Referred: {referral.createdAt}</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge 
+                      variant={referral.status === 'completed' ? 'default' : 'secondary'}
+                      className={referral.status === 'completed' ? 'bg-emerald-600' : ''}
+                    >
                       {referral.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell>{referral.createdAt}</TableCell>
-                  <TableCell>
-                    {referral.reward ? `$${referral.reward}` : '-'}
-                  </TableCell>
-                </TableRow>
+                    {referral.reward && (
+                      <p className="text-emerald-400 text-sm mt-1">+${referral.reward}</p>
+                    )}
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Leaderboard */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Referral Leaderboard</CardTitle>
-          <CardDescription>See how you rank against other top referrers</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Total Referrals</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Total Rewards</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockLeaderboard.map((entry) => (
-                <TableRow key={entry.userId}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">#{entry.rank}</span>
-                      {entry.rank <= 3 && <Trophy className="w-4 h-4 text-yellow-500" />}
+        {/* Leaderboard */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Leaderboard</CardTitle>
+            <CardDescription className="text-slate-400">
+              Top referrers on the platform
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {leaderboard.map((entry) => (
+                <div key={entry.userId} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">#{entry.rank}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{entry.userName}</TableCell>
-                  <TableCell>{entry.totalReferrals}</TableCell>
-                  <TableCell>{entry.completedReferrals}</TableCell>
-                  <TableCell>${entry.totalRewards}</TableCell>
-                </TableRow>
+                    <div>
+                      <p className="text-white font-medium">{entry.userName}</p>
+                      <p className="text-slate-400 text-sm">{entry.completedReferrals} referrals</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-emerald-400 font-medium">${entry.totalRewards}</p>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
