@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TalentSidebar } from "@/components/TalentSidebar";
@@ -11,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, Clock, Award, Mail, Send, Plus, Star, Trophy, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import OTPVerification from "@/components/OTPVerification";
 
 interface VerificationRequest {
   id: string;
@@ -41,6 +41,7 @@ const verifierTypes = [
 export default function Verification() {
   const { toast } = useToast();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([
     {
       id: '1',
@@ -121,11 +122,31 @@ export default function Verification() {
       
       setIsRequesting(false);
       
+      // Show OTP modal after successful request
+      setShowOTPModal(true);
+      
       toast({
         title: "Verification Request Sent!",
-        description: `Verification request sent to ${newRequest.verifierEmail}. They will receive an email notification.`,
+        description: `Verification request sent to ${newRequest.verifierEmail}. Please verify with OTP.`,
       });
     }, 1000);
+  };
+
+  const handleOTPVerify = async (otp: string): Promise<boolean> => {
+    // Simulate OTP verification
+    console.log('Verifying OTP:', otp);
+    
+    // For demo purposes, accept any 5-digit code
+    if (otp.length === 5) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleOTPResend = async (): Promise<void> => {
+    // Simulate resending OTP
+    console.log('Resending OTP...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
   };
 
   const getBadgeIcon = (badgeType?: string) => {
@@ -193,6 +214,14 @@ export default function Verification() {
                 <Badge variant="secondary" className="text-slate-300">
                   {pendingCount} Pending
                 </Badge>
+                <Button 
+                  onClick={() => setShowOTPModal(true)}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                >
+                  Test OTP
+                </Button>
               </div>
             </div>
           </div>
@@ -386,6 +415,14 @@ export default function Verification() {
             </Card>
           </div>
         </main>
+        
+        {/* OTP Verification Modal */}
+        <OTPVerification 
+          isVisible={showOTPModal}
+          onVerify={handleOTPVerify}
+          onResend={handleOTPResend}
+          onClose={() => setShowOTPModal(false)}
+        />
       </div>
     </SidebarProvider>
   );

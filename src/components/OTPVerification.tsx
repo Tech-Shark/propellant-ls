@@ -16,7 +16,7 @@ interface OTPVerificationProps {
 
 const OTPVerification: React.FC<OTPVerificationProps> = ({
   title = "VERIFICATION",
-  description = "A 4 digit code has been sent to your email/phone",
+  description = "A 5 digit code has been sent to your email/phone",
   onVerify,
   onResend,
   isVisible,
@@ -27,8 +27,8 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
   const [isResending, setIsResending] = useState(false);
 
   const handleVerify = async () => {
-    if (otp.length !== 4) {
-      toast.error('Please enter a 4-digit code');
+    if (otp.length !== 5) {
+      toast.error('Please enter a 5-digit code');
       return;
     }
 
@@ -80,7 +80,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
         <CardContent className="space-y-6">
           <div className="flex justify-center">
             <InputOTP
-              maxLength={4}
+              maxLength={5}
               value={otp}
               onChange={(value) => setOtp(value)}
               className="gap-3"
@@ -102,13 +102,17 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
                   index={3} 
                   className="w-12 h-12 md:w-14 md:h-14 text-xl font-bold bg-slate-800 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20" 
                 />
+                <InputOTPSlot 
+                  index={4} 
+                  className="w-12 h-12 md:w-14 md:h-14 text-xl font-bold bg-slate-800 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20" 
+                />
               </InputOTPGroup>
             </InputOTP>
           </div>
 
           <Button 
             onClick={handleVerify}
-            disabled={isLoading || otp.length !== 4}
+            disabled={isLoading || otp.length !== 5}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
           >
             {isLoading ? 'Verifying...' : 'VERIFY'}
