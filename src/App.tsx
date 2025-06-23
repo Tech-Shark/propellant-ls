@@ -27,7 +27,7 @@ import OrganizationPayment from './pages/organization/OrganizationPayment';
 import OrganizationSettings from './pages/organization/OrganizationSettings';
 
 // Admin pages
-import AdminDashboard from './pages/admin/AdminD`ashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from '@/components/ui/sonner';
