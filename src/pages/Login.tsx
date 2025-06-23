@@ -7,19 +7,39 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Zap, Users, Building2, Shield, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
+import { Label } from "@/components/ui/label"
 
 const Login = () => {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState('');
+  const [termsAndConditionsAccepted, setTermsAndConditionsAccepted] = useState(false);
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('talent');
   const [isSignUp, setIsSignUp] = useState(false);
-  const { login, isLoading } = useAuth();
+  const { login, register, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('email:', email, 'password:', password, 'role:', role.toUpperCase() as UserRole);
+
+    const formatedPhoneNumber = phone.startsWith("0")
+        ? phone.replace(/^0/, "+234")
+        : "+234" + phone;
+    console.log('phone:', formatedPhoneNumber);
     try {
-      await login(email, password, role);
+      if (isSignUp) {
+        const success = await register(name, formatedPhoneNumber, email, password, termsAndConditionsAccepted, role.toUpperCase() as UserRole);
+
+        if (success) {
+          navigate('/login');
+        }
+      } else {
+        await login(email, password, role);
+      }
     } catch (error) {
       console.error('Login failed:', error);
     }
@@ -111,6 +131,40 @@ const Login = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {
+                isSignUp && (
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-sm font-medium text-slate-300">Name</label>
+                        <Input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter your full name"
+                            required
+                            className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
+                        />
+                      </div>
+                  )
+              }
+
+              {
+                  isSignUp && (
+                      <div className="space-y-2">
+                        <label htmlFor="phone" className="text-sm font-medium text-slate-300">Phone</label>
+                        <Input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="08023242526"
+                            required
+                            className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
+                        />
+                      </div>
+                  )
+              }
               
               {/* Email */}
               <div className="space-y-2">
@@ -139,7 +193,21 @@ const Login = () => {
                   className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                 />
               </div>
-              
+
+              {
+                  isSignUp && (
+                      <div className="space-y-2 flex items-center gap-2">
+                        <input
+                            type={"checkbox"}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                            onChange={() => setTermsAndConditionsAccepted((prev) => !prev)}
+                            checked={termsAndConditionsAccepted && termsAndConditionsAccepted}
+                        />
+                        <Label htmlFor="terms" className="pb-2">Accept terms and conditions</Label>
+                      </div>
+                  )
+              }
+
               <Button 
                 type="submit" 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg" 

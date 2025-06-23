@@ -10,6 +10,7 @@ import { AdminMetrics } from "@/components/admin/AdminMetrics";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
 import { PlatformOverview } from "@/components/admin/PlatformOverview";
+import { ReferralManagement } from "@/components/admin/ReferralManagement";
 import { 
   Users, 
   Building2, 
@@ -80,10 +81,11 @@ export default function AdminDashboard() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4 lg:space-y-6">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 h-auto">
                 <TabsTrigger value="overview" className="text-xs lg:text-sm">Overview</TabsTrigger>
                 <TabsTrigger value="users" className="text-xs lg:text-sm">Users</TabsTrigger>
                 <TabsTrigger value="verifications" className="text-xs lg:text-sm">Verifications</TabsTrigger>
+                <TabsTrigger value="referrals" className="text-xs lg:text-sm">Referrals</TabsTrigger>
                 <TabsTrigger value="analytics" className="text-xs lg:text-sm">Analytics</TabsTrigger>
               </TabsList>
 
@@ -98,6 +100,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="verifications" className="space-y-4 lg:space-y-6">
                 <VerificationManagement />
+              </TabsContent>
+
+              <TabsContent value="referrals" className="space-y-4 lg:space-y-6">
+                <ReferralManagement />
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
@@ -125,15 +131,41 @@ export default function AdminDashboard() {
 
   const MobileContent = () => (
     <div className="min-h-screen bg-gray-50">
-      <MobileHeader />
+      {/* Mobile Header */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600">
+          <div className="flex items-center gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-80">
+                <AdminSidebar />
+              </SheetContent>
+            </Sheet>
+            <div>
+              <h1 className="text-xl font-bold text-white">Admin</h1>
+              <p className="text-blue-100 text-sm">Dashboard</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span className="text-xs text-blue-100">Online</span>
+          </div>
+        </div>
+      </div>
+
       <main className="p-4">
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 h-auto bg-white shadow-sm">
             <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
             <TabsTrigger value="users" className="text-xs">Users</TabsTrigger>
           </TabsList>
-          <TabsList className="grid w-full grid-cols-2 h-auto bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 h-auto bg-white shadow-sm">
             <TabsTrigger value="verifications" className="text-xs">Verifications</TabsTrigger>
+            <TabsTrigger value="referrals" className="text-xs">Referrals</TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs">Analytics</TabsTrigger>
           </TabsList>
 
@@ -148,6 +180,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="verifications" className="space-y-4">
             <VerificationManagement />
+          </TabsContent>
+
+          <TabsContent value="referrals" className="space-y-4">
+            <ReferralManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
