@@ -155,13 +155,6 @@ export default function Profile() {
         );
     };
 
-    const handleShare = () => {
-        toast({
-            title: "Profile Shared",
-            description: "Your profile link has been copied to clipboard.",
-        });
-    };
-
     return (
         <main className="flex-1 overflow-auto">
             {/* Header */}

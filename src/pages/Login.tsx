@@ -21,7 +21,7 @@ const Login = () => {
     const [termsAndConditionsAccepted, setTermsAndConditionsAccepted] = useState(false);
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<UserRole>('talent');
+    const [role, setRole] = useState<UserRole>('TALENT');
     const [isSignUp, setIsSignUp] = useState(false);
     const {login, register, isLoading} = useAuth();
 
@@ -87,11 +87,11 @@ const Login = () => {
 
     const getRoleIcon = (selectedRole: UserRole) => {
         switch (selectedRole) {
-            case 'talent':
+            case 'TALENT':
                 return <Users className="w-5 h-5 text-blue-400"/>;
-            case 'organization':
+            case 'ORGANIZATION':
                 return <Building2 className="w-5 h-5 text-emerald-400"/>;
-            case 'admin':
+            case 'ADMIN':
                 return <Shield className="w-5 h-5 text-orange-400"/>;
             default:
                 return <Users className="w-5 h-5 text-blue-400"/>;
@@ -100,11 +100,11 @@ const Login = () => {
 
     const getRoleColor = (selectedRole: UserRole) => {
         switch (selectedRole) {
-            case 'talent':
+            case 'TALENT':
                 return 'border-blue-600 bg-blue-600/10';
-            case 'organization':
+            case 'ORGANIZATION':
                 return 'border-emerald-600 bg-emerald-600/10';
-            case 'admin':
+            case 'ADMIN':
                 return 'border-orange-600 bg-orange-600/10';
             default:
                 return 'border-blue-600 bg-blue-600/10';

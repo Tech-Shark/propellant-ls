@@ -13,53 +13,56 @@ import { credentialTypes, credentialCategories } from '@/utils/constant';
 import {toast} from "sonner";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import {CubeSpinner} from "react-spinners-kit";
 
 export default function Credentials() {
     const [isUploading, setIsUploading] = useState(false);
-    const [credentials, setCredentials] = useState<CredentialsData[]>([
-        {
-            user: {
-                _id: "685baadbaf4ad967b6f88299",
-                email: "test1@gmail.com",
-                username: "lordibe"
-            },
-            title: 'React Developer Certificate',
-            type: 'Certificate',
-            category: 'Technical Skills',
-            description: 'Advanced React development certification from Meta',
-            verificationStatus: 'VERIFIED',
-            createdAt: '2024-01-15',
-            verifiedAt: '2024-01-20'
-        },
-        {
-            user: {
-                _id: "685baadyeu4ad967b6f88299",
-                email: "test2@gmail.com",
-                username: "sleek"
-            },
-            title: 'Bachelor of Computer Science',
-            type: 'Degree',
-            category: 'Education',
-            description: 'Bachelor\'s degree in Computer Science from MIT',
-            verificationStatus: 'PENDING',
-            createdAt: '2024-01-10',
-            verifiedAt: null
-        },
-        {
-            user: {
-                _id: "685baadbafakdjs893jd8299",
-                email: "test3@gmail.com",
-                username: "nwankwo"
-            },
-            title: 'AWS Solutions Architect',
-            type: 'License',
-            category: 'Professional',
-            description: 'AWS Certified Solutions Architect - Professional',
-            verificationStatus: 'REJECTED',
-            createdAt: '2024-01-05',
-            verifiedAt: null
-        }
-    ]);
+    const [credentials, setCredentials] = useState<CredentialsData[]>(
+        // [
+        //     {
+        //         user: {
+        //             _id: "685baadbaf4ad967b6f88299",
+        //             email: "test1@gmail.com",
+        //             username: "lordibe"
+        //         },
+        //         title: 'React Developer Certificate',
+        //         type: 'Certificate',
+        //         category: 'Technical Skills',
+        //         description: 'Advanced React development certification from Meta',
+        //         verificationStatus: 'VERIFIED',
+        //         createdAt: '2024-01-15',
+        //         verifiedAt: '2024-01-20'
+        //     },
+        //     {
+        //         user: {
+        //             _id: "685baadyeu4ad967b6f88299",
+        //             email: "test2@gmail.com",
+        //             username: "sleek"
+        //         },
+        //         title: 'Bachelor of Computer Science',
+        //         type: 'Degree',
+        //         category: 'Education',
+        //         description: 'Bachelor\'s degree in Computer Science from MIT',
+        //         verificationStatus: 'PENDING',
+        //         createdAt: '2024-01-10',
+        //         verifiedAt: null
+        //     },
+        //     {
+        //         user: {
+        //             _id: "685baadbafakdjs893jd8299",
+        //             email: "test3@gmail.com",
+        //             username: "nwankwo"
+        //         },
+        //         title: 'AWS Solutions Architect',
+        //         type: 'License',
+        //         category: 'Professional',
+        //         description: 'AWS Certified Solutions Architect - Professional',
+        //         verificationStatus: 'REJECTED',
+        //         createdAt: '2024-01-05',
+        //         verifiedAt: null
+        //     }
+        // ]
+    );
 
     useEffect(() => {
         const getCredentials = async () => {
@@ -313,7 +316,8 @@ export default function Credentials() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {credentials.map((credential) => (
+
+                            {credentials ? credentials.map((credential) => (
                                 <div key={credential.user._id} className="p-4 border border-slate-700 rounded-lg">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -358,7 +362,11 @@ export default function Credentials() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            )) :
+                                <div className="w-full flex items-center justify-center p-10">
+                                    <CubeSpinner />
+                                </div>
+                            }
                         </div>
                     </CardContent>
                 </Card>

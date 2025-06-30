@@ -34,32 +34,32 @@ export interface User {
   updatedAt: string;
 }
 
-export interface TalentProfile extends User {
-  role: 'talent';
-  skills: string[];
-  experience: WorkExperience[];
-  education: Education[];
-  profileCompleteness: number;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
-  cvGenerated: boolean;
-}
+// export interface TalentProfile extends User {
+//   role: 'talent';
+//   skills: string[];
+//   experience: WorkExperience[];
+//   education: Education[];
+//   profileCompleteness: number;
+//   verificationStatus: 'pending' | 'verified' | 'rejected';
+//   cvGenerated: boolean;
+// }
 
-export interface OrganizationProfile extends User {
-  role: 'organization';
-  companyName: string;
-  industry: string;
-  companySize: string;
-  subscriptionLevel: 'basic' | 'premium' | 'enterprise';
-  jobPosts: number;
-  talentContacted: number;
-  successRate: number;
-}
+// export interface OrganizationProfile extends User {
+//   role: 'organization';
+//   companyName: string;
+//   industry: string;
+//   companySize: string;
+//   subscriptionLevel: 'basic' | 'premium' | 'enterprise';
+//   jobPosts: number;
+//   talentContacted: number;
+//   successRate: number;
+// }
 
-export interface AdminProfile extends User {
-  role: 'admin';
-  permissions: string[];
-  canAddAdmins: boolean;
-}
+// export interface AdminProfile extends User {
+//   role: 'admin';
+//   permissions: string[];
+//   canAddAdmins: boolean;
+// }
 
 export interface WorkExperience {
   id: string;
