@@ -45,11 +45,11 @@ const navigationItems = [
     url: "/talent/cv-builder",
     icon: FileText,
   },
-  // {
-  //   title: "Credentials",
-  //   url: "/talent/credentials",
-  //   icon: Upload,
-  // },
+  {
+    title: "Credentials",
+    url: "/talent/credentials",
+    icon: Upload,
+  },
   // {
   //   title: "Verification",
   //   url: "/talent/verification",
