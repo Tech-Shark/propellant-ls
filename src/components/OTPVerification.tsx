@@ -4,76 +4,94 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
+import axiosInstance from "@/api/AxiosInstance.ts";
+import axios from "axios";
+import {useOTPContext} from "@/context/OTPContext.tsx";
 
-interface OTPVerificationProps {
-  title?: string;
-  description?: string;
-  onVerify: (otp: string) => Promise<boolean>;
-  onResend?: () => Promise<void>;
-  isVisible: boolean;
-  onClose?: () => void;
-}
+const OTPVerification: React.FC = () => {
+  const { type, email, url, setIsVisible } = useOTPContext();
 
-const OTPVerification: React.FC<OTPVerificationProps> = ({
-  title = "VERIFICATION",
-  description = "A 5 digit code has been sent to your email/phone",
-  onVerify,
-  onResend,
-  isVisible,
-  onClose
-}) => {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
-  const handleVerify = async () => {
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (otp.length !== 5) {
       toast.error('Please enter a 5-digit code');
       return;
     }
 
     setIsLoading(true);
+
+    let data = {};
+
+    if (type === "VERIFY_EMAIL") {
+      data = { code: Number.parseInt(otp), email }
+    } else {
+      data = { code: Number.parseInt(otp), type, email }
+    }
+
     try {
-      const success = await onVerify(otp);
-      if (success) {
-        toast.success('Verification successful!');
-        onClose?.();
-      } else {
-        toast.error('Invalid code. Please try again.');
-        setOtp('');
-      }
-    } catch (error) {
-      toast.error('Verification failed. Please try again.');
+      toast.promise(axiosInstance.post(url, data), {
+        loading: 'Loading...',
+        success: (response) => {
+          console.log(response?.data);
+          setIsVisible(false);
+          return response?.data.message;
+        },
+        error: (error) => {
+          if (axios.isAxiosError(error)) {
+            console.log(error)
+            return error.response?.data.message;
+          }
+          else {
+            return "Something went wrong. Please try again later.";
+          }
+        },
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResend = async () => {
-    if (!onResend) return;
-    
+  const handleResend = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     setIsResending(true);
+
     try {
-      await onResend();
-      toast.success('Code resent successfully!');
-    } catch (error) {
-      toast.error('Failed to resend code. Please try again.');
+      toast.promise(axiosInstance.post('/otp/request', { type, email }), {
+        loading: 'Loading...',
+        success: (response) => {
+          console.log(response?.data);
+          return response?.data.message;
+        },
+        error: (error) => {
+          if (axios.isAxiosError(error)) {
+            console.log(error)
+            return error.response?.data.message;
+          }
+          else {
+            return "Something went wrong. Please try again later.";
+          }
+        },
+      });
     } finally {
       setIsResending(false);
     }
   };
-
-  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-md bg-slate-900 border-blue-500/50 border-2 shadow-2xl">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-white text-lg font-medium tracking-wider">
-            {title}
+            VERIFICATION
           </CardTitle>
           <p className="text-slate-400 text-sm mt-2">
-            {description}
+            A 5 digit code has been sent to your email/phone
           </p>
         </CardHeader>
         
@@ -119,13 +137,9 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
           </Button>
 
           <div className="flex items-center justify-between text-sm">
-            <button
-              onClick={handleResend}
-              disabled={isResending}
-              className="text-slate-400 hover:text-white transition-colors disabled:opacity-50"
-            >
-              {isResending ? 'Sending...' : "Don't get code?"}
-            </button>
+            <div className="text-white transition-colors disabled:opacity-50">
+              Don't get code?
+            </div>
             
             <button
               onClick={handleResend}

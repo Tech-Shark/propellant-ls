@@ -32,7 +32,7 @@ import {
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/talent/dashboard",
+    url: "/talent",
     icon: Home,
   },
   {
@@ -45,36 +45,36 @@ const navigationItems = [
     url: "/talent/cv-builder",
     icon: FileText,
   },
-  {
-    title: "Credentials",
-    url: "/talent/credentials",
-    icon: Upload,
-  },
-  {
-    title: "Verification",
-    url: "/talent/verification",
-    icon: Award,
-  },
+  // {
+  //   title: "Credentials",
+  //   url: "/talent/credentials",
+  //   icon: Upload,
+  // },
+  // {
+  //   title: "Verification",
+  //   url: "/talent/verification",
+  //   icon: Award,
+  // },
   {
     title: "Referrals",
     url: "/talent/referrals",
     icon: UserPlus,
   },
-  {
-    title: "Wallet",
-    url: "/talent/wallet",
-    icon: Wallet,
-  },
-  {
-    title: "Messages",
-    url: "/talent/messages",
-    icon: MessageSquare,
-  },
-  {
-    title: "Analytics",
-    url: "/talent/analytics",
-    icon: BarChart3,
-  },
+  // {
+  //   title: "Wallet",
+  //   url: "/talent/wallet",
+  //   icon: Wallet,
+  // },
+  // {
+  //   title: "Messages",
+  //   url: "/talent/messages",
+  //   icon: MessageSquare,
+  // },
+  // {
+  //   title: "Analytics",
+  //   url: "/talent/analytics",
+  //   icon: BarChart3,
+  // },
 ];
 
 const settingsItems = [

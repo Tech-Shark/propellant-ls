@@ -1,13 +1,37 @@
-
-export type UserRole = 'talent' | 'organization' | 'admin';
+export type UserRole = 'TALENT' | 'ORGANIZATION' | 'ADMIN';
+export type AuthSource = 'EMAIL' | 'GOOGLE' | 'FACEBOOK' | 'TWITTER'; // Extend as needed
 
 export interface User {
-  id: string;
+  _id: string;
   email: string;
-  name: string;
+  emailVerified: boolean;
+  profilePhoto: string | null;
+  firstName: string;
+  lastName: string;
+  username: string;
+  bio: string;
+  phone: string;
   role: UserRole;
-  avatar?: string;
+  authSource: AuthSource;
+  location: string;
+  twitter: string;
+  instagram: string;
+  languages: string[];
+  hobbies: string[];
+  achievements: string[];
+  references: string[];
+  skills: string[];
+  experience: unknown[];        // Replace `any` with a detailed interface if available
+  education: unknown[];         // Replace `any` with a detailed interface if available
+  certifications: unknown[];    // Replace `any` with a detailed interface if available
+  projects: unknown[];          // Replace `any` with a detailed interface if available
+  lastLoginAt: string | null;
+  isNewUser: boolean;
+  termsAndConditionsAccepted: boolean;
+  isDeleted: boolean;
+  profileCompleted: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface TalentProfile extends User {
