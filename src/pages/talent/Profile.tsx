@@ -39,6 +39,7 @@ export default function Profile() {
     });
 
     useEffect(() => {
+        console.log(user);
         setProfileData({
             fullName: `${user?.firstName || ''} ${user?.lastName || ''}`,
             // professionalTitle: user?.professionalTitle,
@@ -127,9 +128,12 @@ export default function Profile() {
         console.log('Profile data:', profileData);
         setIsEditing(false);
 
+        const fn = profileData?.fullName.trim().split(' ')[0];
+        const ln = profileData?.fullName.trim().split(' ')[1];
+
         const updatedUser = {
-            firstName: profileData?.fullName.split(' ')[0],
-            lastName: profileData?.fullName.split(' ')[1],
+            firstName: fn,
+            lastName: ln,
             bio: profileData?.bio,
             phone: profileData?.phone,
         };
