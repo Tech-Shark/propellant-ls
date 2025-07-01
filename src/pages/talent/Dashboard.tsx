@@ -124,9 +124,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metrics Section */}
-                <div id="metrics">
-                    <TalentMetrics />
-                </div>
+                {/*<div id="metrics">*/}
+                {/*    <TalentMetrics />*/}
+                {/*</div>*/}
 
                 {/* Recent Activity */}
                 <Card className="bg-slate-900 border-slate-700">
@@ -140,24 +140,24 @@ const Dashboard = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            {[
-                                { status: 'success', message: 'CV generation completed', time: '2 min ago', color: 'bg-emerald-500' },
-                                { status: 'info', message: 'New message from TechCorp', time: '15 min ago', color: 'bg-blue-500' },
-                                { status: 'warning', message: 'Credential verification pending', time: '1 hour ago', color: 'bg-orange-500' },
-                                { status: 'success', message: 'NFT skill badge earned: React', time: '2 hours ago', color: 'bg-emerald-500' }
-                            ].map((activity, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>
-                                        <span className="text-slate-300">{activity.message}</span>
-                                    </div>
-                                    <Badge variant="secondary" className="text-xs text-slate-400">
-                                        {activity.time}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
+                        {/*<div className="space-y-4">*/}
+                        {/*    {[*/}
+                        {/*        { status: 'success', message: 'CV generation completed', time: '2 min ago', color: 'bg-emerald-500' },*/}
+                        {/*        { status: 'info', message: 'New message from TechCorp', time: '15 min ago', color: 'bg-blue-500' },*/}
+                        {/*        { status: 'warning', message: 'Credential verification pending', time: '1 hour ago', color: 'bg-orange-500' },*/}
+                        {/*        { status: 'success', message: 'NFT skill badge earned: React', time: '2 hours ago', color: 'bg-emerald-500' }*/}
+                        {/*    ].map((activity, index) => (*/}
+                        {/*        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">*/}
+                        {/*            <div className="flex items-center gap-3">*/}
+                        {/*                <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>*/}
+                        {/*                <span className="text-slate-300">{activity.message}</span>*/}
+                        {/*            </div>*/}
+                        {/*            <Badge variant="secondary" className="text-xs text-slate-400">*/}
+                        {/*                {activity.time}*/}
+                        {/*            </Badge>*/}
+                        {/*        </div>*/}
+                        {/*    ))}*/}
+                        {/*</div>*/}
                     </CardContent>
                 </Card>
             </div>

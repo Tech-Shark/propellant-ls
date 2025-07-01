@@ -1,99 +1,157 @@
 import {useState} from 'react';
-import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
-import {TalentSidebar} from "@/components/TalentSidebar";
+import {SidebarTrigger} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
-import {FileText, Download, Wand2, Plus, Trash2, Save, Eye} from "lucide-react";
+import {Download, Wand2, Plus, Trash2, Save} from "lucide-react";
 import {useToast} from "@/hooks/use-toast";
-
-interface WorkExperience {
-    id: string;
-    company: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-}
-
-interface Education {
-    id: string;
-    institution: string;
-    degree: string;
-    field: string;
-    graduationDate: string;
-}
+import {Certification, CV, Project, SkillLevel} from "@/utils/global";
+import {WorkExperience, Education, Skill} from "@/utils/global";
+import {Switch} from "@/components/ui/switch.tsx";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
+import {skillLevels} from "@/utils/constant.ts";
 
 export default function CVBuilder() {
     const {toast} = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
-    const [personalInfo, setPersonalInfo] = useState({
-        fullName: '',
+    const [personalInfo, setPersonalInfo] = useState<CV>({
+        firstName: '',
+        lastName: '',
         email: '',
         phone: '',
-        location: '',
-        summary: ''
+        address: '',
+        professionalTitle: '',
+        professionalSummary: ''
     });
     const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
     const [educations, setEducations] = useState<Education[]>([]);
-    const [skills, setSkills] = useState<string[]>([]);
-    const [newSkill, setNewSkill] = useState('');
+    const [certifications, setCertifications] = useState<Certification[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [skills, setSkills] = useState<Skill[]>([]);
+    const [newSkill, setNewSkill] = useState<Skill>({
+        name: '',
+        level: 'BEGINNER'
+    });
+    const [newTechnology, setNewTechnology] = useState<string>('');
 
     const addWorkExperience = () => {
         const newExp: WorkExperience = {
-            id: Date.now().toString(),
             company: '',
             position: '',
             startDate: '',
             endDate: '',
-            description: ''
+            description: '',
+            location: '',
+            title: '',
+            isCurrentRole: false
         };
         setWorkExperiences([...workExperiences, newExp]);
     };
 
-    const updateWorkExperience = (id: string, field: keyof WorkExperience, value: string) => {
-        setWorkExperiences(prev => prev.map(exp =>
-            exp.id === id ? {...exp, [field]: value} : exp
+    const updateWorkExperience = (index: number, field: keyof WorkExperience, value: string | boolean) => {
+        setWorkExperiences(prev => prev.map((exp, i) =>
+            i === index ? {...exp, [field]: value} : exp
         ));
     };
 
-    const removeWorkExperience = (id: string) => {
-        setWorkExperiences(prev => prev.filter(exp => exp.id !== id));
+    const removeWorkExperience = (index: number) => {
+        setWorkExperiences(prev => prev.filter((_, i) => i !== index));
     };
 
     const addEducation = () => {
         const newEdu: Education = {
-            id: Date.now().toString(),
             institution: '',
             degree: '',
-            field: '',
-            graduationDate: ''
+            fieldOfStudy: '',
+            startDate: '',
+            endDate: '',
+            grade: '',
+            description: ''
         };
         setEducations([...educations, newEdu]);
     };
 
-    const updateEducation = (id: string, field: keyof Education, value: string) => {
-        setEducations(prev => prev.map(edu =>
-            edu.id === id ? {...edu, [field]: value} : edu
+    const updateEducation = (index: number, field: keyof Education, value: string) => {
+        setEducations(prev => prev.map((edu, i) =>
+            i === index ? {...edu, [field]: value} : edu
         ));
     };
 
-    const removeEducation = (id: string) => {
-        setEducations(prev => prev.filter(edu => edu.id !== id));
+    const removeEducation = (index: number) => {
+        setEducations(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addCertification = () => {
+        const newCert: Certification = {
+            name: '',
+            issuer: '',
+            dateIssued: '',
+            credentialId: '',
+            credentialUrl: ''
+        };
+        setCertifications([...certifications, newCert]);
+    };
+
+    const updateCertification = (index: number, field: keyof Certification, value: string) => {
+        setCertifications(prev => prev.map((cert, i) =>
+            i === index ? {...cert, [field]: value} : cert
+        ));
+    };
+
+    const removeCertification = (index: number) => {
+        setCertifications(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addProject = () => {
+        const newProj: Project = {
+            name: '',
+            description: '',
+            technologies: [],
+            project: '',
+            github: ''
+        };
+        setProjects([...projects, newProj]);
+    };
+
+    const updateProject = (index: number, field: keyof Project, value: string) => {
+        setProjects(prev => prev.map((proj, i) =>
+            i === index ? {...proj, [field]: value} : proj
+        ));
+    };
+
+    const removeProject = (index: number) => {
+        setProjects(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const addTechnology = () => {
+        if (!newTechnology) return;
+        setProjects(prev => prev.map(proj => ({
+            ...proj,
+            technologies: [...proj.technologies, newTechnology]
+        })));
+        setNewTechnology('');
+    };
+
+    const removeTechnology = (index: number, projIndex: number) => {
+        setProjects(prev => prev.map((proj, i) =>
+            i === projIndex ? {...proj, technologies: proj.technologies.filter((_, j) => j !== index)} : proj
+        ));
     };
 
     const addSkill = () => {
-        if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-            setSkills([...skills, newSkill.trim()]);
-            setNewSkill('');
-        }
+        if (!newSkill.name || !newSkill.level) return;
+        setSkills([...skills, newSkill]);
+        setNewSkill({
+            name: '',
+            level: 'BEGINNER'
+        });
     };
 
-    const removeSkill = (skill: string) => {
-        setSkills(prev => prev.filter(s => s !== skill));
+    const removeSkill = (index: number) => {
+        setSkills(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleAIGenerate = async () => {
@@ -166,11 +224,20 @@ export default function CVBuilder() {
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <Label htmlFor="fullName" className="text-slate-300">Full Name</Label>
+                                <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
                                 <Input
-                                    id="fullName"
-                                    value={personalInfo.fullName}
-                                    onChange={(e) => setPersonalInfo({...personalInfo, fullName: e.target.value})}
+                                    id="firstName"
+                                    value={personalInfo.firstName}
+                                    onChange={(e) => setPersonalInfo({...personalInfo, firstName: e.target.value})}
+                                    className="bg-slate-800 border-slate-600 text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="lastName" className="text-slate-300">Last Name</Label>
+                                <Input
+                                    id="lastName"
+                                    value={personalInfo.lastName}
+                                    onChange={(e) => setPersonalInfo({...personalInfo, lastName: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
                                 />
                             </div>
@@ -194,21 +261,30 @@ export default function CVBuilder() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="location" className="text-slate-300">Location</Label>
+                                <Label htmlFor="address" className="text-slate-300">Address</Label>
                                 <Input
-                                    id="location"
-                                    value={personalInfo.location}
-                                    onChange={(e) => setPersonalInfo({...personalInfo, location: e.target.value})}
+                                    id="address"
+                                    value={personalInfo.address}
+                                    onChange={(e) => setPersonalInfo({...personalInfo, address: e.target.value})}
+                                    className="bg-slate-800 border-slate-600 text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="professionalTitle" className="text-slate-300">Professional Title</Label>
+                                <Input
+                                    id="professionalTitle"
+                                    value={personalInfo.professionalTitle}
+                                    onChange={(e) => setPersonalInfo({...personalInfo, professionalTitle: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
                                 />
                             </div>
                         </div>
                         <div>
-                            <Label htmlFor="summary" className="text-slate-300">Professional Summary</Label>
+                            <Label htmlFor="professionalSummary" className="text-slate-300">Professional Summary</Label>
                             <Textarea
-                                id="summary"
-                                value={personalInfo.summary}
-                                onChange={(e) => setPersonalInfo({...personalInfo, summary: e.target.value})}
+                                id="professionalSummary"
+                                value={personalInfo.professionalSummary}
+                                onChange={(e) => setPersonalInfo({...personalInfo, professionalSummary: e.target.value})}
                                 className="bg-slate-800 border-slate-600 text-white"
                                 rows={4}
                             />
@@ -234,12 +310,12 @@ export default function CVBuilder() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {workExperiences.map((exp) => (
-                            <div key={exp.id} className="p-4 border border-slate-700 rounded-lg space-y-4">
+                        {workExperiences.map((exp, index) => (
+                            <div key={index} className="p-4 border border-slate-700 rounded-lg space-y-4">
                                 <div className="flex justify-between items-start">
                                     <h4 className="text-lg font-medium text-white">Experience Entry</h4>
                                     <Button
-                                        onClick={() => removeWorkExperience(exp.id)}
+                                        onClick={() => removeWorkExperience(index)}
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-400 hover:text-red-300"
@@ -252,7 +328,7 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">Company</Label>
                                         <Input
                                             value={exp.company}
-                                            onChange={(e) => updateWorkExperience(exp.id, 'company', e.target.value)}
+                                            onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
@@ -260,7 +336,23 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">Position</Label>
                                         <Input
                                             value={exp.position}
-                                            onChange={(e) => updateWorkExperience(exp.id, 'position', e.target.value)}
+                                            onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Title</Label>
+                                        <Input
+                                            value={exp.title}
+                                            onChange={(e) => updateWorkExperience(index, 'title', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Location</Label>
+                                        <Input
+                                            value={exp.location}
+                                            onChange={(e) => updateWorkExperience(index, 'location', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
@@ -269,7 +361,7 @@ export default function CVBuilder() {
                                         <Input
                                             type="date"
                                             value={exp.startDate}
-                                            onChange={(e) => updateWorkExperience(exp.id, 'startDate', e.target.value)}
+                                            onChange={(e) => updateWorkExperience(index, 'startDate', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
@@ -278,16 +370,25 @@ export default function CVBuilder() {
                                         <Input
                                             type="date"
                                             value={exp.endDate}
-                                            onChange={(e) => updateWorkExperience(exp.id, 'endDate', e.target.value)}
+                                            onChange={(e) => updateWorkExperience(index, 'endDate', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div>
+                                        <Label className="text-white">Current Role</Label>
+                                    </div>
+                                    <Switch
+                                        checked={exp.isCurrentRole}
+                                        onCheckedChange={(checked) => updateWorkExperience(index, 'isCurrentRole', checked)}
+                                    />
                                 </div>
                                 <div>
                                     <Label className="text-slate-300">Description</Label>
                                     <Textarea
                                         value={exp.description}
-                                        onChange={(e) => updateWorkExperience(exp.id, 'description', e.target.value)}
+                                        onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
                                         className="bg-slate-800 border-slate-600 text-white"
                                         rows={3}
                                     />
@@ -320,12 +421,12 @@ export default function CVBuilder() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {educations.map((edu) => (
-                            <div key={edu.id} className="p-4 border border-slate-700 rounded-lg space-y-4">
+                        {educations.map((edu, index) => (
+                            <div key={index} className="p-4 border border-slate-700 rounded-lg space-y-4">
                                 <div className="flex justify-between items-start">
                                     <h4 className="text-lg font-medium text-white">Education Entry</h4>
                                     <Button
-                                        onClick={() => removeEducation(edu.id)}
+                                        onClick={() => removeEducation(index)}
                                         variant="ghost"
                                         size="sm"
                                         className="text-red-400 hover:text-red-300"
@@ -338,7 +439,7 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">Institution</Label>
                                         <Input
                                             value={edu.institution}
-                                            onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)}
+                                            onChange={(e) => updateEducation(index, 'institution', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
@@ -346,33 +447,253 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">Degree</Label>
                                         <Input
                                             value={edu.degree}
-                                            onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)}
+                                            onChange={(e) => updateEducation(index, 'degree', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
                                     <div>
                                         <Label className="text-slate-300">Field of Study</Label>
                                         <Input
-                                            value={edu.field}
-                                            onChange={(e) => updateEducation(edu.id, 'field', e.target.value)}
+                                            value={edu.fieldOfStudy}
+                                            onChange={(e) => updateEducation(index, 'fieldOfStudy', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
                                     <div>
-                                        <Label className="text-slate-300">Graduation Date</Label>
+                                        <Label className="text-slate-300">Grade</Label>
                                         <Input
-                                            type="date"
-                                            value={edu.graduationDate}
-                                            onChange={(e) => updateEducation(edu.id, 'graduationDate', e.target.value)}
+                                            type="text"
+                                            value={edu.grade}
+                                            onChange={(e) => updateEducation(index, 'grade', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
                                         />
                                     </div>
+                                    <div>
+                                        <Label className="text-slate-300">Start Date</Label>
+                                        <Input
+                                            type="date"
+                                            value={edu.startDate}
+                                            onChange={(e) => updateEducation(index, 'startDate', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">End Date</Label>
+                                        <Input
+                                            type="date"
+                                            value={edu.endDate}
+                                            onChange={(e) => updateEducation(index, 'endDate', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-slate-300">Description</Label>
+                                    <Textarea
+                                        value={edu.description}
+                                        onChange={(e) => updateEducation(index, 'description', e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white"
+                                        rows={3}
+                                    />
                                 </div>
                             </div>
                         ))}
                         {educations.length === 0 && (
                             <div className="text-center py-8 text-slate-400">
                                 No education added yet. Click "Add Education" to get started.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/*Certifications*/}
+                <Card className="bg-slate-900 border-slate-700">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-white">Certification</CardTitle>
+                                <CardDescription className="text-slate-400">
+                                    Your certifications
+                                </CardDescription>
+                            </div>
+                            <Button onClick={addCertification} variant="outline"
+                                    className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white">
+                                <Plus className="w-4 h-4 mr-2"/>
+                                Add Certification
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {certifications.map((cert, index) => (
+                            <div key={index} className="p-4 border border-slate-700 rounded-lg space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="text-lg font-medium text-white">Certification Entry</h4>
+                                    <Button
+                                        onClick={() => removeCertification(index)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        <Trash2 className="w-4 h-4"/>
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-slate-300">Name</Label>
+                                        <Input
+                                            value={cert.name}
+                                            onChange={(e) => updateCertification(index, 'name', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Credential ID</Label>
+                                        <Input
+                                            value={cert.credentialId}
+                                            onChange={(e) => updateCertification(index, 'credentialId', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Issuer</Label>
+                                        <Input
+                                            value={cert.issuer}
+                                            onChange={(e) => updateCertification(index, 'issuer', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Date Issued</Label>
+                                        <Input
+                                            type="date"
+                                            value={cert.dateIssued}
+                                            onChange={(e) => updateCertification(index, 'dateIssued', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-slate-300">Credential URL</Label>
+                                    <Input
+                                        type="text"
+                                        value={cert.credentialUrl}
+                                        onChange={(e) => updateCertification(index, 'credentialUrl', e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white"
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        {certifications.length === 0 && (
+                            <div className="text-center py-8 text-slate-400">
+                                No certifications added yet. Click "Add Certification" to get started.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/*Projects*/}
+                <Card className="bg-slate-900 border-slate-700">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-white">Project</CardTitle>
+                                <CardDescription className="text-slate-400">
+                                    Your projects
+                                </CardDescription>
+                            </div>
+                            <Button onClick={addProject} variant="outline"
+                                    className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white">
+                                <Plus className="w-4 h-4 mr-2"/>
+                                Add Project
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {projects.map((proj, index) => (
+                            <div key={index} className="p-4 border border-slate-700 rounded-lg space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="text-lg font-medium text-white">Project Entry</h4>
+                                    <Button
+                                        onClick={() => removeProject(index)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        <Trash2 className="w-4 h-4"/>
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-slate-300">Name</Label>
+                                        <Input
+                                            value={proj.name}
+                                            onChange={(e) => updateProject(index, 'name', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-slate-300">Project</Label>
+                                        <Input
+                                            value={proj.project}
+                                            onChange={(e) => updateProject(index, 'project', e.target.value)}
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-slate-300">Link</Label>
+                                    <Input
+                                        value={proj.github}
+                                        onChange={(e) => updateProject(index, 'github', e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white"
+                                    />
+                                </div>
+
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <Label htmlFor="firstName" className="text-slate-300">Technologies</Label>
+                                        <Input
+                                            value={newTechnology}
+                                            onChange={(e) => setNewTechnology(e.target.value)}
+                                            placeholder="Enter a technology"
+                                            className="bg-slate-800 border-slate-600 text-white"
+                                        />
+                                    </div>
+
+                                    <Button onClick={addTechnology} className="bg-blue-600 hover:bg-blue-700">
+                                        <Plus className="w-4 h-4"/>
+                                    </Button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {proj.technologies.map((tech, i) => (
+                                        <Badge
+                                            key={index}
+                                            variant="secondary"
+                                            className="bg-blue-600/20 text-blue-400 border-blue-600/30 cursor-pointer hover:bg-red-600/20 hover:text-red-400"
+                                            onClick={() => removeTechnology(i, index)}
+                                        >
+                                            {tech} ×
+                                        </Badge>
+                                    ))}
+                                </div>
+
+                                <div>
+                                    <Label className="text-slate-300">Project Description</Label>
+                                    <Textarea
+                                        value={proj.description}
+                                        onChange={(e) => updateProject(index, 'description', e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white"
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        {projects.length === 0 && (
+                            <div className="text-center py-8 text-slate-400">
+                                No projects added yet. Click "Add Project" to get started.
                             </div>
                         )}
                     </CardContent>
@@ -387,30 +708,52 @@ export default function CVBuilder() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex gap-2">
-                            <Input
-                                value={newSkill}
-                                onChange={(e) => setNewSkill(e.target.value)}
-                                placeholder="Enter a skill"
-                                className="bg-slate-800 border-slate-600 text-white"
-                                onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                            />
+                        <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                                <Label htmlFor="firstName" className="text-slate-300">Name</Label>
+                                <Input
+                                    value={newSkill?.name}
+                                    onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
+                                    placeholder="Enter a skill name"
+                                    className="bg-slate-800 border-slate-600 text-white"
+                                />
+                            </div>
+
+                            <div className="flex-1">
+                                <Label htmlFor="category" className="text-slate-300">Level</Label>
+                                <Select value={newSkill?.level} onValueChange={(value: SkillLevel) => setNewSkill({ ...newSkill, level: value })}>
+                                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                                        <SelectValue placeholder="Select category"/>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-600">
+                                        {skillLevels.map((skillLevel) => (
+                                            <SelectItem key={skillLevel.id} value={skillLevel.value}
+                                                        className="text-white hover:bg-slate-700">
+                                                {skillLevel.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <Button onClick={addSkill} className="bg-blue-600 hover:bg-blue-700">
                                 <Plus className="w-4 h-4"/>
                             </Button>
                         </div>
+
                         <div className="flex flex-wrap gap-2">
-                            {skills.map((skill) => (
+                            {skills.map((skill, index) => (
                                 <Badge
-                                    key={skill}
+                                    key={index}
                                     variant="secondary"
                                     className="bg-blue-600/20 text-blue-400 border-blue-600/30 cursor-pointer hover:bg-red-600/20 hover:text-red-400"
-                                    onClick={() => removeSkill(skill)}
+                                    onClick={() => removeSkill(index)}
                                 >
-                                    {skill} ×
+                                    {skill.name} ×
                                 </Badge>
                             ))}
                         </div>
+
                         {skills.length === 0 && (
                             <div className="text-center py-4 text-slate-400">
                                 No skills added yet. Add your skills above.

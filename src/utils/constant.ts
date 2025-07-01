@@ -83,3 +83,21 @@ export const credentialCategories = [
         value: 'OTHER'
     }
 ];
+
+export const skillLevels = [
+    {
+        id: 1,
+        name: 'Beginner',
+        value: 'BEGINNER'
+    },
+    {
+        id: 2,
+        name: 'Intermediate',
+        value: 'INTERMEDIATE'
+    },
+    {
+        id: 3,
+        name: 'Expert',
+        value: 'EXPERT'
+    }
+];

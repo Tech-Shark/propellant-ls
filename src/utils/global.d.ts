@@ -49,24 +49,24 @@ export interface Project {
 }
 
 export interface CV {
-    firstName: string;
-    lastName: string;
-    phone: string;
-    email: string;
-    professionalTitle: string;
-    professionalSummary: string;
-    address: string;
-    github: string;
-    portfolio: string;
-    website: string;
-    languages: string[];
-    hobbies: string[];
-    achievements: string[];
-    skills: Skill[];
-    workExperience: WorkExperience[];
-    education: Education[];
-    certifications: Certification[];
-    projects: Project[];
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+    professionalTitle?: string;
+    professionalSummary?: string;
+    address?: string;
+    github?: string;
+    portfolio?: string;
+    website?: string;
+    languages?: string[];
+    hobbies?: string[];
+    achievements?: string[];
+    skills?: Skill[];
+    workExperience?: WorkExperience[];
+    education?: Education[];
+    certifications?: Certification[];
+    projects?: Project[];
 }
 
 // Credentials
