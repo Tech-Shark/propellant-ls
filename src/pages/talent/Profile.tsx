@@ -8,7 +8,7 @@ import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {Progress} from "@/components/ui/progress";
-import {User, Mail, Phone, Save} from "lucide-react";
+import {Mail, MapPin, Phone, Save, User, X} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.tsx";
 import {toast} from "sonner";
 import axios from "axios";
@@ -32,6 +32,7 @@ export default function Profile() {
     const [profileData, setProfileData] = useState({
         fullName: `${user?.firstName || ''} ${user?.lastName || ''}`,
         // professionalTitle: user?.professionalTitle,
+        // professionalSummary: user?.professionalSummary,
         bio: user?.bio,
         email: user?.email,
         phone: user?.phone,
@@ -43,6 +44,7 @@ export default function Profile() {
         setProfileData({
             fullName: `${user?.firstName || ''} ${user?.lastName || ''}`,
             // professionalTitle: user?.professionalTitle,
+            // professionalSummary: user?.professionalSummary,
             bio: user?.bio,
             email: user?.email,
             phone: user?.phone,
@@ -53,18 +55,20 @@ export default function Profile() {
     const [profileCompleteness, setProfileCompleteness] = useState(0);
 
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         setProfileCompleteness(() => {
-            const fields = ['fullName', 'bio', 'email', 'phone', 'skills'];
+            const fields = ['firstName', 'lastName', 'bio', 'email', 'phone'];
 
             let count = 0;
 
             fields.forEach((field) => {
-                if (!profileData[field]) {
+                if (user[field]) {
                     count++;
                 }
             });
 
-            return count / fields.length * 100;
+            return ((count / fields.length) * 100).toFixed(1);
         });
     }, [profileData, user]);
 
@@ -178,10 +182,17 @@ export default function Profile() {
                         {/*  Share Profile*/}
                         {/*</Button>*/}
                         {isEditing ? (
-                            <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                                <Save className="w-4 h-4 mr-2"/>
-                                Save Changes
-                            </Button>
+                            <div className="flex items-center gap-3">
+                                <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <Save className="w-4 h-4 mr-2"/>
+                                    Save Changes
+                                </Button>
+
+                                <Button onClick={() => setIsEditing(false)} className="bg-slate-600 hover:bg-slate-700 text-white">
+                                    <X className="w-4 h-4 mr-2"/>
+                                    Cancel
+                                </Button>
+                            </div>
                         ) : (
                             <Button onClick={() => setIsEditing(true)}
                                     className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -222,7 +233,7 @@ export default function Profile() {
                                 <Avatar className="w-24 h-24">
                                     <AvatarImage src={null} alt={profileData.fullName}/>
                                     <AvatarFallback className="bg-slate-700 text-white text-lg">
-                                        {profileData.fullName.split(' ').map(n => n[0]).join('')}
+                                        {profileData.fullName.trim().split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
                                 {/*{isEditing && (*/}
@@ -249,6 +260,18 @@ export default function Profile() {
                                                 className="bg-slate-800 border-slate-600 text-white"
                                             />
                                         </div>
+
+                                        {/*<div>*/}
+                                        {/*    <Label className="text-slate-300">Professional Title</Label>*/}
+                                        {/*    <Input*/}
+                                        {/*        value={profileData.professionalTitle}*/}
+                                        {/*        onChange={(e) => setProfileData({*/}
+                                        {/*            ...profileData,*/}
+                                        {/*            professionalTitle: e.target.value*/}
+                                        {/*        })}*/}
+                                        {/*        className="bg-slate-800 border-slate-600 text-white"*/}
+                                        {/*    />*/}
+                                        {/*</div>*/}
                                         {/*<div>*/}
                                         {/*  <Label className="text-slate-300">Professional Title</Label>*/}
                                         {/*  <Input*/}
@@ -261,11 +284,11 @@ export default function Profile() {
                                 ) : (
                                     <div>
                                         <h2 className="text-2xl font-bold text-white">{profileData.fullName}</h2>
-                                        {/*<p className="text-lg text-blue-400">{profileData.title}</p>*/}
+                                        {/*<p className="text-lg text-blue-400">{profileData.professionalTitle}</p>*/}
                                         <div className="flex items-center gap-4 mt-2 text-slate-400">
                                             {/*<div className="flex items-center gap-1">*/}
                                             {/*  <MapPin className="w-4 h-4" />*/}
-                                            {/*  <span>{profileData.location}</span>*/}
+                                            {/*  <span>{profileData.professionalTitle}</span>*/}
                                             {/*</div>*/}
                                             {/*<div className="flex items-center gap-1">*/}
                                             {/*  <Star className="w-4 h-4 text-yellow-400" />*/}
@@ -276,6 +299,20 @@ export default function Profile() {
                                 )}
                             </div>
                         </div>
+
+                        {/*<div>*/}
+                        {/*    <Label className="text-slate-300">Professional Summary</Label>*/}
+                        {/*    {isEditing ? (*/}
+                        {/*        <Textarea*/}
+                        {/*            value={profileData.professionalSummary}*/}
+                        {/*            onChange={(e) => setProfileData({...profileData, professionalSummary: e.target.value})}*/}
+                        {/*            className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                        {/*            rows={4}*/}
+                        {/*        />*/}
+                        {/*    ) : (*/}
+                        {/*        <p className="text-slate-300 mt-2">{profileData.professionalSummary}</p>*/}
+                        {/*    )}*/}
+                        {/*</div>*/}
 
                         <div>
                             <Label className="text-slate-300">Bio</Label>

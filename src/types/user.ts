@@ -7,6 +7,8 @@ export interface User {
   emailVerified: boolean;
   profilePhoto: string | null;
   firstName: string;
+  professionalTitle: string;
+  professionalSummary: string;
   lastName: string;
   username: string;
   bio: string;
