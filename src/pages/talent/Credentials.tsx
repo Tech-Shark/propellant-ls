@@ -256,12 +256,14 @@ export default function Credentials() {
                             <div>
                                 <Label htmlFor="file" className="text-slate-300">Upload File</Label>
                                 <div className="mt-2">
-                                    <input
+                                    <Input
                                         id="file"
                                         type="file"
                                         onChange={handleFileUpload}
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                         className="hidden"
+                                        title="Upload credential file"
+                                        placeholder="Choose a file"
                                     />
                                     <Button
                                         variant="outline"

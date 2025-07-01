@@ -234,6 +234,7 @@ const Login = () => {
                                             className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                                             onChange={() => setTermsAndConditionsAccepted((prev) => !prev)}
                                             checked={termsAndConditionsAccepted && termsAndConditionsAccepted}
+                                            title="Accept terms and conditions"
                                         />
                                         <Label htmlFor="terms" className="pb-2">Accept terms and conditions</Label>
                                     </div>
