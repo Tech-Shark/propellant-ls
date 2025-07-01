@@ -24,7 +24,6 @@ dist-ssr
 *.sw?
 .vercel
 .github/
-Dockerfile 
 
 .env
 .env.production 
