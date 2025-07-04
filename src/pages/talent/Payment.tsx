@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
 import {TalentSidebar} from "@/components/TalentSidebar";
 import {Button} from "@/components/ui/button";
@@ -9,6 +9,8 @@ import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {CreditCard, Check, Star, Shield, Zap} from "lucide-react";
 import {useToast} from "@/hooks/use-toast";
+import {PaymentMethod} from "@/utils/global";
+import axiosInstance from "@/api/AxiosInstance.ts";
 
 const plans = [
     {
@@ -72,16 +74,22 @@ export default function Payment() {
     const {toast} = useToast();
     const [selectedPlan, setSelectedPlan] = useState('professional');
     const [paymentMethod, setPaymentMethod] = useState('');
-    const [billingInfo, setBillingInfo] = useState({
-        cardNumber: '',
-        expiryDate: '',
-        cvv: '',
-        name: '',
-        email: '',
-        address: '',
-        city: '',
-        country: ''
-    });
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+
+    useEffect(() => {
+        const fetchPaymentMethods = async () => {
+            try {
+                const response = await axiosInstance.get('/payment');
+                console.log(response.data);
+                console.log(response.data.data);
+                setPaymentMethods(response.data.data);
+            } catch (error) {
+                console.error('Error fetching payment methods:', error);
+            }
+        };
+
+        fetchPaymentMethods();
+    }, []);
 
     const handleUpgrade = (planId: string) => {
         setSelectedPlan(planId);
@@ -226,108 +234,113 @@ export default function Payment() {
                                         <SelectValue placeholder="Select payment method"/>
                                     </SelectTrigger>
                                     <SelectContent className="bg-slate-800 border-slate-600">
-                                        <SelectItem value="card" className="text-white hover:bg-slate-700">Credit/Debit
-                                            Card</SelectItem>
-                                        <SelectItem value="paypal"
-                                                    className="text-white hover:bg-slate-700">PayPal</SelectItem>
-                                        <SelectItem value="crypto"
-                                                    className="text-white hover:bg-slate-700">Cryptocurrency</SelectItem>
+                                        {
+                                            paymentMethods.map((method) => (
+                                                <SelectItem
+                                                    key={method._id}
+                                                    value={method._id}
+                                                    className="text-white hover:bg-slate-700"
+                                                >
+                                                    {method.name}
+                                                </SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>
 
-                            {paymentMethod === 'card' && (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label className="text-slate-300">Card Number</Label>
-                                            <Input
-                                                value={billingInfo.cardNumber}
-                                                onChange={(e) => setBillingInfo({
-                                                    ...billingInfo,
-                                                    cardNumber: e.target.value
-                                                })}
-                                                placeholder="1234 5678 9012 3456"
-                                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-slate-300">Cardholder Name</Label>
-                                            <Input
-                                                value={billingInfo.name}
-                                                onChange={(e) => setBillingInfo({...billingInfo, name: e.target.value})}
-                                                placeholder="John Doe"
-                                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-slate-300">Expiry Date</Label>
-                                            <Input
-                                                value={billingInfo.expiryDate}
-                                                onChange={(e) => setBillingInfo({
-                                                    ...billingInfo,
-                                                    expiryDate: e.target.value
-                                                })}
-                                                placeholder="MM/YY"
-                                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-slate-300">CVV</Label>
-                                            <Input
-                                                value={billingInfo.cvv}
-                                                onChange={(e) => setBillingInfo({...billingInfo, cvv: e.target.value})}
-                                                placeholder="123"
-                                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                                            />
-                                        </div>
-                                    </div>
+                            {/*{paymentMethod === 'card' && (*/}
+                            {/*    <div className="space-y-4">*/}
+                            {/*        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">Card Number</Label>*/}
+                            {/*                <Input*/}
+                            {/*                    value={billingInfo.cardNumber}*/}
+                            {/*                    onChange={(e) => setBillingInfo({*/}
+                            {/*                        ...billingInfo,*/}
+                            {/*                        cardNumber: e.target.value*/}
+                            {/*                    })}*/}
+                            {/*                    placeholder="1234 5678 9012 3456"*/}
+                            {/*                    className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                            {/*                />*/}
+                            {/*            </div>*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">Cardholder Name</Label>*/}
+                            {/*                <Input*/}
+                            {/*                    value={billingInfo.name}*/}
+                            {/*                    onChange={(e) => setBillingInfo({...billingInfo, name: e.target.value})}*/}
+                            {/*                    placeholder="John Doe"*/}
+                            {/*                    className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                            {/*                />*/}
+                            {/*            </div>*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">Expiry Date</Label>*/}
+                            {/*                <Input*/}
+                            {/*                    value={billingInfo.expiryDate}*/}
+                            {/*                    onChange={(e) => setBillingInfo({*/}
+                            {/*                        ...billingInfo,*/}
+                            {/*                        expiryDate: e.target.value*/}
+                            {/*                    })}*/}
+                            {/*                    placeholder="MM/YY"*/}
+                            {/*                    className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                            {/*                />*/}
+                            {/*            </div>*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">CVV</Label>*/}
+                            {/*                <Input*/}
+                            {/*                    value={billingInfo.cvv}*/}
+                            {/*                    onChange={(e) => setBillingInfo({...billingInfo, cvv: e.target.value})}*/}
+                            {/*                    placeholder="123"*/}
+                            {/*                    className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                            {/*                />*/}
+                            {/*            </div>*/}
+                            {/*        </div>*/}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label className="text-slate-300">Email</Label>
-                                            <Input
-                                                value={billingInfo.email}
-                                                onChange={(e) => setBillingInfo({
-                                                    ...billingInfo,
-                                                    email: e.target.value
-                                                })}
-                                                placeholder="john@example.com"
-                                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-slate-300">Country</Label>
-                                            <Select value={billingInfo.country}
-                                                    onValueChange={(value) => setBillingInfo({
-                                                        ...billingInfo,
-                                                        country: value
-                                                    })}>
-                                                <SelectTrigger
-                                                    className="bg-slate-800 border-slate-600 text-white mt-2">
-                                                    <SelectValue placeholder="Select country"/>
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-slate-800 border-slate-600">
-                                                    <SelectItem value="us" className="text-white hover:bg-slate-700">United
-                                                        States</SelectItem>
-                                                    <SelectItem value="uk" className="text-white hover:bg-slate-700">United
-                                                        Kingdom</SelectItem>
-                                                    <SelectItem value="ca"
-                                                                className="text-white hover:bg-slate-700">Canada</SelectItem>
-                                                    <SelectItem value="au"
-                                                                className="text-white hover:bg-slate-700">Australia</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {/*        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">Email</Label>*/}
+                            {/*                <Input*/}
+                            {/*                    value={billingInfo.email}*/}
+                            {/*                    onChange={(e) => setBillingInfo({*/}
+                            {/*                        ...billingInfo,*/}
+                            {/*                        email: e.target.value*/}
+                            {/*                    })}*/}
+                            {/*                    placeholder="john@example.com"*/}
+                            {/*                    className="bg-slate-800 border-slate-600 text-white mt-2"*/}
+                            {/*                />*/}
+                            {/*            </div>*/}
+                            {/*            <div>*/}
+                            {/*                <Label className="text-slate-300">Country</Label>*/}
+                            {/*                <Select value={billingInfo.country}*/}
+                            {/*                        onValueChange={(value) => setBillingInfo({*/}
+                            {/*                            ...billingInfo,*/}
+                            {/*                            country: value*/}
+                            {/*                        })}>*/}
+                            {/*                    <SelectTrigger*/}
+                            {/*                        className="bg-slate-800 border-slate-600 text-white mt-2">*/}
+                            {/*                        <SelectValue placeholder="Select country"/>*/}
+                            {/*                    </SelectTrigger>*/}
+                            {/*                    <SelectContent className="bg-slate-800 border-slate-600">*/}
+                            {/*                        <SelectItem value="us" className="text-white hover:bg-slate-700">United*/}
+                            {/*                            States</SelectItem>*/}
+                            {/*                        <SelectItem value="uk" className="text-white hover:bg-slate-700">United*/}
+                            {/*                            Kingdom</SelectItem>*/}
+                            {/*                        <SelectItem value="ca"*/}
+                            {/*                                    className="text-white hover:bg-slate-700">Canada</SelectItem>*/}
+                            {/*                        <SelectItem value="au"*/}
+                            {/*                                    className="text-white hover:bg-slate-700">Australia</SelectItem>*/}
+                            {/*                    </SelectContent>*/}
+                            {/*                </Select>*/}
+                            {/*            </div>*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+                            {/*)}*/}
 
                             <div className="flex items-center gap-2 p-4 bg-slate-800 rounded-lg">
                                 <Shield className="w-5 h-5 text-emerald-400"/>
                                 <span className="text-sm text-slate-300">
-                      Your payment information is encrypted and secure
-                    </span>
+                                    Your payment information is encrypted and secure
+                                </span>
                             </div>
 
                             <Button onClick={handlePayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white">

@@ -106,11 +106,20 @@ export default function Credentials() {
 
         setIsUploading(true);
 
-        toast.promise(axiosInstance.post("/credentials/upload", newCredential), {
+        toast.promise(axiosInstance.post("/credentials/upload", newCredential, {headers: {'Content-Type': 'multipart/form-data'}}), {
             loading: 'Uploading...',
             success: (response) => {
                 console.log(response?.data.data);
                 setCredentials([...credentials, response?.data.data]);
+                setNewCredential({
+                    title: '',
+                    type: '',
+                    category: '',
+                    url: '',
+                    description: '',
+                    visibility: true,
+                    file: null as File | null
+                });
                 return response?.data.message;
             },
             error: (error) => {
