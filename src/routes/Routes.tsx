@@ -10,6 +10,8 @@ import CVBuilder from "@/pages/talent/CVBuilder.tsx";
 import Referrals from "@/pages/talent/Referrals.tsx";
 import Payment from "@/pages/talent/Payment.tsx";
 import Settings from '@/pages/talent/Settings';
+import ForgotPassword from "@/pages/ForgotPassword.tsx";
+import ResetPassword from "@/pages/ResetPassword.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -18,6 +20,8 @@ export const router = createBrowserRouter([
         children: [
             { path: "", element: <Index /> },
             { path: "login", element: <Login /> },
+            { path: "forgot-password", element: <ForgotPassword /> },
+            { path: "reset-password", element: <ResetPassword /> },
             {
                 path: "talent",
                 element: <TalentDashboard />,

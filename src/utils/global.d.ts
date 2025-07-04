@@ -115,3 +115,14 @@ export interface CredentialsData {
     ipfsHash?: string;
     visibility?: boolean;
 }
+
+export interface PaymentMethod {
+    _id: string;
+    name: string;
+    fee: number;
+    active: boolean;
+    isDeleted: boolean;
+    createdAt: string;
+    updatedAt: string;
+    description: string;
+}

@@ -79,11 +79,11 @@ const navigationItems = [
 ];
 
 const settingsItems = [
-  {
-    title: "Settings",
-    url: "/talent/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Settings",
+  //   url: "/talent/settings",
+  //   icon: Settings,
+  // },
   {
     title: "Payment",
     url: "/talent/payment",

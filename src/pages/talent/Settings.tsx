@@ -1,13 +1,11 @@
 import {useState} from 'react';
-import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
-import {TalentSidebar} from "@/components/TalentSidebar";
+import {SidebarTrigger} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
 import {Separator} from "@/components/ui/separator";
-import {Settings2, Bell, Shield, Globe, Github, Linkedin, Twitter, Instagram, Save} from "lucide-react";
+import {Settings2, Bell, Shield, Save} from "lucide-react";
 import {useToast} from "@/hooks/use-toast";
 
 export default function Settings() {
@@ -24,13 +22,6 @@ export default function Settings() {
         showEmail: false,
         showPhone: false,
         allowMessages: true
-    });
-
-    const [socialMedia, setSocialMedia] = useState({
-        linkedin: 'https://linkedin.com/in/alexjohnson',
-        github: 'https://github.com/alexjohnson',
-        twitter: 'https://twitter.com/alexjohnson',
-        instagram: ''
     });
 
     const handleSave = () => {
@@ -61,76 +52,6 @@ export default function Settings() {
             </div>
 
             <div className="p-6 space-y-8">
-                {/* Social Media Links */}
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                            <Globe className="w-5 h-5 text-blue-400"/>
-                            Social Media Links
-                        </CardTitle>
-                        <CardDescription className="text-slate-400">
-                            Connect your social media profiles to showcase your professional presence
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <Label htmlFor="linkedin" className="text-slate-300 flex items-center gap-2">
-                                <Linkedin className="w-4 h-4 text-blue-500"/>
-                                LinkedIn
-                            </Label>
-                            <Input
-                                id="linkedin"
-                                value={socialMedia.linkedin}
-                                onChange={(e) => setSocialMedia({...socialMedia, linkedin: e.target.value})}
-                                placeholder="https://linkedin.com/in/yourprofile"
-                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                            />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="github" className="text-slate-300 flex items-center gap-2">
-                                <Github className="w-4 h-4 text-gray-400"/>
-                                GitHub
-                            </Label>
-                            <Input
-                                id="github"
-                                value={socialMedia.github}
-                                onChange={(e) => setSocialMedia({...socialMedia, github: e.target.value})}
-                                placeholder="https://github.com/yourusername"
-                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                            />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="twitter" className="text-slate-300 flex items-center gap-2">
-                                <Twitter className="w-4 h-4 text-blue-400"/>
-                                Twitter
-                            </Label>
-                            <Input
-                                id="twitter"
-                                value={socialMedia.twitter}
-                                onChange={(e) => setSocialMedia({...socialMedia, twitter: e.target.value})}
-                                placeholder="https://twitter.com/yourusername"
-                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                            />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="instagram" className="text-slate-300 flex items-center gap-2">
-                                <Instagram className="w-4 h-4 text-pink-500"/>
-                                Instagram
-                            </Label>
-                            <Input
-                                id="instagram"
-                                value={socialMedia.instagram}
-                                onChange={(e) => setSocialMedia({...socialMedia, instagram: e.target.value})}
-                                placeholder="https://instagram.com/yourusername"
-                                className="bg-slate-800 border-slate-600 text-white mt-2"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
                 {/* Notification Settings */}
                 <Card className="bg-slate-900 border-slate-700">
                     <CardHeader>
