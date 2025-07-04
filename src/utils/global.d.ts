@@ -45,7 +45,7 @@ export interface Project {
     description: string;
     technologies: string[];
     project: string;
-    github: string;
+    link: string;
 }
 
 export interface CV {

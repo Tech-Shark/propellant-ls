@@ -7,15 +7,16 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
 import {Download, Wand2, Plus, Trash2, Save} from "lucide-react";
-import {useToast} from "@/hooks/use-toast";
 import {Certification, CV, Project, SkillLevel} from "@/utils/global";
 import {WorkExperience, Education, Skill} from "@/utils/global";
 import {Switch} from "@/components/ui/switch.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {skillLevels} from "@/utils/constant.ts";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {toast} from "sonner";
+import axios from "axios";
 
 export default function CVBuilder() {
-    const {toast} = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
     const [personalInfo, setPersonalInfo] = useState<CV>({
         firstName: '',
@@ -111,7 +112,7 @@ export default function CVBuilder() {
             description: '',
             technologies: [],
             project: '',
-            github: ''
+            link: ''
         };
         setProjects([...projects, newProj]);
     };
@@ -156,28 +157,42 @@ export default function CVBuilder() {
 
     const handleAIGenerate = async () => {
         setIsGenerating(true);
-        // Simulate AI generation
-        setTimeout(() => {
-            setIsGenerating(false);
-            toast({
-                title: "CV Generated Successfully!",
-                description: "Your AI-optimized CV is ready for download.",
-            });
-        }, 3000);
+
+        const data = {
+            ...personalInfo,
+            workExperience: workExperiences,
+            education: educations,
+            certifications,
+            projects,
+            skills
+        }
+
+        const generatedCv = axiosInstance.post('/cv/generate/classic', data);
+
+        toast.promise(generatedCv, {
+                loading: 'Loading...',
+                success: (response) => {
+                    console.log(response?.data);
+                    return response?.data.message;
+                },
+                error: (error) => {
+                    if (axios.isAxiosError(error)) {
+                        console.log(error);
+                        return error.response?.data.message;
+                    } else {
+                        return "Something went wrong. Please try again later.";
+                    }
+                },
+            }
+        );
     };
 
     const handleSave = () => {
-        toast({
-            title: "CV Saved",
-            description: "Your CV has been saved to your profile.",
-        });
+        toast.success("Your CV has been saved to your profile.");
     };
 
     const handleDownload = () => {
-        toast({
-            title: "Download Started",
-            description: "Your CV is being downloaded...",
-        });
+        toast.success("Your CV is being downloaded...");
     };
 
     return (
@@ -230,6 +245,7 @@ export default function CVBuilder() {
                                     value={personalInfo.firstName}
                                     onChange={(e) => setPersonalInfo({...personalInfo, firstName: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                             <div>
@@ -239,6 +255,7 @@ export default function CVBuilder() {
                                     value={personalInfo.lastName}
                                     onChange={(e) => setPersonalInfo({...personalInfo, lastName: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                             <div>
@@ -249,6 +266,7 @@ export default function CVBuilder() {
                                     value={personalInfo.email}
                                     onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                             <div>
@@ -258,6 +276,7 @@ export default function CVBuilder() {
                                     value={personalInfo.phone}
                                     onChange={(e) => setPersonalInfo({...personalInfo, phone: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                             <div>
@@ -267,6 +286,7 @@ export default function CVBuilder() {
                                     value={personalInfo.address}
                                     onChange={(e) => setPersonalInfo({...personalInfo, address: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                             <div>
@@ -276,6 +296,7 @@ export default function CVBuilder() {
                                     value={personalInfo.professionalTitle}
                                     onChange={(e) => setPersonalInfo({...personalInfo, professionalTitle: e.target.value})}
                                     className="bg-slate-800 border-slate-600 text-white"
+                                    required
                                 />
                             </div>
                         </div>
@@ -286,6 +307,7 @@ export default function CVBuilder() {
                                 value={personalInfo.professionalSummary}
                                 onChange={(e) => setPersonalInfo({...personalInfo, professionalSummary: e.target.value})}
                                 className="bg-slate-800 border-slate-600 text-white"
+                                required
                                 rows={4}
                             />
                         </div>
@@ -327,6 +349,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">Company</Label>
                                         <Input
+                                            required
                                             value={exp.company}
                                             onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
@@ -335,6 +358,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">Position</Label>
                                         <Input
+                                            required
                                             value={exp.position}
                                             onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
@@ -343,6 +367,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">Title</Label>
                                         <Input
+                                            required
                                             value={exp.title}
                                             onChange={(e) => updateWorkExperience(index, 'title', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
@@ -351,6 +376,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">Location</Label>
                                         <Input
+                                            required
                                             value={exp.location}
                                             onChange={(e) => updateWorkExperience(index, 'location', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
@@ -359,6 +385,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">Start Date</Label>
                                         <Input
+                                            required
                                             type="date"
                                             value={exp.startDate}
                                             onChange={(e) => updateWorkExperience(index, 'startDate', e.target.value)}
@@ -368,6 +395,7 @@ export default function CVBuilder() {
                                     <div>
                                         <Label className="text-slate-300">End Date</Label>
                                         <Input
+                                            required
                                             type="date"
                                             value={exp.endDate}
                                             onChange={(e) => updateWorkExperience(index, 'endDate', e.target.value)}
@@ -391,6 +419,7 @@ export default function CVBuilder() {
                                         onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
                                         className="bg-slate-800 border-slate-600 text-white"
                                         rows={3}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -441,6 +470,7 @@ export default function CVBuilder() {
                                             value={edu.institution}
                                             onChange={(e) => updateEducation(index, 'institution', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -449,6 +479,7 @@ export default function CVBuilder() {
                                             value={edu.degree}
                                             onChange={(e) => updateEducation(index, 'degree', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -457,6 +488,7 @@ export default function CVBuilder() {
                                             value={edu.fieldOfStudy}
                                             onChange={(e) => updateEducation(index, 'fieldOfStudy', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -466,6 +498,7 @@ export default function CVBuilder() {
                                             value={edu.grade}
                                             onChange={(e) => updateEducation(index, 'grade', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -475,6 +508,7 @@ export default function CVBuilder() {
                                             value={edu.startDate}
                                             onChange={(e) => updateEducation(index, 'startDate', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -484,6 +518,7 @@ export default function CVBuilder() {
                                             value={edu.endDate}
                                             onChange={(e) => updateEducation(index, 'endDate', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                 </div>
@@ -493,6 +528,7 @@ export default function CVBuilder() {
                                         value={edu.description}
                                         onChange={(e) => updateEducation(index, 'description', e.target.value)}
                                         className="bg-slate-800 border-slate-600 text-white"
+                                        required
                                         rows={3}
                                     />
                                 </div>
@@ -544,6 +580,7 @@ export default function CVBuilder() {
                                             value={cert.name}
                                             onChange={(e) => updateCertification(index, 'name', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -552,6 +589,7 @@ export default function CVBuilder() {
                                             value={cert.credentialId}
                                             onChange={(e) => updateCertification(index, 'credentialId', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -560,6 +598,7 @@ export default function CVBuilder() {
                                             value={cert.issuer}
                                             onChange={(e) => updateCertification(index, 'issuer', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -569,6 +608,7 @@ export default function CVBuilder() {
                                             value={cert.dateIssued}
                                             onChange={(e) => updateCertification(index, 'dateIssued', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                 </div>
@@ -580,6 +620,7 @@ export default function CVBuilder() {
                                         value={cert.credentialUrl}
                                         onChange={(e) => updateCertification(index, 'credentialUrl', e.target.value)}
                                         className="bg-slate-800 border-slate-600 text-white"
+                                        required
                                     />
                                 </div>
                             </div>
@@ -630,6 +671,7 @@ export default function CVBuilder() {
                                             value={proj.name}
                                             onChange={(e) => updateProject(index, 'name', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                     <div>
@@ -638,6 +680,7 @@ export default function CVBuilder() {
                                             value={proj.project}
                                             onChange={(e) => updateProject(index, 'project', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            required
                                         />
                                     </div>
                                 </div>
@@ -645,9 +688,10 @@ export default function CVBuilder() {
                                 <div>
                                     <Label className="text-slate-300">Link</Label>
                                     <Input
-                                        value={proj.github}
-                                        onChange={(e) => updateProject(index, 'github', e.target.value)}
+                                        value={proj.link}
+                                        onChange={(e) => updateProject(index, 'link', e.target.value)}
                                         className="bg-slate-800 border-slate-600 text-white"
+                                        required
                                     />
                                 </div>
 
