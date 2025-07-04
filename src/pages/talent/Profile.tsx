@@ -8,7 +8,7 @@ import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {Progress} from "@/components/ui/progress";
-import {Mail, MapPin, Phone, Save, User, X} from "lucide-react";
+import {Github, Instagram, Linkedin, Mail, MapPin, Phone, Save, Twitter, User, X} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.tsx";
 import {toast} from "sonner";
 import axios from "axios";
@@ -30,9 +30,11 @@ export default function Profile() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [profileData, setProfileData] = useState({
-        fullName: `${user?.firstName || ''} ${user?.lastName || ''}`,
-        // professionalTitle: user?.professionalTitle,
-        // professionalSummary: user?.professionalSummary,
+        fullname: user?.fullname,
+        linkedin: user?.linkedin,
+        github: user?.github,
+        twitter: user?.twitter,
+        instagram: user?.instagram,
         bio: user?.bio,
         email: user?.email,
         phone: user?.phone,
@@ -42,9 +44,12 @@ export default function Profile() {
     useEffect(() => {
         console.log(user);
         setProfileData({
-            fullName: `${user?.firstName || ''} ${user?.lastName || ''}`,
-            // professionalTitle: user?.professionalTitle,
-            // professionalSummary: user?.professionalSummary,
+            ...profileData,
+            fullname: user?.fullname,
+            linkedin: user?.linkedin,
+            github: user?.github,
+            twitter: user?.twitter,
+            instagram: user?.instagram,
             bio: user?.bio,
             email: user?.email,
             phone: user?.phone,
@@ -58,12 +63,12 @@ export default function Profile() {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         setProfileCompleteness(() => {
-            const fields = ['firstName', 'lastName', 'bio', 'email', 'phone'];
+            const fields = ['fullName', 'linkedin', 'github', 'twitter', 'instagram', 'bio', 'email', 'phone'];
 
             let count = 0;
 
             fields.forEach((field) => {
-                if (user[field]) {
+                if (user?.[field]) {
                     count++;
                 }
             });
@@ -132,14 +137,14 @@ export default function Profile() {
         console.log('Profile data:', profileData);
         setIsEditing(false);
 
-        const fn = profileData?.fullName.trim().split(' ')[0];
-        const ln = profileData?.fullName.trim().split(' ')[1];
-
         const updatedUser = {
-            firstName: fn,
-            lastName: ln,
-            bio: profileData?.bio,
-            phone: profileData?.phone,
+            fullname: profileData.fullname,
+            linkedin: profileData.linkedin,
+            github: profileData.github,
+            twitter: profileData.twitter,
+            instagram: profileData.instagram,
+            bio: profileData.bio,
+            phone: profileData.phone
         };
 
         const updateProfilePromise = axiosInstance.patch('users/profile', updatedUser);
@@ -229,62 +234,90 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center gap-6">
-                            <div className="relative">
-                                <Avatar className="w-24 h-24">
-                                    <AvatarImage src={null} alt={profileData.fullName}/>
-                                    <AvatarFallback className="bg-slate-700 text-white text-lg">
-                                        {profileData.fullName.trim().split(' ').map(n => n[0]).join('')}
-                                    </AvatarFallback>
-                                </Avatar>
-                                {/*{isEditing && (*/}
-                                {/*  <Button*/}
-                                {/*    size="sm"*/}
-                                {/*    variant="secondary"*/}
-                                {/*    className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"*/}
-                                {/*  >*/}
-                                {/*    <Camera className="w-4 h-4" />*/}
-                                {/*  </Button>*/}
-                                {/*)}*/}
-                            </div>
+                            {
+                                !isEditing && (
+                                    <div className="relative">
+                                        <Avatar className="w-24 h-24">
+                                            <AvatarImage src={null} alt={profileData.fullname}/>
+                                            <AvatarFallback className="bg-slate-700 text-white text-lg">
+                                                {profileData.fullname?.trim().split(' ').map(n => n[0]).join('')}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </div>
+                                )
+                            }
+
                             <div className="flex-1">
                                 {isEditing ? (
                                     <div className="space-y-3">
                                         <div>
                                             <Label className="text-slate-300">Full Name</Label>
                                             <Input
-                                                value={profileData.fullName}
+                                                value={profileData.fullname}
                                                 onChange={(e) => setProfileData({
                                                     ...profileData,
-                                                    fullName: e.target.value
+                                                    fullname: e.target.value
                                                 })}
                                                 className="bg-slate-800 border-slate-600 text-white"
+                                                placeholder="Enter your full name"
                                             />
                                         </div>
 
-                                        {/*<div>*/}
-                                        {/*    <Label className="text-slate-300">Professional Title</Label>*/}
-                                        {/*    <Input*/}
-                                        {/*        value={profileData.professionalTitle}*/}
-                                        {/*        onChange={(e) => setProfileData({*/}
-                                        {/*            ...profileData,*/}
-                                        {/*            professionalTitle: e.target.value*/}
-                                        {/*        })}*/}
-                                        {/*        className="bg-slate-800 border-slate-600 text-white"*/}
-                                        {/*    />*/}
-                                        {/*</div>*/}
-                                        {/*<div>*/}
-                                        {/*  <Label className="text-slate-300">Professional Title</Label>*/}
-                                        {/*  <Input*/}
-                                        {/*    value={profileData.title}*/}
-                                        {/*    onChange={(e) => setProfileData({...profileData, title: e.target.value})}*/}
-                                        {/*    className="bg-slate-800 border-slate-600 text-white"*/}
-                                        {/*  />*/}
-                                        {/*</div>*/}
+                                        <div>
+                                            <Label className="text-slate-300">GitHub</Label>
+                                            <Input
+                                                value={profileData.github}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    github: e.target.value
+                                                })}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                                placeholder="Enter your GitHub username"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-slate-300">Linkedin</Label>
+                                            <Input
+                                                value={profileData.linkedin}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    linkedin: e.target.value
+                                                })}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                                placeholder="Enter your LinkedIn profile URL"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-slate-300">Instagram</Label>
+                                            <Input
+                                                value={profileData.instagram}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    instagram: e.target.value
+                                                })}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                                placeholder="Enter your Instagram profile URL"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-slate-300">Twitter</Label>
+                                            <Input
+                                                value={profileData.twitter}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    twitter : e.target.value
+                                                })}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                                placeholder="Enter your Twitter profile URL"
+                                            />
+                                        </div>
                                     </div>
                                 ) : (
                                     <div>
-                                        <h2 className="text-2xl font-bold text-white">{profileData.fullName}</h2>
-                                        {/*<p className="text-lg text-blue-400">{profileData.professionalTitle}</p>*/}
+                                        <h2 className="text-2xl font-bold text-white">{profileData.fullname}</h2>
                                         <div className="flex items-center gap-4 mt-2 text-slate-400">
                                             {/*<div className="flex items-center gap-1">*/}
                                             {/*  <MapPin className="w-4 h-4" />*/}
@@ -299,20 +332,6 @@ export default function Profile() {
                                 )}
                             </div>
                         </div>
-
-                        {/*<div>*/}
-                        {/*    <Label className="text-slate-300">Professional Summary</Label>*/}
-                        {/*    {isEditing ? (*/}
-                        {/*        <Textarea*/}
-                        {/*            value={profileData.professionalSummary}*/}
-                        {/*            onChange={(e) => setProfileData({...profileData, professionalSummary: e.target.value})}*/}
-                        {/*            className="bg-slate-800 border-slate-600 text-white mt-2"*/}
-                        {/*            rows={4}*/}
-                        {/*        />*/}
-                        {/*    ) : (*/}
-                        {/*        <p className="text-slate-300 mt-2">{profileData.professionalSummary}</p>*/}
-                        {/*    )}*/}
-                        {/*</div>*/}
 
                         <div>
                             <Label className="text-slate-300">Bio</Label>
@@ -330,14 +349,6 @@ export default function Profile() {
 
                         {isEditing && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/*<div>*/}
-                                {/*  <Label className="text-slate-300">Location</Label>*/}
-                                {/*  <Input*/}
-                                {/*    value={profileData.location}*/}
-                                {/*    onChange={(e) => setProfileData({...profileData, location: e.target.value})}*/}
-                                {/*    className="bg-slate-800 border-slate-600 text-white"*/}
-                                {/*  />*/}
-                                {/*</div>*/}
                                 <div>
                                     <Label className="text-slate-300">Email</Label>
                                     <Input
@@ -354,31 +365,64 @@ export default function Profile() {
                                         className="bg-slate-800 border-slate-600 text-white"
                                     />
                                 </div>
-                                {/*<div>*/}
-                                {/*  <Label className="text-slate-300">Website</Label>*/}
-                                {/*  <Input*/}
-                                {/*    value={profileData.website}*/}
-                                {/*    onChange={(e) => setProfileData({...profileData, website: e.target.value})}*/}
-                                {/*    className="bg-slate-800 border-slate-600 text-white"*/}
-                                {/*  />*/}
-                                {/*</div>*/}
                             </div>
                         )}
 
                         {!isEditing && (
                             <div className="flex flex-wrap gap-4 text-slate-400">
-                                <div className="flex items-center gap-1">
-                                    <Mail className="w-4 h-4"/>
-                                    <span>{profileData.email}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Phone className="w-4 h-4"/>
-                                    <span>{profileData.phone}</span>
-                                </div>
-                                {/*<div className="flex items-center gap-1">*/}
-                                {/*  <Globe className="w-4 h-4" />*/}
-                                {/*  <span>{profileData.website}</span>*/}
-                                {/*</div>*/}
+                                {
+                                    profileData?.email && (
+                                        <div className="flex items-center gap-1">
+                                            <Mail className="w-4 h-4"/>
+                                            <span>{profileData.email}</span>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    profileData?.phone && (
+                                        <div className="flex items-center gap-1">
+                                            <Phone className="w-4 h-4"/>
+                                            <span>{profileData.phone}</span>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    profileData?.linkedin && (
+                                        <div className="flex items-center gap-1">
+                                            <Linkedin className="w-4 h-4"/>
+                                            <span>{profileData.linkedin}</span>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    profileData?.github && (
+                                        <div className="flex items-center gap-1">
+                                            <Github className="w-4 h-4"/>
+                                            <span>{profileData.github}</span>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    profileData?.twitter && (
+                                        <div className="flex items-center gap-1">
+                                            <Twitter className="w-4 h-4"/>
+                                            <span>{profileData.twitter}</span>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    profileData?.instagram && (
+                                        <div className="flex items-center gap-1">
+                                            <Instagram className="w-4 h-4"/>
+                                            <span>{profileData.instagram}</span>
+                                        </div>
+                                    )
+                                }
                             </div>
                         )}
                     </CardContent>
@@ -439,27 +483,27 @@ export default function Profile() {
                 {/*</Card>*/}
 
                 {/* Skills */}
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white">Skills</CardTitle>
-                        <CardDescription className="text-slate-400">
-                            Your technical and professional skills
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {profileData?.skills?.map((skill) => (
-                                <Badge
-                                    key={skill}
-                                    variant="secondary"
-                                    className="bg-blue-600/20 text-blue-400 border-blue-600/30"
-                                >
-                                    {skill}
-                                </Badge>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                {/*<Card className="bg-slate-900 border-slate-700">*/}
+                {/*    <CardHeader>*/}
+                {/*        <CardTitle className="text-white">Skills</CardTitle>*/}
+                {/*        <CardDescription className="text-slate-400">*/}
+                {/*            Your technical and professional skills*/}
+                {/*        </CardDescription>*/}
+                {/*    </CardHeader>*/}
+                {/*    <CardContent>*/}
+                {/*        <div className="flex flex-wrap gap-2">*/}
+                {/*            {profileData?.skills?.map((skill) => (*/}
+                {/*                <Badge*/}
+                {/*                    key={skill}*/}
+                {/*                    variant="secondary"*/}
+                {/*                    className="bg-blue-600/20 text-blue-400 border-blue-600/30"*/}
+                {/*                >*/}
+                {/*                    {skill}*/}
+                {/*                </Badge>*/}
+                {/*            ))}*/}
+                {/*        </div>*/}
+                {/*    </CardContent>*/}
+                {/*</Card>*/}
             </div>
         </main>
     );

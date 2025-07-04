@@ -6,16 +6,15 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    // port: 8080,
-    port: 3000,
-    // proxy: {
-    //   '/api': {
-    //     target: 'https://propellant-latest.onrender.com',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '/api'),
-    //     secure: true,
-    //   },
-    // },
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: 'https://propellant-latest.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        secure: true,
+      },
+    },
   },
   plugins: [
     react(),

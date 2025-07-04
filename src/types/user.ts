@@ -6,6 +6,9 @@ export interface User {
   email: string;
   emailVerified: boolean;
   profilePhoto: string | null;
+  fullname: string;
+  linkedin: string;
+  github: string;
   firstName: string;
   professionalTitle: string;
   professionalSummary: string;
