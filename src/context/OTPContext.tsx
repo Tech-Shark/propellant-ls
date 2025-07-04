@@ -9,6 +9,8 @@ interface OTPContextType {
     email: string;
     url: string;
     setUrl: (url: string) => void;
+    otp: string;
+    setOtp: (otp: string) => void;
 }
 
 const OTPContext = createContext<OTPContextType | undefined>(undefined);
@@ -18,9 +20,10 @@ export const OTPContextProvider = ({ children }: { children: React.ReactNode }) 
     const [type, setType] = React.useState('');
     const [email, setEmail] = React.useState('');
     const [url, setUrl] = React.useState('');
+    const [otp, setOtp] = React.useState('');
 
     return (
-        <OTPContext.Provider value={{ isVisible, type, setType, setIsVisible, setEmail, email, url, setUrl }}>
+        <OTPContext.Provider value={{ isVisible, type, setType, setIsVisible, setEmail, email, url, setUrl, otp, setOtp }}>
             {children}
         </OTPContext.Provider>
     )
