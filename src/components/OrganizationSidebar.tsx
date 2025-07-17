@@ -24,11 +24,12 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {Link, useNavigate} from "react-router-dom";
 
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/organization/dashboard",
+    url: "/organization",
     icon: Home,
   },
   {
@@ -72,6 +73,8 @@ const settingsItems = [
 ];
 
 export function OrganizationSidebar() {
+  const navigate = useNavigate();
+
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -92,10 +95,10 @@ export function OrganizationSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="/" className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300">
+                  <Link to="/" className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300">
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Home</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -109,10 +112,10 @@ export function OrganizationSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
+                    <Link to={item.url} className="flex items-center gap-3">
                       <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -127,10 +130,10 @@ export function OrganizationSidebar() {
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3">
+                    <Link to={item.url} className="flex items-center gap-3">
                       <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
