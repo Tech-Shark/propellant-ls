@@ -63,7 +63,6 @@ const JobPosts = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-950">
-        <OrganizationSidebar />
         <main className="flex-1 overflow-auto">
           {/* Header */}
           <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">

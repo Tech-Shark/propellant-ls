@@ -1,21 +1,21 @@
-import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
-import {TalentSidebar} from "@/components/TalentSidebar";
+import {SidebarProvider} from "@/components/ui/sidebar";
+import {OrganizationSidebar} from "@/components/OrganizationSidebar";
 import {OnboardingTour} from "@/components/onboarding/OnboardingTour";
-import {Outlet} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.tsx";
+import {Outlet} from "react-router-dom";
 
-const TalentDashboard = () => {
+const OrganizationLayout = () => {
     const {showOnboarding, setShowOnboarding} = useAuth();
 
     const handleOnboardingClose = () => {
         setShowOnboarding(false);
-        localStorage.setItem('propellant-talent-onboarding', 'true');
+        localStorage.setItem('propellant-organization-onboarding', 'true');
     };
 
     return (
         <SidebarProvider>
             <div className="min-h-screen flex w-full bg-slate-950">
-                <TalentSidebar/>
+                <OrganizationSidebar/>
                 <Outlet/>
             </div>
 
@@ -27,4 +27,4 @@ const TalentDashboard = () => {
     );
 };
 
-export default TalentDashboard;
+export default OrganizationLayout;

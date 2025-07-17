@@ -2,8 +2,6 @@ import {SidebarTrigger} from "@/components/ui/sidebar.tsx";
 import {Award, Bell, FileText, Upload, Users, Zap} from "lucide-react";
 import {Button} from "@/components/ui/button.tsx";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card.tsx";
-import {TalentMetrics} from "@/components/talent/TalentMetrics.tsx";
-import {Badge} from "@/components/ui/badge.tsx";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.tsx";

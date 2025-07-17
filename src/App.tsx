@@ -15,16 +15,6 @@ import Settings from './pages/talent/Settings';
 import Referrals from './pages/talent/Referrals';
 import Wallet from './pages/talent/Wallet';
 
-// Organization pages
-import OrganizationDashboard from './pages/organization/OrganizationDashboard';
-import CompanyProfile from './pages/organization/CompanyProfile';
-import TalentPool from './pages/organization/TalentPool';
-import JobPosts from './pages/organization/JobPosts';
-import Messages from './pages/organization/Messages';
-import OrganizationAnalytics from './pages/organization/Analytics';
-import OrganizationPayment from './pages/organization/OrganizationPayment';
-import OrganizationSettings from './pages/organization/OrganizationSettings';
-
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -66,16 +56,6 @@ function App() {
             {/*  <Route path="/talent/settings" element={<Settings />} />*/}
             {/*  <Route path="/talent/referrals" element={<Referrals />} />*/}
             {/*  <Route path="/talent/wallet" element={<Wallet />} />*/}
-
-            {/*  /!* Organization routes *!/*/}
-            {/*  <Route path="/organization/dashboard" element={<OrganizationDashboard />} />*/}
-            {/*  <Route path="/organization/profile" element={<CompanyProfile />} />*/}
-            {/*  <Route path="/organization/talent-pool" element={<TalentPool />} />*/}
-            {/*  <Route path="/organization/job-posts" element={<JobPosts />} />*/}
-            {/*  <Route path="/organization/messages" element={<Messages />} />*/}
-            {/*  <Route path="/organization/analytics" element={<OrganizationAnalytics />} />*/}
-            {/*  <Route path="/organization/payment" element={<OrganizationPayment />} />*/}
-            {/*  <Route path="/organization/settings" element={<OrganizationSettings />} />*/}
 
             {/*  /!* Admin routes *!/*/}
             {/*  <Route path="/admin/dashboard" element={<AdminDashboard />} />*/}
