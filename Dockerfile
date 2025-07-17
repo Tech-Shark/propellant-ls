@@ -45,13 +45,20 @@ COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
 
 # Create necessary directories and set permissions
+# RUN mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp \
+#     /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp \
+#     /var/cache/nginx/scgi_temp /var/log/nginx /var/run && \
+#     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/run && \
+#     chmod -R 755 /var/cache/nginx && \
+#     chmod -R 644 /usr/share/nginx/html && \
+#     chmod 755 /usr/share/nginx/html
+
 RUN mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp \
     /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp \
     /var/cache/nginx/scgi_temp /var/log/nginx /var/run && \
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/run && \
-    chmod -R 755 /var/cache/nginx && \
-    find /usr/share/nginx/html -type d -exec chmod 755 {} \; && \
-    find /usr/share/nginx/html -type f -exec chmod 644 {} \;
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/run /usr/share/nginx/html && \
+    chmod -R 755 /var/cache/nginx /usr/share/nginx/html
+
 
 # Switch to non-root user
 USER nginx

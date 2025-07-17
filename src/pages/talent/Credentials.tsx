@@ -128,35 +128,56 @@ export default function Credentials() {
 
     setIsUploading(true);
 
-        toast.promise(axiosInstance.post("/credentials/upload", newCredential, {headers: {'Content-Type': 'multipart/form-data'}}), {
-            loading: 'Uploading...',
-            success: (response) => {
-                console.log(response?.data.data);
-                setCredentials([...credentials, response?.data.data]);
-                setNewCredential({
-                    title: '',
-                    type: '',
-                    category: '',
-                    url: '',
-                    description: '',
-                    visibility: true,
-                    file: null as File | null
-                });
-                return response?.data.message;
-            },
-            error: (error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log(error)
-                    return error.response?.data.message;
-                } else {
-                    return "Something went wrong. Please try again later.";
-                }
-            },
-            finally: () => {
-                setIsUploading(false);
-            }
-        });
-    };
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append("title", newCredential.title);
+    formData.append("type", newCredential.type);
+    formData.append("category", newCredential.category);
+    formData.append("description", newCredential.description);
+    formData.append("url", newCredential.url);
+    formData.append("visibility", newCredential.visibility.toString());
+
+    if (newCredential.file) {
+      formData.append("file", newCredential.file);
+    }
+
+    toast.promise(
+      axiosInstance.post("/credentials/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+      {
+        loading: "Uploading...",
+        success: (response) => {
+          console.log(response?.data.data);
+          setCredentials([...credentials, response?.data.data]);
+          // Clear form after successful upload
+          setNewCredential({
+            title: "",
+            type: "",
+            category: "",
+            url: "",
+            description: "",
+            visibility: true,
+            file: null,
+          });
+          return response?.data.message;
+        },
+        error: (error) => {
+          if (axios.isAxiosError(error)) {
+            console.log(error);
+            return error.response?.data.message;
+          } else {
+            return "Something went wrong. Please try again later.";
+          }
+        },
+        finally: () => {
+          setIsUploading(false);
+        },
+      }
+    );
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
