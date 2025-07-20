@@ -239,17 +239,15 @@ export default function CVBuilder() {
             skills
         }
 
-        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data, {
-            responseType: 'arraybuffer',
-            headers: {
-                Accept: 'application/pdf',
-            }
-        });
+        const downloadCvPromise = axiosInstance.post('/cv/generate/classic', data);
 
         toast.promise(downloadCvPromise, {
                 loading: 'Loading...',
                 success: (response) => {
                     console.log(response?.data);
+                    const blob = new Blob([response.data], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url);
                     return response?.data.message;
                 },
                 error: (error) => {
@@ -260,7 +258,10 @@ export default function CVBuilder() {
                         return "Something went wrong. Please try again later.";
                     }
                 },
-            }
+                finally: () => {
+                    setIsDownloading(false);
+                }
+            },
         );
 
         await downloadCvPromise;
@@ -293,7 +294,7 @@ export default function CVBuilder() {
                         </Button>
                         <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             <Download className="w-4 h-4 mr-2"/>
-                            {isDownloading ? 'Downloading...' : 'Download'}
+                            {isDownloading ? 'Downloading...' : 'Download to Mail'}
                         </Button>
                     </div>
                 </div>
