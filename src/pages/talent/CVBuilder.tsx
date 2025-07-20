@@ -239,7 +239,12 @@ export default function CVBuilder() {
             skills
         }
 
-        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
+        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data, {
+            responseType: 'arraybuffer',
+            headers: {
+                Accept: 'application/pdf',
+            }
+        });
 
         toast.promise(downloadCvPromise, {
                 loading: 'Loading...',
@@ -258,8 +263,8 @@ export default function CVBuilder() {
             }
         );
 
-        await setIsDownloading;
-        setIsSaving(false);
+        await downloadCvPromise;
+        setIsDownloading(false);
     };
 
     return (
@@ -463,6 +468,7 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">End Date</Label>
                                         <Input
                                             required
+                                            disabled={exp.isCurrentRole}
                                             type="date"
                                             value={exp.endDate}
                                             onChange={(e) => updateWorkExperience(index, 'endDate', e.target.value)}
