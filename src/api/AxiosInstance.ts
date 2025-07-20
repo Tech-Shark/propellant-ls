@@ -10,7 +10,7 @@ import {getCookie} from "@/utils/CookieManagement";
 //     },
 // });
 
-// // Create Axios instance
+// Create Axios instance
 const axiosInstance = axios.create({
     baseURL: "https://propellant-latest.onrender.com/api/v1",
     headers: {

@@ -18,6 +18,8 @@ import axios from "axios";
 
 export default function CVBuilder() {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [personalInfo, setPersonalInfo] = useState<CV>({
         firstName: '',
         lastName: '',
@@ -158,7 +160,7 @@ export default function CVBuilder() {
     const handleAIGenerate = async () => {
         setIsGenerating(true);
 
-        const data = {
+        const data: CV = {
             ...personalInfo,
             workExperience: workExperiences,
             education: educations,
@@ -167,7 +169,7 @@ export default function CVBuilder() {
             skills
         }
 
-        const generatedCv = axiosInstance.post('/cv/generate/classic', data);
+        const generatedCv = axiosInstance.post('/cv/optimize', data);
 
         toast.promise(generatedCv, {
                 loading: 'Loading...',
@@ -185,14 +187,79 @@ export default function CVBuilder() {
                 },
             }
         );
+
+        await generatedCv;
+        setIsGenerating(false);
     };
 
-    const handleSave = () => {
-        toast.success("Your CV has been saved to your profile.");
+    const handleSave = async () => {
+        setIsSaving(true);
+
+        const data: CV = {
+            ...personalInfo,
+            workExperience: workExperiences,
+            education: educations,
+            certifications,
+            projects,
+            skills
+        }
+
+        const savedCvPromise = axiosInstance.post('/cv/save-draft', data);
+
+        toast.promise(savedCvPromise, {
+                loading: 'Loading...',
+                success: (response) => {
+                    console.log(response?.data);
+                    return response?.data.message;
+                },
+                error: (error) => {
+                    if (axios.isAxiosError(error)) {
+                        console.log(error);
+                        return error.response?.data.message;
+                    } else {
+                        return "Something went wrong. Please try again later.";
+                    }
+                },
+            }
+        );
+
+        await savedCvPromise;
+        setIsSaving(false);
     };
 
-    const handleDownload = () => {
-        toast.success("Your CV is being downloaded...");
+    const handleDownload = async () => {
+        setIsDownloading(true);
+
+        const data: CV = {
+            ...personalInfo,
+            workExperience: workExperiences,
+            education: educations,
+            certifications,
+            projects,
+            skills
+        }
+
+        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
+
+        toast.promise(downloadCvPromise, {
+                loading: 'Loading...',
+                success: (response) => {
+                    console.log(response?.data);
+                    return response?.data.message;
+                },
+                error: (error) => {
+                    if (axios.isAxiosError(error)) {
+                        console.log(error);
+                        return error.response?.data.message;
+                    } else {
+                        return "Something went wrong. Please try again later.";
+                    }
+                },
+            }
+        );
+
+        await setIsDownloading;
+        setIsSaving(false);
     };
 
     return (
@@ -212,7 +279,7 @@ export default function CVBuilder() {
                         <Button variant="outline" onClick={handleSave}
                                 className="border-slate-600 text-slate-300 hover:bg-slate-800">
                             <Save className="w-4 h-4 mr-2"/>
-                            Save Draft
+                            {isSaving ? 'Saving...' : 'Save'}
                         </Button>
                         <Button onClick={handleAIGenerate} disabled={isGenerating}
                                 className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -221,7 +288,7 @@ export default function CVBuilder() {
                         </Button>
                         <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             <Download className="w-4 h-4 mr-2"/>
-                            Download
+                            {isDownloading ? 'Downloading...' : 'Download'}
                         </Button>
                     </div>
                 </div>
