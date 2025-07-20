@@ -147,7 +147,7 @@ export default function Profile() {
             phone: profileData.phone
         };
 
-        const updateProfilePromise = axiosInstance.patch('users/profile', updatedUser);
+        const updateProfilePromise = axiosInstance.patch('users/profile/talent', updatedUser);
 
         toast.promise(updateProfilePromise, {
                 loading: 'Loading...',

@@ -7,14 +7,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // proxy: {
-    //   '/api': {
-    //     target: 'https://propellant-latest.onrender.com',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '/api'),
-    //     secure: true,
-    //   },
-    // },
+    proxy: {
+      '/api': {
+        target: 'https://propellant-latest.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        secure: true,
+      },
+    },
   },
   plugins: [
     react(),
