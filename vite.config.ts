@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     // proxy: {
     //   '/api': {
-    //     target: 'https://propellant-latest.onrender.com',
+    //     target: 'https://PropellantHR.fly.dev',
     //     changeOrigin: true,
     //     rewrite: (path) => path.replace(/^\/api/, '/api'),
     //     secure: true,

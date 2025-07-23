@@ -12,6 +12,8 @@ import {useOTPContext} from "@/context/OTPContext.tsx";
 import {toast} from "sonner";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import PhoneInputWithCountrySelect from "react-phone-number-input";
+import PhoneInputComponent from "@/components/PhoneInputComponent.tsx";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -63,9 +65,10 @@ const Login = () => {
         console.log('email:', email, 'password:', password, 'role:', role.toUpperCase() as UserRole);
 
         const formatedPhoneNumber = phone.startsWith("0")
-            ? phone.replace(/^0/, "+234")
-            : "+234" + phone;
+            ? phone.replace(/^0/, "+")
+            : "+" + phone;
         console.log('phone:', formatedPhoneNumber);
+
         try {
             if (isSignUp) {
                 const status = await register(formatedPhoneNumber, email, password, termsAndConditionsAccepted, role.toUpperCase() as UserRole);
@@ -74,7 +77,7 @@ const Login = () => {
                     setIsSignUp(false);
                 }
             } else {
-                const {status, role} = await login(email, password);
+                const {status} = await login(email, password, role);
 
                 if (status) {
                     navigate(`/${role.toLowerCase()}`);
@@ -142,56 +145,46 @@ const Login = () => {
                     <CardContent className="space-y-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Role Selection */}
-
-                            {
-                                isSignUp && (
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-medium text-slate-300">Account Type</label>
-                                        <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-                                            <SelectTrigger
-                                                className={`bg-slate-800 border-slate-600 text-white ${getRoleColor(role)}`}>
-                                                <div className="flex items-center gap-2">
-                                                    {getRoleIcon(role)}
-                                                    <SelectValue placeholder="Select account type"/>
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-slate-800 border-slate-600">
-                                                <SelectItem value="talent" className="text-white hover:bg-slate-700">
-                                                    <div className="flex items-center gap-2">
-                                                        <Users className="w-4 h-4 text-blue-400"/>
-                                                        Talent
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="organization" className="text-white hover:bg-slate-700">
-                                                    <div className="flex items-center gap-2">
-                                                        <Building2 className="w-4 h-4 text-emerald-400"/>
-                                                        Organization
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="admin" className="text-white hover:bg-slate-700">
-                                                    <div className="flex items-center gap-2">
-                                                        <Shield className="w-4 h-4 text-orange-400"/>
-                                                        Admin
-                                                    </div>
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )
-                            }
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-slate-300">Account Type</label>
+                                <Select value={role} onValueChange={(value: UserRole) => setRole(value)} required={true}>
+                                    <SelectTrigger
+                                        className={`bg-slate-800 border-slate-600 text-white ${getRoleColor(role)}`}>
+                                        <div className="flex items-center gap-2">
+                                            {getRoleIcon(role)}
+                                            <SelectValue placeholder="Select account type"/>
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-600">
+                                        <SelectItem value="talent" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Users className="w-4 h-4 text-blue-400"/>
+                                                Talent
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="organization" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Building2 className="w-4 h-4 text-emerald-400"/>
+                                                Organization
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="admin" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Shield className="w-4 h-4 text-orange-400"/>
+                                                Admin
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
                             {
                                 isSignUp && (
                                     <div className="space-y-2">
                                         <label htmlFor="phone" className="text-sm font-medium text-slate-300">Phone</label>
-                                        <Input
-                                            id="phone"
-                                            type="tel"
+                                        <PhoneInputComponent
+                                            onChange={(value) => setPhone(value || '')}
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            placeholder="08023242526"
-                                            required
-                                            className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                                         />
                                     </div>
                                 )
