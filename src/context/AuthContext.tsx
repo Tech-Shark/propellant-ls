@@ -8,7 +8,7 @@ import {useOTPContext} from "@/context/OTPContext.tsx";
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => Promise<{ status: boolean, role: string }>;
+    login: (email: string, password: string, role: UserRole) => Promise<{ status: boolean, role: string }>;
     register: (
         phone: string,
         email: string,
@@ -66,14 +66,13 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     }, []);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, role: UserRole) => {
         setIsLoading(true);
 
         let status = false;
-        let role = "";
 
         try {
-            const loginPromise = axiosInstance.post('auth/login', {email, password});
+            const loginPromise = axiosInstance.post('auth/login', {email, password, role});
 
             toast.promise(loginPromise, {
                     loading: 'Loading...',
