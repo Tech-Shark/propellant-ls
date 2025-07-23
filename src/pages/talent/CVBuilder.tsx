@@ -157,6 +157,7 @@ export default function CVBuilder() {
         setSkills(prev => prev.filter((_, i) => i !== index));
     };
 
+    // Function to handle AI CV generation
     const handleAIGenerate = async () => {
         setIsGenerating(true);
 
@@ -185,6 +186,9 @@ export default function CVBuilder() {
                         return "Something went wrong. Please try again later.";
                     }
                 },
+                finally: () => {
+                    setIsGenerating(false);
+                }
             }
         );
 
@@ -192,6 +196,7 @@ export default function CVBuilder() {
         setIsGenerating(false);
     };
 
+    // Function to handle CV saving
     const handleSave = async () => {
         setIsSaving(true);
 
@@ -220,6 +225,9 @@ export default function CVBuilder() {
                         return "Something went wrong. Please try again later.";
                     }
                 },
+                finally: () => {
+                    setIsSaving(false);
+                }
             }
         );
 
@@ -227,6 +235,7 @@ export default function CVBuilder() {
         setIsSaving(false);
     };
 
+    // Function to handle CV download
     const handleDownload = async () => {
         setIsDownloading(true);
 
@@ -239,7 +248,7 @@ export default function CVBuilder() {
             skills
         }
 
-        const downloadCvPromise = axiosInstance.post('/cv/generate/classic', data);
+        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
 
         toast.promise(downloadCvPromise, {
                 loading: 'Loading...',
@@ -282,7 +291,7 @@ export default function CVBuilder() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" onClick={handleSave}
+                        <Button variant="outline" disabled={isSaving} onClick={handleSave}
                                 className="border-slate-600 text-slate-300 hover:bg-slate-800">
                             <Save className="w-4 h-4 mr-2"/>
                             {isSaving ? 'Saving...' : 'Save'}
@@ -292,9 +301,9 @@ export default function CVBuilder() {
                             <Wand2 className="w-4 h-4 mr-2"/>
                             {isGenerating ? 'Generating...' : 'AI Optimize'}
                         </Button>
-                        <Button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                        <Button onClick={handleDownload} disabled={isDownloading} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             <Download className="w-4 h-4 mr-2"/>
-                            {isDownloading ? 'Downloading...' : 'Download to Mail'}
+                            {isDownloading ? 'Downloading...' : 'Download CV'}
                         </Button>
                     </div>
                 </div>
@@ -749,25 +758,26 @@ export default function CVBuilder() {
                                         />
                                     </div>
                                     <div>
-                                        <Label className="text-slate-300">Project</Label>
+                                        <Label className="text-slate-300">Project Link</Label>
                                         <Input
                                             value={proj.project}
                                             onChange={(e) => updateProject(index, 'project', e.target.value)}
                                             className="bg-slate-800 border-slate-600 text-white"
+                                            placeholder="https://yourproject.com"
                                             required
                                         />
                                     </div>
                                 </div>
 
-                                <div>
-                                    <Label className="text-slate-300">Link</Label>
-                                    <Input
-                                        value={proj.link}
-                                        onChange={(e) => updateProject(index, 'link', e.target.value)}
-                                        className="bg-slate-800 border-slate-600 text-white"
-                                        required
-                                    />
-                                </div>
+                                {/*<div>*/}
+                                {/*    <Label className="text-slate-300">Link</Label>*/}
+                                {/*    <Input*/}
+                                {/*        value={proj.link}*/}
+                                {/*        onChange={(e) => updateProject(index, 'link', e.target.value)}*/}
+                                {/*        className="bg-slate-800 border-slate-600 text-white"*/}
+                                {/*        required*/}
+                                {/*    />*/}
+                                {/*</div>*/}
 
                                 <div className="flex items-end gap-2">
                                     <div className="flex-1">
@@ -785,7 +795,7 @@ export default function CVBuilder() {
                                     </Button>
                                 </div>
 
-                                <div className="flex flex-wrap gap-2">
+                                <div className="w-full flex flex-wrap gap-2">
                                     {proj.technologies.map((tech, i) => (
                                         <Badge
                                             key={index}
