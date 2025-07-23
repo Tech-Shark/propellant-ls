@@ -183,7 +183,7 @@ const Login = () => {
                                     <div className="space-y-2">
                                         <label htmlFor="phone" className="text-sm font-medium text-slate-300">Phone</label>
                                         <PhoneInputComponent
-                                            onChange={(value) => console.log(value)}
+                                            onChange={(value) => setPhone(value || '')}
                                             value={phone}
                                         />
                                     </div>
