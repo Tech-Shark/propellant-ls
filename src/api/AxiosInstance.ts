@@ -12,7 +12,7 @@ import {getCookie} from "@/utils/CookieManagement";
 
 // Create Axios instance
 const axiosInstance = axios.create({
-    baseURL: "https://propellant-latest.onrender.com/api/v1",
+    baseURL: "https://PropellantHR.fly.dev/api/v1",
     headers: {
         'Content-Type': 'application/json',
     },
