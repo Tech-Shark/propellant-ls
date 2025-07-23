@@ -12,6 +12,8 @@ import {useOTPContext} from "@/context/OTPContext.tsx";
 import {toast} from "sonner";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import PhoneInputWithCountrySelect from "react-phone-number-input";
+import PhoneInputComponent from "@/components/PhoneInputComponent.tsx";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -63,9 +65,10 @@ const Login = () => {
         console.log('email:', email, 'password:', password, 'role:', role.toUpperCase() as UserRole);
 
         const formatedPhoneNumber = phone.startsWith("0")
-            ? phone.replace(/^0/, "+234")
-            : "+234" + phone;
+            ? phone.replace(/^0/, "+")
+            : "+" + phone;
         console.log('phone:', formatedPhoneNumber);
+
         try {
             if (isSignUp) {
                 const status = await register(formatedPhoneNumber, email, password, termsAndConditionsAccepted, role.toUpperCase() as UserRole);
@@ -179,14 +182,9 @@ const Login = () => {
                                 isSignUp && (
                                     <div className="space-y-2">
                                         <label htmlFor="phone" className="text-sm font-medium text-slate-300">Phone</label>
-                                        <Input
-                                            id="phone"
-                                            type="tel"
+                                        <PhoneInputComponent
+                                            onChange={(value) => console.log(value)}
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            placeholder="08023242526"
-                                            required
-                                            className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                                         />
                                     </div>
                                 )
