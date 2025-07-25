@@ -38,6 +38,7 @@ import { CubeSpinner } from "react-spinners-kit";
 export default function Credentials() {
   const [isUploading, setIsUploading] = useState(false);
   const [credentials, setCredentials] = useState<CredentialsData[]>();
+  const [modalImage, setModalImage] = useState<string | null>(null);
   // [
   //     {
   //         user: {
@@ -421,66 +422,94 @@ export default function Credentials() {
               {credentials ? (
                 credentials.map((credential) => (
                   <div
-                    key={credential.user._id}
-                    className="p-4 border border-slate-700 rounded-lg"
+                    key={credential._id}
+                    className="p-4 border border-slate-700 rounded-lg flex gap-4 items-center"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-medium text-white">
-                            {credential.title}
-                          </h3>
-                          {getStatusIcon(credential.verificationStatus)}
-                          <Badge
-                            variant="secondary"
-                            className={getStatusColor(
-                              credential.verificationStatus
-                            )}
-                          >
-                            {credential.verificationStatus}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-slate-400 mb-2">
-                          <span>{credential.type}</span>
-                          <span>•</span>
-                          <span>{credential.category}</span>
-                          <span>•</span>
-                          <span>Uploaded: {credential.createdAt}</span>
-                          {credential.verifiedAt && (
-                            <>
-                              <span>•</span>
-                              <span>Verified: {credential.verifiedAt}</span>
-                            </>
+                    {/* Thumbnail removed. */}
+                    {/* Details */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-medium text-white">
+                          {credential.title || credential.name}
+                        </h3>
+                        <Badge
+                          variant="secondary"
+                          className={getStatusColor(
+                            credential.status || credential.verificationStatus
                           )}
-                        </div>
-                        {credential.description && (
-                          <p className="text-slate-300 text-sm">
-                            {credential.description}
-                          </p>
+                        >
+                          {credential.status || credential.verificationStatus}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-slate-400 mb-2">
+                        <span>
+                          Uploaded:{" "}
+                          {credential.createdAt
+                            ? new Date(credential.createdAt).toLocaleString()
+                            : "-"}
+                        </span>
+                        {credential.mintedAt && (
+                          <>
+                            <span>
+                              Minted:{" "}
+                              {new Date(credential.mintedAt).toLocaleString()}
+                            </span>
+                          </>
+                        )}
+                        {credential.verifiedAt && (
+                          <>
+                            <span>
+                              Verified:{" "}
+                              {new Date(credential.verifiedAt).toLocaleString()}
+                            </span>
+                          </>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      {credential.description && (
+                        <p className="text-slate-300 text-sm">
+                          {credential.description.length > 80
+                            ? credential.description.slice(0, 80) + "..."
+                            : credential.description}
+                        </p>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`${
+                          newCredential.visibility
+                            ? "bg-green-600 text-white"
+                            : "bg-slate-800 text-slate-400"
+                        } border-slate-600  hover:text-white`}
+                        onClick={() => {
+                          const imageUrl =
+                            credential.imageUrl ||
+                            (credential.url &&
+                            credential.url.match(/\.(jpg|jpeg|png)$/i)
+                              ? credential.url
+                              : null);
+                          if (imageUrl) {
+                            setModalImage(imageUrl);
+                          } else {
+                            toast.warning(
+                              "No image available for this credential."
+                            );
+                          }
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {credential.url && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`${
-                            newCredential.visibility
-                              ? "bg-green-600 text-white"
-                              : "bg-slate-800 text-slate-400"
-                          } border-slate-600  hover:text-white`}
+                          className="text-slate-400 hover:text-white"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Link2 className="w-4 h-4" />
                         </Button>
-                        {credential.url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <Link2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -492,7 +521,55 @@ export default function Credentials() {
             </div>
           </CardContent>
         </Card>
+        {/* Modal for full image preview */}
+        {modalImage && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <img
+                src={modalImage}
+                alt="Full Preview"
+                style={{
+                  maxWidth: "90vw",
+                  maxHeight: "90vh",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.5)",
+                }}
+              />
+              <button
+                onClick={() => setModalImage(null)}
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  background: "rgba(0,0,0,0.6)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                  fontSize: 16,
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
 }
+// Remove all code below this line (if any)

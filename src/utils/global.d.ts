@@ -95,24 +95,30 @@ export interface Credential {
 }
 
 export interface CredentialsData {
-    user?: {
-        _id: string;
-        email: string;
-        username: string;
-    }
+    _id?: string;
+    credentialId?: string;
+    subject?: string;
+    issuer?: string | { _id: string; email?: string };
+    name?: string;
     title?: string;
     type?: string;
     category?: string;
     file?: File;
     url?: string;
+    imageUrl?: string;
     description?: string;
+    credentialType?: number | string;
+    status?: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'MINTED' | string;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
     createdAt?: string;
     updatedAt?: string;
     verifiedAt?: string | null;
+    mintedAt?: string | null;
     isDeleted?: boolean;
     rejectionReason?: string;
     ipfsHash?: string;
+    evidenceHash?: string;
+    revocable?: boolean;
     visibility?: boolean;
 }
 
