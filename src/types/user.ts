@@ -37,6 +37,8 @@ export interface User {
   profileCompleted: boolean;
   createdAt: string;
   updatedAt: string;
+  totalReferrals?: number;
+  referralCode?: string;
 }
 
 // export interface TalentProfile extends User {
