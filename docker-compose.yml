@@ -1,0 +1,16 @@
+#  version: '3.8'
+
+# services:
+#   propellant-app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     ports:
+#       - "80:8080"
+#       - "443:443"
+#     volumes:
+#       # Mount SSL certificates from host to container
+#       - ./certs:/etc/nginx/ssl:ro
+#     environment:
+#       - NODE_ENV=production
+#     restart: unless-stopped

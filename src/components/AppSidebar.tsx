@@ -1,4 +1,3 @@
-
 import {
   Badge,
   Home,
@@ -8,7 +7,7 @@ import {
   Settings,
   BarChart3,
   Building2,
-  UserCheck
+  UserCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -74,16 +73,22 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Badge className="w-5 h-5 text-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+            <img
+              src={require("../../public/logo.png")}
+              alt="Propellant Logo"
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <h2 className="font-bold text-sidebar-foreground">SkillVerse</h2>
-            <p className="text-xs text-sidebar-foreground/70">Credential Platform</p>
+            <p className="text-xs text-sidebar-foreground/70">
+              Credential Platform
+            </p>
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
