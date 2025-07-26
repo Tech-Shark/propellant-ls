@@ -6,9 +6,11 @@ import {OrganizationMetrics} from "@/components/organization/OrganizationMetrics
 import {Badge} from "@/components/ui/badge.tsx";
 import {useAuth} from "@/context/AuthContext.tsx";
 import {useEffect} from "react";
+import {useNavigate} from "react-router-dom";
 
 export const OrganizationDashboard = () => {
     const { setShowOnboarding } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const hasSeenOnboarding = localStorage.getItem('propellant-organization-onboarding');
@@ -39,9 +41,8 @@ export const OrganizationDashboard = () => {
                         <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-800">
                             <Bell className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Create Job Post
+                        <Button onClick={() => navigate("/organization/jobs")} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                            Job Posts
                         </Button>
                     </div>
                 </div>
@@ -84,15 +85,16 @@ export const OrganizationDashboard = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-4 md:grid-cols-4">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {/*<Button*/}
+                                {/*    variant="outline"*/}
+                                {/*    className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"*/}
+                                {/*>*/}
+                                {/*    <Plus className="w-6 h-6 text-emerald-400" />*/}
+                                {/*    <span className="text-sm">Create Job Post</span>*/}
+                                {/*</Button>*/}
                                 <Button
-                                    variant="outline"
-                                    className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"
-                                >
-                                    <Plus className="w-6 h-6 text-emerald-400" />
-                                    <span className="text-sm">Create Job Post</span>
-                                </Button>
-                                <Button
+                                    onClick={() => navigate("/organization/talent")}
                                     variant="outline"
                                     className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-blue-500"
                                 >
@@ -100,19 +102,20 @@ export const OrganizationDashboard = () => {
                                     <span className="text-sm">Browse Talent</span>
                                 </Button>
                                 <Button
+                                    onClick={() => navigate("/organization/messages")}
                                     variant="outline"
                                     className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-purple-500"
                                 >
                                     <MessageSquare className="w-6 h-6 text-purple-400" />
                                     <span className="text-sm">Messages</span>
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-orange-500"
-                                >
-                                    <Bell className="w-6 h-6 text-orange-400" />
-                                    <span className="text-sm">Notifications</span>
-                                </Button>
+                                {/*<Button*/}
+                                {/*    variant="outline"*/}
+                                {/*    className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-orange-500"*/}
+                                {/*>*/}
+                                {/*    <Bell className="w-6 h-6 text-orange-400" />*/}
+                                {/*    <span className="text-sm">Notifications</span>*/}
+                                {/*</Button>*/}
                             </div>
                         </CardContent>
                     </Card>

@@ -77,7 +77,7 @@ const Login = () => {
                     setIsSignUp(false);
                 }
             } else {
-                const {status} = await login(email, password, role);
+                const {status} = await login(email, password, role.toUpperCase() as UserRole);
 
                 if (status) {
                     navigate(`/${role.toLowerCase()}`);

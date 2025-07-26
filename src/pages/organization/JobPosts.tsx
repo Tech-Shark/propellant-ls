@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSidebar } from "@/components/OrganizationSidebar";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Filter, MapPin, DollarSign, Clock, Users, Eye, Edit, Trash2 } from "lucide-react";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import axios from "axios";
 
 const JobPosts = () => {
-  const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [jobPostsData, setJobPostsData] = useState([]);
+  const [formData, setFormData] = useState({
+    title: '',
+    location: '',
+    salaryRange: '',
+    jobType: '',
+    description: '',
+    requiredSkills: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, jobType: value }));
+  };
 
   const jobPosts = [
     {
@@ -52,12 +72,63 @@ const JobPosts = () => {
     }
   ];
 
-  const handleCreateJob = () => {
-    setIsCreating(true);
-    // Simulate API call
-    setTimeout(() => {
+  const fetchJobPosts = async () => {
+    try {
+      const response = await axiosInstance.get('/job-post/organization');
+
+      console.log('Job posts fetched:', response.data.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        return error.response?.data.message;
+      } else {
+        return "Something went wrong. Please try again later.";
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchJobPosts();
+  }, []);
+
+  const handleCreateJob = async () => {
+    try {
+      setIsCreating(true);
+
+      // Convert skills string to array
+      const skillsArray = formData.requiredSkills
+          .split(',')
+          .map(skill => skill.trim())
+          .filter(skill => skill.length > 0);
+
+      const payload = {
+        title: formData.title,
+        location: formData.location,
+        salaryRange: formData.salaryRange,
+        jobType: formData.jobType.toUpperCase().replace('-', '_'),
+        description: formData.description,
+        requiredSkills: skillsArray,
+      };
+
+      const response = await axiosInstance.post(`/job-post`, payload);
+
+      console.log('Job post created:', response.data);
+
+      // Reset form
+      setFormData({
+        title: '',
+        location: '',
+        salaryRange: '',
+        jobType: '',
+        description: '',
+        requiredSkills: '',
+      });
+
+    } catch (error) {
+      console.error('Error creating job post:', error);
+    } finally {
       setIsCreating(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -74,7 +145,7 @@ const JobPosts = () => {
                   <p className="text-slate-400">Manage your job postings and find talent</p>
                 </div>
               </div>
-              
+
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="bg-orange-600 hover:bg-orange-700 text-white">
@@ -92,21 +163,39 @@ const JobPosts = () => {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="title" className="text-white">Job Title</Label>
-                      <Input id="title" placeholder="e.g. Senior React Developer" className="bg-slate-800 border-slate-600 text-white" />
+                      <Input
+                          id="title"
+                          value={formData.title}
+                          onChange={handleChange}
+                          placeholder="e.g. Senior React Developer"
+                          className="bg-slate-800 border-slate-600 text-white"
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="location" className="text-white">Location</Label>
-                        <Input id="location" placeholder="e.g. Remote, New York" className="bg-slate-800 border-slate-600 text-white" />
+                        <Input
+                            id="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            placeholder="e.g. Remote, New York"
+                            className="bg-slate-800 border-slate-600 text-white"
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="salary" className="text-white">Salary Range</Label>
-                        <Input id="salary" placeholder="e.g. $80,000 - $120,000" className="bg-slate-800 border-slate-600 text-white" />
+                        <Label htmlFor="salaryRange" className="text-white">Salary Range</Label>
+                        <Input
+                            id="salaryRange"
+                            value={formData.salaryRange}
+                            onChange={handleChange}
+                            placeholder="e.g. $80,000 - $120,000"
+                            className="bg-slate-800 border-slate-600 text-white"
+                        />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="type" className="text-white">Job Type</Label>
-                      <Select>
+                      <Label htmlFor="jobType" className="text-white">Job Type</Label>
+                      <Select value={formData.jobType} onValueChange={handleSelectChange}>
                         <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
                           <SelectValue placeholder="Select job type" />
                         </SelectTrigger>
@@ -120,20 +209,28 @@ const JobPosts = () => {
                     </div>
                     <div>
                       <Label htmlFor="description" className="text-white">Job Description</Label>
-                      <Textarea 
-                        id="description" 
-                        placeholder="Describe the role, responsibilities, and requirements..." 
-                        className="bg-slate-800 border-slate-600 text-white min-h-32"
+                      <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          placeholder="Describe the role, responsibilities, and requirements..."
+                          className="bg-slate-800 border-slate-600 text-white min-h-32"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="skills" className="text-white">Required Skills</Label>
-                      <Input id="skills" placeholder="e.g. React, TypeScript, Node.js (comma separated)" className="bg-slate-800 border-slate-600 text-white" />
+                      <Label htmlFor="requiredSkills" className="text-white">Required Skills</Label>
+                      <Input
+                          id="requiredSkills"
+                          value={formData.requiredSkills}
+                          onChange={handleChange}
+                          placeholder="e.g. React, TypeScript, Node.js (comma separated)"
+                          className="bg-slate-800 border-slate-600 text-white"
+                      />
                     </div>
-                    <Button 
-                      onClick={handleCreateJob} 
-                      disabled={isCreating}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    <Button
+                        onClick={handleCreateJob}
+                        disabled={isCreating}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                     >
                       {isCreating ? "Creating Job Post..." : "Create Job Post"}
                     </Button>

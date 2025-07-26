@@ -7,14 +7,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // proxy: {
-    //   '/api': {
-    //     target: 'https://PropellantHR.fly.dev',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '/api'),
-    //     secure: true,
-    //   },
-    // },
+    proxy: {
+      '/api': {
+        target: 'https://PropellantHR.fly.dev',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        secure: true,
+      },
+    },
   },
   plugins: [
     react(),

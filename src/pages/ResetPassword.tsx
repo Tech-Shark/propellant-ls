@@ -1,13 +1,15 @@
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Zap, ArrowLeft} from 'lucide-react';
+import {Zap, ArrowLeft, Users, Building2, Shield} from 'lucide-react';
 import {Link, useNavigate} from 'react-router-dom';
 import {useOTPContext} from "@/context/OTPContext.tsx";
 import {toast} from "sonner";
 import React, {useState} from "react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import {UserRole} from "@/types/user.ts";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 
 const ResetPassword = () => {
     const navigate = useNavigate();
@@ -15,6 +17,8 @@ const ResetPassword = () => {
     const { email } = useOTPContext();
 
     const [loading, setLoading] = React.useState(false);
+
+    const [role, setRole] = useState<UserRole>('TALENT');
 
     const [formData, setFormData] = useState({
         email: email,
@@ -40,6 +44,7 @@ const ResetPassword = () => {
 
         const data = {
             ...formData,
+            role,
             code: Number.parseInt(formData.code)
         };
 
@@ -65,6 +70,32 @@ const ResetPassword = () => {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const getRoleIcon = (selectedRole: UserRole) => {
+        switch (selectedRole) {
+            case 'TALENT':
+                return <Users className="w-5 h-5 text-blue-400"/>;
+            case 'ORGANIZATION':
+                return <Building2 className="w-5 h-5 text-emerald-400"/>;
+            case 'ADMIN':
+                return <Shield className="w-5 h-5 text-orange-400"/>;
+            default:
+                return <Users className="w-5 h-5 text-blue-400"/>;
+        }
+    };
+
+    const getRoleColor = (selectedRole: UserRole) => {
+        switch (selectedRole) {
+            case 'TALENT':
+                return 'border-blue-600 bg-blue-600/10';
+            case 'ORGANIZATION':
+                return 'border-emerald-600 bg-emerald-600/10';
+            case 'ADMIN':
+                return 'border-orange-600 bg-orange-600/10';
+            default:
+                return 'border-blue-600 bg-blue-600/10';
         }
     };
 
@@ -98,6 +129,40 @@ const ResetPassword = () => {
 
                     <CardContent className="space-y-6 h-full">
                         <form onSubmit={handleSubmit} className="space-y-6 h-full flex flex-col justify-between">
+                            {/* Role Selection */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-slate-300">Account Type</label>
+                                <Select value={role} onValueChange={(value: UserRole) => setRole(value)} required={true}>
+                                    <SelectTrigger
+                                        className={`bg-slate-800 border-slate-600 text-white ${getRoleColor(role)}`}>
+                                        <div className="flex items-center gap-2">
+                                            {getRoleIcon(role)}
+                                            <SelectValue placeholder="Select account type"/>
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-800 border-slate-600">
+                                        <SelectItem value="talent" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Users className="w-4 h-4 text-blue-400"/>
+                                                Talent
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="organization" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Building2 className="w-4 h-4 text-emerald-400"/>
+                                                Organization
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="admin" className="text-white hover:bg-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <Shield className="w-4 h-4 text-orange-400"/>
+                                                Admin
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <div className="space-y-2">
                                 <label htmlFor="email" className="text-sm font-medium text-slate-300">Code</label>
                                 <Input
