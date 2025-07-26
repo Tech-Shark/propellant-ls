@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 
 // Create Axios instance
 // const axiosInstance = axios.create({
-//     baseURL: "https://PropellantHR.fly.dev/api/v1",
+//     baseURL: "https://propellanthr.fly.dev/api/v1",
 //     headers: {
 //         'Content-Type': 'application/json',
 //     },

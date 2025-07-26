@@ -6,10 +6,10 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 3000,
     proxy: {
       '/api': {
-        target: 'https://PropellantHR.fly.dev',
+        target: 'https://propellanthr.fly.dev/api/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
         secure: true,

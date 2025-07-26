@@ -1,4 +1,3 @@
-
 import {
   Badge,
   Home,
@@ -14,7 +13,7 @@ import {
   CreditCard,
   ArrowLeft,
   Wallet,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +27,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
+import logo from "../../public/logo.png";
 
 const navigationItems = [
   {
@@ -96,8 +96,12 @@ export function TalentSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-slate-800 rounded-lg flex items-center justify-center">
-            <Badge className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+            <img
+              src={logo}
+              alt="Propellant Logo"
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
@@ -105,14 +109,17 @@ export function TalentSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/" className="flex items-center gap-3 text-blue-400 hover:text-blue-300">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300"
+                  >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Home</span>
                   </Link>
