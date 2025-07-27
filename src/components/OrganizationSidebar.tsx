@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Plus,
   CreditCard,
-  ArrowLeft
+  ArrowLeft, LogOut
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +25,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import {Link, useNavigate} from "react-router-dom";
+import {useAuth} from "@/context/AuthContext.tsx";
 
 const navigationItems = [
   {
@@ -73,7 +74,7 @@ const settingsItems = [
 ];
 
 export function OrganizationSidebar() {
-  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -137,6 +138,17 @@ export function OrganizationSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                      onClick={logout}
+                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

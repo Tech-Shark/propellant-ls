@@ -13,7 +13,7 @@ import {
   CreditCard,
   ArrowLeft,
   Wallet,
-  UserPlus,
+  UserPlus, LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import logo from "../../public/logo.png";
+import {useAuth} from "@/context/AuthContext.tsx";
 
 const navigationItems = [
   {
@@ -92,6 +93,8 @@ const settingsItems = [
 ];
 
 export function TalentSidebar() {
+  const { logout } = useAuth();
+
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -161,6 +164,17 @@ export function TalentSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                      onClick={logout}
+                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

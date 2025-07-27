@@ -7,15 +7,6 @@ export default defineConfig(() => ({
   server: {
     host: "::",
     port: 3000,
-    // port: 8080,
-    // proxy: {
-    //   '/api': {
-    //     target: 'https://propellanthr.fly.dev',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '/api'),
-    //     secure: true,
-    //   },
-    // },
   },
   plugins: [
     react(),

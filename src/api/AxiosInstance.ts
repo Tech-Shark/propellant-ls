@@ -3,14 +3,6 @@ import Cookie from 'js-cookie';
 import {getCookie} from "@/utils/CookieManagement";
 
 // Create Axios instance
-// const axiosInstance = axios.create({
-//     baseURL: "/api/v1",
-//     headers: {
-//         'Content-Type': 'application/json',
-//     },
-// });
-
-// Create Axios instance
 const axiosInstance = axios.create({
     baseURL: "https://propellanthr.fly.dev/api/v1",
     headers: {
