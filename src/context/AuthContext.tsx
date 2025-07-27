@@ -8,13 +8,14 @@ import {useOTPContext} from "@/context/OTPContext.tsx";
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string, role: UserRole) => Promise<{ status: boolean, role: string }>;
+    login: (email: string, password: string) => Promise<{ status: boolean, role: string }>;
     register: (
         phone: string,
         email: string,
         password: string,
         termsAndConditionsAccepted: boolean,
-        role: UserRole
+        role: UserRole,
+        referralCode?: string
     ) => Promise<boolean>;
     logout: () => void;
     isLoading: boolean;
@@ -32,6 +33,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
 
     const {setType, setIsVisible, setUrl} = useOTPContext();
 
+    // Initialize the context with default values
     useEffect(() => {
         // Check for existing session
         const savedUser = localStorage.getItem('user');
@@ -41,6 +43,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         setIsLoading(false);
     }, []);
 
+    // Function to fetch user data from the API
     const fetchUser = async () => {
         console.log("fetching user...");
         axiosInstance.get("users", {
@@ -54,6 +57,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             });
     }
 
+    // Check if user is already logged in from localStorage or cookie
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('user'));
         if (storedUser) {
@@ -66,13 +70,15 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     }, []);
 
-    const login = async (email: string, password: string, role: UserRole) => {
+    // Function to handle user login
+    const login = async (email: string, password: string) => {
         setIsLoading(true);
 
         let status = false;
+        let role = 'TALENT';
 
         try {
-            const loginPromise = axiosInstance.post('auth/login', {email, password, role});
+            const loginPromise = axiosInstance.post('auth/login', {email, password});
 
             toast.promise(loginPromise, {
                     loading: 'Loading...',
@@ -81,7 +87,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                         setCookie("accessToken", response?.data.data.accessToken);
                         fetchUser();
                         status = true;
-                        role = response?.data.data.role;
+                        role = response?.data.data.role || 'TALENT';
                         return response?.data.message;
                     },
                     error: (error) => {
@@ -108,12 +114,14 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     };
 
+    // Function to handle user registration
     const register = async (
         phone: string,
         email: string,
         password: string,
         termsAndConditionsAccepted: boolean,
-        role: UserRole
+        role: UserRole,
+        referralCode?: string
     ) => {
         setIsLoading(true);
 
@@ -125,7 +133,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                 email,
                 password,
                 termsAndConditionsAccepted,
-                role
+                role,
+                referralCode
             });
 
             toast.promise(registerPromise, {
@@ -155,6 +164,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         }
     }
 
+    // Function to handle user logout
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');

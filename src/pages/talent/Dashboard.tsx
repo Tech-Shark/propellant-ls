@@ -10,10 +10,19 @@ const Dashboard = () => {
     const { setShowOnboarding } = useAuth();
     const navigate = useNavigate();
 
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(true);
+
     useEffect(() => {
-        // Check if user has seen onboarding
-        const hasSeenOnboarding = localStorage.getItem('propellant-talent-onboarding');
-        if (!hasSeenOnboarding) {
+        // Check if user has seen onboarded
+        const seenOnboarding = localStorage.getItem('propellant-talent-onboarding');
+
+        if (seenOnboarding) {
+            setHasSeenOnboarding(true);
+        } else {
+            setHasSeenOnboarding(false);
+        }
+
+        if (!seenOnboarding) {
             setTimeout(() => setShowOnboarding(true), 1000);
         }
     }, [setShowOnboarding]);
@@ -50,27 +59,33 @@ const Dashboard = () => {
 
             <div className="p-6 space-y-8">
                 {/* Welcome Banner */}
-                <Card className="bg-gradient-to-r from-blue-600/20 to-emerald-600/20 border-blue-600/30">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-semibold text-white mb-2">
-                                    Welcome back! Ready to propel your career? 🚀
-                                </h2>
-                                <p className="text-slate-300">
-                                    Complete your profile to unlock AI-powered CV generation and verification features.
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowOnboarding(true)}
-                                className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white"
-                            >
-                                Take Tour
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+
+                {
+                    !hasSeenOnboarding && (
+                        <Card className="bg-gradient-to-r from-blue-600/20 to-emerald-600/20 border-blue-600/30">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-white mb-2">
+                                            Welcome back! Ready to propel your career? 🚀
+                                        </h2>
+                                        <p className="text-slate-300">
+                                            Complete your profile to unlock AI-powered CV generation and verification
+                                            features.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowOnboarding(true)}
+                                        className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white"
+                                    >
+                                        Take Tour
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                }
 
                 {/* Quick Actions */}
                 <div id="quick-actions">
@@ -127,37 +142,37 @@ const Dashboard = () => {
                 {/*</div>*/}
 
                 {/* Recent Activity */}
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                            <Users className="w-5 h-5 text-emerald-400" />
-                            Recent Activity
-                        </CardTitle>
-                        <CardDescription className="text-slate-400">
-                            Your latest platform activities
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {/*<div className="space-y-4">*/}
-                        {/*    {[*/}
-                        {/*        { status: 'success', message: 'CV generation completed', time: '2 min ago', color: 'bg-emerald-500' },*/}
-                        {/*        { status: 'info', message: 'New message from TechCorp', time: '15 min ago', color: 'bg-blue-500' },*/}
-                        {/*        { status: 'warning', message: 'Credential verification pending', time: '1 hour ago', color: 'bg-orange-500' },*/}
-                        {/*        { status: 'success', message: 'NFT skill badge earned: React', time: '2 hours ago', color: 'bg-emerald-500' }*/}
-                        {/*    ].map((activity, index) => (*/}
-                        {/*        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">*/}
-                        {/*            <div className="flex items-center gap-3">*/}
-                        {/*                <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>*/}
-                        {/*                <span className="text-slate-300">{activity.message}</span>*/}
-                        {/*            </div>*/}
-                        {/*            <Badge variant="secondary" className="text-xs text-slate-400">*/}
-                        {/*                {activity.time}*/}
-                        {/*            </Badge>*/}
-                        {/*        </div>*/}
-                        {/*    ))}*/}
-                        {/*</div>*/}
-                    </CardContent>
-                </Card>
+                {/*<Card className="bg-slate-900 border-slate-700">*/}
+                {/*    <CardHeader>*/}
+                {/*        <CardTitle className="text-white flex items-center gap-2">*/}
+                {/*            <Users className="w-5 h-5 text-emerald-400" />*/}
+                {/*            Recent Activity*/}
+                {/*        </CardTitle>*/}
+                {/*        <CardDescription className="text-slate-400">*/}
+                {/*            Your latest platform activities*/}
+                {/*        </CardDescription>*/}
+                {/*    </CardHeader>*/}
+                {/*    <CardContent>*/}
+                {/*        /!*<div className="space-y-4">*!/*/}
+                {/*        /!*    {[*!/*/}
+                {/*        /!*        { status: 'success', message: 'CV generation completed', time: '2 min ago', color: 'bg-emerald-500' },*!/*/}
+                {/*        /!*        { status: 'info', message: 'New message from TechCorp', time: '15 min ago', color: 'bg-blue-500' },*!/*/}
+                {/*        /!*        { status: 'warning', message: 'Credential verification pending', time: '1 hour ago', color: 'bg-orange-500' },*!/*/}
+                {/*        /!*        { status: 'success', message: 'NFT skill badge earned: React', time: '2 hours ago', color: 'bg-emerald-500' }*!/*/}
+                {/*        /!*    ].map((activity, index) => (*!/*/}
+                {/*        /!*        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">*!/*/}
+                {/*        /!*            <div className="flex items-center gap-3">*!/*/}
+                {/*        /!*                <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>*!/*/}
+                {/*        /!*                <span className="text-slate-300">{activity.message}</span>*!/*/}
+                {/*        /!*            </div>*!/*/}
+                {/*        /!*            <Badge variant="secondary" className="text-xs text-slate-400">*!/*/}
+                {/*        /!*                {activity.time}*!/*/}
+                {/*        /!*            </Badge>*!/*/}
+                {/*        /!*        </div>*!/*/}
+                {/*        /!*    ))}*!/*/}
+                {/*        /!*</div>*!/*/}
+                {/*    </CardContent>*/}
+                {/*</Card>*/}
             </div>
         </main>
     )

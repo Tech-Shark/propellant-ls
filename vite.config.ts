@@ -3,18 +3,19 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(() => ({
   server: {
     host: "::",
     port: 3000,
-    proxy: {
-      '/api': {
-        target: 'https://propellanthr.fly.dev/api/v1',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
-        secure: true,
-      },
-    },
+    // port: 8080,
+    // proxy: {
+    //   '/api': {
+    //     target: 'https://propellanthr.fly.dev',
+    //     changeOrigin: true,
+    //     rewrite: (path) => path.replace(/^\/api/, '/api'),
+    //     secure: true,
+    //   },
+    // },
   },
   plugins: [
     react(),

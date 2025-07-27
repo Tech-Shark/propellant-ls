@@ -8,11 +8,12 @@ import { Copy, Users, Trophy, Gift, Share2, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { ReferralData, ReferralStats, LeaderboardEntry } from "@/types/referral";
 import {useAuth} from "@/context/AuthContext.tsx";
+import {toast} from "sonner";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {isAxiosError} from "axios";
+import {User} from "@/types/user.ts";
 
 export function ReferralDashboard() {
-  const { toast } = useToast();
-  const [referralLink] = useState("https://propellant.com/invite/user123");
-
   const { user } = useAuth();
   
   const [stats] = useState<ReferralStats>({
@@ -23,57 +24,31 @@ export function ReferralDashboard() {
     rank: 5
   });
 
-  const [referrals] = useState<ReferralData[]>([
-    {
-      id: '1',
-      referrerId: 'user123',
-      referredUserId: 'user456',
-      referredUserEmail: 'john@example.com',
-      referredUserName: 'John Doe',
-      status: 'completed',
-      createdAt: '2024-01-15',
-      completedAt: '2024-01-20',
-      reward: 25
-    },
-    {
-      id: '2',
-      referrerId: 'user123',
-      referredUserId: 'user789',
-      referredUserEmail: 'jane@example.com',
-      referredUserName: 'Jane Smith',
-      status: 'pending',
-      createdAt: '2024-01-18'
-    }
-  ]);
+  const [referrals, setReferrals] = useState<User[]>([]);
 
-  const [leaderboard] = useState<LeaderboardEntry[]>([
-    {
-      userId: 'top1',
-      userName: 'Alice Johnson',
-      userEmail: 'alice@example.com',
-      totalReferrals: 45,
-      completedReferrals: 42,
-      totalRewards: 1050,
-      rank: 1
-    },
-    {
-      userId: 'top2',
-      userName: 'Bob Wilson',
-      userEmail: 'bob@example.com',
-      totalReferrals: 38,
-      completedReferrals: 35,
-      totalRewards: 875,
-      rank: 2
-    }
-  ]);
-
-  const copyReferralLink = () => {
+  const copyReferralLink = (referralLink: string) => {
     navigator.clipboard.writeText(referralLink);
-    toast({
-      title: "Link Copied!",
-      description: "Your referral link has been copied to clipboard."
-    });
+    toast.success("Referral link copied to clipboard!");
   };
+
+  useEffect(() => {
+    // Fetch referrals when component mounts
+    fetchReferrals();
+  }, []);
+
+  const fetchReferrals = async () => {
+    try {
+      const response = await axiosInstance.get("/users/referrals")
+
+      setReferrals(response.data.data.data)
+    } catch (error) {
+      if (isAxiosError(error)) {
+        console.error(error.response?.data?.message || error.message)
+      } else {
+        console.error("An unexpected error occurred:", error);
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -146,9 +121,13 @@ export function ReferralDashboard() {
               readOnly
               className="bg-slate-800 border-slate-600 text-white"
             />
-            <Button onClick={copyReferralLink} variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-500/10">
-              <Copy className="w-4 h-4" />
-            </Button>
+            {
+                user?.referralCode && (
+                    <Button onClick={() => copyReferralLink(`https://propellanthr.com/login?referralCode=${user?.referralCode}`)} variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-500/10">
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                )
+            }
           </div>
         </CardContent>
       </Card>
@@ -164,26 +143,26 @@ export function ReferralDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/*{referrals.map((referral) => (*/}
-              {/*  <div key={referral.id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">*/}
-              {/*    <div>*/}
-              {/*      <p className="text-white font-medium">{referral.referredUserName}</p>*/}
-              {/*      <p className="text-slate-400 text-sm">{referral.referredUserEmail}</p>*/}
-              {/*      <p className="text-slate-500 text-xs">Referred: {referral.createdAt}</p>*/}
-              {/*    </div>*/}
-              {/*    <div className="text-right">*/}
-              {/*      <Badge */}
-              {/*        variant={referral.status === 'completed' ? 'default' : 'secondary'}*/}
-              {/*        className={referral.status === 'completed' ? 'bg-emerald-600' : ''}*/}
-              {/*      >*/}
-              {/*        {referral.status}*/}
-              {/*      </Badge>*/}
-              {/*      {referral.reward && (*/}
-              {/*        <p className="text-emerald-400 text-sm mt-1">+${referral.reward}</p>*/}
-              {/*      )}*/}
-              {/*    </div>*/}
-              {/*  </div>*/}
-              {/*))}*/}
+              {referrals.map((referral) => (
+                <div key={referral._id} className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">{referral.fullname}</p>
+                    <p className="text-slate-400 text-sm">{referral.email}</p>
+                    <p className="text-slate-500 text-xs">Referred: {new Date(referral.createdAt).toDateString()}</p>
+                  </div>
+                  {/*<div className="text-right">*/}
+                  {/*  <Badge */}
+                  {/*    variant={referral.status === 'completed' ? 'default' : 'secondary'}*/}
+                  {/*    className={referral.status === 'completed' ? 'bg-emerald-600' : ''}*/}
+                  {/*  >*/}
+                  {/*    {referral.status}*/}
+                  {/*  </Badge>*/}
+                  {/*  {referral.reward && (*/}
+                  {/*    <p className="text-emerald-400 text-sm mt-1">+${referral.reward}</p>*/}
+                  {/*  )}*/}
+                  {/*</div>*/}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

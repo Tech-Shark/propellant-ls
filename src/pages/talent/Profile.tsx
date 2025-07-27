@@ -2,7 +2,6 @@ import {useEffect, useState} from 'react';
 import {SidebarTrigger} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
@@ -63,7 +62,7 @@ export default function Profile() {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         setProfileCompleteness(() => {
-            const fields = ['fullName', 'linkedin', 'github', 'twitter', 'instagram', 'bio', 'email', 'phone'];
+            const fields = ['fullname', 'linkedin', 'github', 'twitter', 'instagram', 'bio', 'email', 'phone'];
 
             let count = 0;
 
@@ -147,7 +146,7 @@ export default function Profile() {
             phone: profileData.phone
         };
 
-        const updateProfilePromise = axiosInstance.patch('users/profile/talent', updatedUser);
+        const updateProfilePromise = axiosInstance.patch('users/profile', updatedUser);
 
         toast.promise(updateProfilePromise, {
                 loading: 'Loading...',

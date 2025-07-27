@@ -71,11 +71,11 @@ const navigationItems = [
   //   url: "/talent/messages",
   //   icon: MessageSquare,
   // },
-  {
-    title: "Templates",
-    url: "/talent/template",
-    icon: BarChart3,
-  },
+  // {
+  //   title: "Templates",
+  //   url: "/talent/template",
+  //   icon: BarChart3,
+  // },
 ];
 
 const settingsItems = [
