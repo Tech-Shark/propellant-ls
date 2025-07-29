@@ -34,6 +34,7 @@ import {toast} from "sonner";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
 import {CircleSpinner, CubeSpinner} from "react-spinners-kit";
+import {isPdfBySignature} from "@/utils/helperfunctions.ts";
 
 export default function Credentials() {
     const [isUploading, setIsUploading] = useState(false);
@@ -469,15 +470,13 @@ export default function Credentials() {
                                                 } border-slate-600  hover:text-white`}
                                                 onClick={() => toggleVisibility(credential._id, {visibility: !credential.visibility})}
                                             >
-                                                {
-                                                    isUpdating ? <CircleSpinner size={16} /> : <Eye className="w-4 h-4"/>
-                                                }
+                                                <Eye className="w-4 h-4"/>
                                             </Button>
                                             {credential && (
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => {
+                                                    onClick={async () => {
                                                       const imageUrl =
                                                           credential.imageUrl ||
                                                           (credential.url &&
@@ -485,6 +484,11 @@ export default function Credentials() {
                                                               ? credential.url
                                                               : null);
                                                       if (imageUrl) {
+                                                          const isPdf =  await isPdfBySignature(imageUrl);
+                                                            if (isPdf) {
+                                                                window.open(imageUrl, "_blank");
+                                                                return;
+                                                            }
                                                         setModalImage(imageUrl);
                                                       } else {
                                                         toast.warning(
