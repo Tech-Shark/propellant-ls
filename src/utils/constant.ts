@@ -101,3 +101,21 @@ export const skillLevels = [
         value: 'EXPERT'
     }
 ];
+
+export const cardTypes = [
+    {
+        id: 1,
+        name: 'Visa',
+        value: 'VISA'
+    },
+    {
+        id: 2,
+        name: 'Verve',
+        value: 'VERVE'
+    },
+    {
+        id: 2,
+        name: 'MasterCard',
+        value: 'MASTERCARD'
+    },
+]

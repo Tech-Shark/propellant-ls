@@ -20,6 +20,7 @@ export interface WorkExperience {
     location: string;
     title: string;
     isCurrentRole: boolean;
+
 }
 
 export interface Education {
@@ -59,6 +60,8 @@ export interface CV {
     github?: string;
     portfolio?: string;
     website?: string;
+    createdAt?: string;
+    updatedAt?: string;
     languages?: string[];
     hobbies?: string[];
     achievements?: string[];
@@ -131,4 +134,13 @@ export interface PaymentMethod {
     createdAt: string;
     updatedAt: string;
     description: string;
+}
+
+export interface TalentPayment {
+    "plan": "PROFESSIONAL" | "PREMIUM",
+    "cardType": string,
+    "cardNumber": string,
+    "expiryDate": string,
+    "cvv": number,
+    "cardName": string
 }

@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {SidebarTrigger} from "@/components/ui/sidebar";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {skillLevels} from "@/utils/constant.ts";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import {toast} from "sonner";
-import axios from "axios";
+import axios, {isAxiosError} from "axios";
 
 export default function CVBuilder() {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -170,12 +170,22 @@ export default function CVBuilder() {
             skills
         }
 
-        const generatedCv = axiosInstance.post('/cv/optimize', data);
+        const d = removeIdFromCv(data);
+
+        const generatedCv = axiosInstance.post('/cv/optimize', d);
 
         toast.promise(generatedCv, {
                 loading: 'Loading...',
                 success: (response) => {
-                    console.log(response?.data);
+                    console.log(response?.data.data);
+                    const cv = removeIdFromCv(response?.data.data) as CV;
+                    setPersonalInfo({...cv});
+                    setWorkExperiences(cv.workExperience);
+                    setEducations(cv.education);
+                    setCertifications(cv.certifications);
+                    setProjects(cv.projects);
+                    setSkills(cv.skills);
+
                     return response?.data.message;
                 },
                 error: (error) => {
@@ -209,12 +219,23 @@ export default function CVBuilder() {
             skills
         }
 
-        const savedCvPromise = axiosInstance.post('/cv/save-draft', data);
+        const d = removeIdFromCv(data);
+
+        localStorage.setItem('cv', JSON.stringify(d));
+
+        const savedCvPromise = axiosInstance.post('/cv/save-draft', d);
 
         toast.promise(savedCvPromise, {
                 loading: 'Loading...',
                 success: (response) => {
-                    console.log(response?.data);
+                    const cv = removeIdFromCv(response?.data.data.data) as CV;
+                    setPersonalInfo({...cv});
+                    setWorkExperiences(cv.workExperience);
+                    setEducations(cv.education);
+                    setCertifications(cv.certifications);
+                    setProjects(cv.projects);
+                    setSkills(cv.skills);
+
                     return response?.data.message;
                 },
                 error: (error) => {
@@ -276,6 +297,34 @@ export default function CVBuilder() {
         await downloadCvPromise;
         setIsDownloading(false);
     };
+
+    const handleFetchDraft = async () => {
+        try {
+            const response = await axiosInstance.get('/cv/draft');
+
+            const cv = removeIdFromCv(response?.data?.data) as CV;
+
+            console.log(cv)
+
+            setPersonalInfo({...cv});
+            setWorkExperiences(cv.workExperience);
+            setEducations(cv.education);
+            setCertifications(cv.certifications);
+            setProjects(cv.projects);
+            setSkills(cv.skills);
+
+        } catch (error) {
+            if (isAxiosError(error)) {
+                console.log(error);
+            } else {
+                console.error("An unexpected error occurred:", error);
+            }
+        }
+    }
+
+    useEffect(() => {
+        handleFetchDraft();
+    }, []);
 
     return (
         <main className="flex-1 overflow-auto">
@@ -761,7 +810,10 @@ export default function CVBuilder() {
                                         <Label className="text-slate-300">Project Link</Label>
                                         <Input
                                             value={proj.project}
-                                            onChange={(e) => updateProject(index, 'project', e.target.value)}
+                                            onChange={(e) => {
+                                                updateProject(index, 'project', e.target.value)
+                                                updateProject(index, 'link', e.target.value)
+                                            }}
                                             className="bg-slate-800 border-slate-600 text-white"
                                             placeholder="https://yourproject.com"
                                             required
@@ -892,4 +944,101 @@ export default function CVBuilder() {
             </div>
         </main>
     );
+}
+
+const removeIdFromCv = (data: CV): CV => {
+    return (
+
+        // workExperiences: data.workExperience.forEach((exp, index) => {
+        //     return {
+        //         company: exp.company,
+        //         position: exp.position,
+        //         startDate: exp.startDate,
+        //         endDate: exp.endDate,
+        //         description: exp.description,
+        //         location: exp.location,
+        //         title: exp.title,
+        //         isCurrentRole: exp.isCurrentRole
+        //     }
+        // }),
+        // educations: data.education.forEach((edu, index) => {
+        //     return {
+        //         institution: edu.institution,
+        //         degree: edu.degree,
+        //         fieldOfStudy: edu.fieldOfStudy,
+        //         startDate: edu.startDate,
+        //         endDate: edu.endDate,
+        //         grade: edu.grade,
+        //         description: edu.description
+        //     }
+        // }),
+        // certifications: data.certifications.forEach((cert, index) => {
+        //     return {
+        //         name: cert.name,
+        //         issuer: cert.issuer,
+        //         dateIssued: cert.dateIssued,
+        //         credentialId: cert.credentialId,
+        //         credentialUrl: cert.credentialUrl
+        //     }
+        // }),
+        // projects: data.projects.forEach((proj, index) => {
+        //     return {
+        //         name: proj.name,
+        //         description: proj.description,
+        //         technologies: proj.technologies,
+        //         project: proj.project,
+        //         link: proj.link
+        //     }
+        // }),
+        // skills: data.skills.map(skill => ({
+        //     name: skill.name,
+        //     level: skill.level as SkillLevel
+        // }))
+        {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            professionalTitle: data.professionalTitle,
+            professionalSummary: data.professionalSummary,
+            workExperience: data.workExperience.map(exp => ({
+                company: exp.company,
+                position: exp.position,
+                startDate: exp.startDate,
+                endDate: exp.endDate,
+                description: exp.description,
+                location: exp.location,
+                title: exp.title,
+                isCurrentRole: exp.isCurrentRole
+            })),
+            education: data.education.map(edu => ({
+                institution: edu.institution,
+                degree: edu.degree,
+                fieldOfStudy: edu.fieldOfStudy,
+                startDate: edu.startDate,
+                endDate: edu.endDate,
+                grade: edu.grade,
+                description: edu.description
+            })),
+            certifications: data.certifications.map(cert => ({
+                name: cert.name,
+                issuer: cert.issuer,
+                dateIssued: cert.dateIssued,
+                credentialId: cert.credentialId,
+                credentialUrl: cert.credentialUrl
+            })),
+            projects: data.projects.map(proj => ({
+                name: proj.name,
+                description: proj.description,
+                technologies: proj.technologies,
+                project: proj.project,
+                link: proj.link
+            })),
+            skills: data.skills.map(skill => ({
+                name: skill.name,
+                level: skill.level as SkillLevel
+            }))
+        }
+    )
 }

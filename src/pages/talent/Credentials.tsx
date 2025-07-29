@@ -463,7 +463,7 @@ export default function Credentials() {
                                                 variant="ghost"
                                                 size="sm"
                                                 className={`${
-                                                    newCredential.visibility
+                                                    credential.visibility
                                                         ? "bg-green-600 text-white"
                                                         : "bg-slate-800 text-slate-400"
                                                 } border-slate-600  hover:text-white`}
