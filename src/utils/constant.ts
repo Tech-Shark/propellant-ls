@@ -116,6 +116,6 @@ export const cardTypes = [
     {
         id: 2,
         name: 'MasterCard',
-        value: 'MASTERCARD'
+        value: 'MASTER_CARD'
     },
 ]

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import {useEffect, useState} from "react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import {isAxiosError} from "axios";
+import {TrendingUp} from "lucide-react";
 
 const metrics = [
   {
@@ -64,22 +65,21 @@ export function OrganizationMetrics() {
       }
     }
   }
+
   return (
     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-      {metrics.map((metric) => (
-        <Card key={metric.title}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
-            <Badge variant="secondary" className={metric.color}>
-              {metric.trend}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metric.value}</div>
-            <p className="text-xs text-muted-foreground">{metric.description}</p>
-          </CardContent>
-        </Card>
-      ))}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+          <Badge variant="secondary" className="text-green-600">
+            <TrendingUp className="w-5 h-5 text-white" />
+          </Badge>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats?.total}</div>
+          <p className="text-xs text-muted-foreground">Total Job Posts</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {useOTPContext} from "@/context/OTPContext.tsx";
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => Promise<{ status: boolean, role: string }>;
+    login: (email: string, password: string) => Promise<{ status: boolean, userRole: string }>;
     register: (
         phone: string,
         email: string,
@@ -75,7 +75,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
         setIsLoading(true);
 
         let status = false;
-        let role = 'TALENT';
+        let userRole = 'TALENT';
 
         try {
             const loginPromise = axiosInstance.post('auth/login', {email, password});
@@ -86,8 +86,8 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                         console.log(response?.data);
                         setCookie("accessToken", response?.data.data.accessToken);
                         fetchUser();
-                        status = true;
-                        role = response?.data.data.role || 'TALENT';
+                        status = true
+                        userRole = response?.data.data.role || 'TALENT';
                         return response?.data.message;
                     },
                     error: (error) => {
@@ -108,7 +108,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
             );
 
             await loginPromise;
-            return {status, role};
+            return {status, userRole};
         } finally {
             setIsLoading(false);
         }

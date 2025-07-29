@@ -13,11 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Plus, Search, Filter, MapPin, DollarSign, Clock, Users, Eye, Edit, Trash2 } from "lucide-react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import {JobListing} from "@/utils/global";
+import {toast} from "sonner";
 
 const JobPosts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [jobPostsData, setJobPostsData] = useState([]);
+  const [jobPosts, setJobPosts] = useState<JobListing[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -36,47 +38,11 @@ const JobPosts = () => {
     setFormData(prev => ({ ...prev, jobType: value }));
   };
 
-  const jobPosts = [
-    {
-      id: "1",
-      title: "Senior React Developer",
-      location: "Remote",
-      salary: "$80,000 - $120,000",
-      type: "Full-time",
-      status: "active",
-      applicants: 12,
-      posted: "2 days ago",
-      skills: ["React", "TypeScript", "Node.js", "GraphQL"]
-    },
-    {
-      id: "2",
-      title: "Data Scientist",
-      location: "New York, NY",
-      salary: "$90,000 - $130,000",
-      type: "Full-time",
-      status: "processing",
-      applicants: 0,
-      posted: "1 hour ago",
-      skills: ["Python", "Machine Learning", "SQL", "TensorFlow"]
-    },
-    {
-      id: "3",
-      title: "UI/UX Designer",
-      location: "San Francisco, CA",
-      salary: "$70,000 - $100,000",
-      type: "Contract",
-      status: "active",
-      applicants: 8,
-      posted: "1 week ago",
-      skills: ["Figma", "Design Systems", "Prototyping", "User Research"]
-    }
-  ];
-
   const fetchJobPosts = async () => {
     try {
       const response = await axiosInstance.get('/job-post/organization');
 
-      console.log('Job posts fetched:', response.data.data);
+      setJobPosts(response.data.data.data as JobListing[]);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.log(error);
@@ -84,6 +50,30 @@ const JobPosts = () => {
       } else {
         return "Something went wrong. Please try again later.";
       }
+    }
+  }
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const deletePromise = axiosInstance.delete(`/job-post/remove?_id=${jobId}`);
+
+      toast.promise(deletePromise, {
+        loading: 'Deleting job post...',
+        success: () => {
+            // Remove the job post from the state
+            setJobPosts(prevPosts => prevPosts.filter(job => job._id !== jobId));
+            return 'Job post deleted successfully.';
+        },
+        error: 'Something went wrong. Please try again later.',
+      });
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error('Error deleting job post:', error.response?.data.message);
+            toast.error(error.response?.data.message || 'Failed to delete job post.');
+        } else {
+            console.error('Unexpected error:', error);
+            toast.error('An unexpected error occurred while deleting the job post.');
+        }
     }
   }
 
@@ -273,40 +263,44 @@ const JobPosts = () => {
             {/* Job Posts Grid */}
             <div className="grid gap-6">
               {jobPosts.map((job) => (
-                <Card key={job.id} className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
+                <Card key={job?._id} className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-white text-xl">{job.title}</CardTitle>
+                        <CardTitle className="text-white text-xl">{job?.title}</CardTitle>
                         <CardDescription className="text-slate-400 mt-2">
                           <div className="flex items-center gap-4 text-sm">
                             <span className="flex items-center gap-1">
                               <MapPin className="w-4 h-4" />
-                              {job.location}
+                              {job?.location}
                             </span>
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-4 h-4" />
-                              {job.salary}
+                              {job?.salaryRange}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
-                              {job.posted}
+                              {new Date(job?.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
                             </span>
                           </div>
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={job.status === 'active' ? 'default' : job.status === 'processing' ? 'secondary' : 'outline'}>
-                          {job.status}
+                        <Badge variant={!job?.isDeleted ? 'default' : 'secondary'}>
+                          {job?.isDeleted ? 'Inactive' : 'Active'}
                         </Badge>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-red-400">
+                          {/*<Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">*/}
+                          {/*  <Edit className="w-4 h-4" />*/}
+                          {/*</Button>*/}
+                          <Button
+                              onClick={() => handleDeleteJob(job?._id)}
+                              variant="ghost" size="sm" className="text-slate-400 hover:text-red-400"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -316,19 +310,19 @@ const JobPosts = () => {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
-                        {job.skills.map((skill) => (
+                        {job?.requiredSkills.map((skill) => (
                           <Badge key={skill} variant="outline" className="border-orange-600/30 text-orange-400">
                             {skill}
                           </Badge>
                         ))}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {job.applicants} applicants
-                        </span>
+                        {/*<span className="flex items-center gap-1">*/}
+                        {/*  <Users className="w-4 h-4" />*/}
+                        {/*  {job?.} applicants*/}
+                        {/*</span>*/}
                         <Badge variant="outline" className="border-emerald-600/30 text-emerald-400">
-                          {job.type}
+                          {job?.jobType.replace('_', ' ')}
                         </Badge>
                       </div>
                     </div>

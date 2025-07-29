@@ -72,7 +72,7 @@ const plans = [
 ];
 
 export default function Payment() {
-    const [selectedPlan, setSelectedPlan] = useState('professional');
+    const [selectedPlan, setSelectedPlan] = useState('free');
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('');
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -102,7 +102,11 @@ export default function Payment() {
     }, []);
 
     const handleUpgrade = (planId: string) => {
-        setSelectedPlan(planId);
+        setSelectedPlan(planId.toUpperCase() as "PROFESSIONAL" | "PREMIUM");
+        setBillingInfo({
+            ...billingInfo,
+            plan: planId.toUpperCase() as "PROFESSIONAL" | "PREMIUM"
+        });
     };
 
     const handlePayment = () => {
@@ -110,7 +114,8 @@ export default function Payment() {
 
         try {
             const upgradePromise = axiosInstance.post("premium", {
-                plan: selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM",
+                plan: selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM" | "FREE",
+                cvv: Number(billingInfo.cvv),
                 ...billingInfo
             })
 
@@ -245,12 +250,12 @@ export default function Payment() {
                                         } text-white flex items-center gap-2`}
                                     >
                                         {
-                                            plan.id === selectedPlan && (
+                                            plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM" === selectedPlan && (
                                                 <Check className="w-4 h-4"/>
                                             )
                                         }
                                         {
-                                            plan.id === selectedPlan ? "Selected Plan" :
+                                            plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM" === selectedPlan ? "Selected Plan" :
                                                 plan.buttonText
                                         }
                                     </Button>
@@ -364,7 +369,7 @@ export default function Payment() {
                                     <div>
                                         <Label className="text-slate-300">CVV</Label>
                                         <Input
-                                            type="number"
+                                            type="password"
                                             value={billingInfo.cvv}
                                             onChange={(e) => setBillingInfo({...billingInfo, cvv: Number(e.target.value)})}
                                             placeholder="123"

@@ -5,19 +5,49 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {OrganizationMetrics} from "@/components/organization/OrganizationMetrics.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
 import {useAuth} from "@/context/AuthContext.tsx";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {isAxiosError} from "axios";
+import {JobListing} from "@/utils/global";
 
 export const OrganizationDashboard = () => {
     const { setShowOnboarding } = useAuth();
     const navigate = useNavigate();
+    const [showTour, setShowTour] = useState(true);
+    const [recentJobPosts, setRecentJobPosts] = useState<JobListing[]>([]);
 
     useEffect(() => {
         const hasSeenOnboarding = localStorage.getItem('propellant-organization-onboarding');
         if (!hasSeenOnboarding) {
-            setTimeout(() => setShowOnboarding(true), 1000);
+            setTimeout(() => {
+                setShowOnboarding(true)
+            }, 1000);
         }
+
+        localStorage.setItem('propellant-organization-onboarding', 'true');
+        setShowTour(false);
     }, [setShowOnboarding]);
+
+
+
+    useEffect(() => {
+        handleFetchJobPosts();
+    }, []);
+
+    const handleFetchJobPosts = async () => {
+        try {
+            const response = await axiosInstance.get(("/job-post/organization"))
+            setRecentJobPosts(response.data.data.data.splice(0, 5) as JobListing[]);
+        } catch (error) {
+            if (isAxiosError(error)) {
+                console.log(error)
+                return error.response?.data.message;
+            } else {
+                return "Something went wrong. Please try again later.";
+            }
+        }
+    }
 
     return (
         <main className="flex-1 overflow-auto">
@@ -50,27 +80,31 @@ export const OrganizationDashboard = () => {
 
             <div className="p-6 space-y-8">
                 {/* Welcome Banner */}
-                <Card className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border-emerald-600/30">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-semibold text-white mb-2">
-                                    Find your next great hire! 🎯
-                                </h2>
-                                <p className="text-slate-300">
-                                    Post jobs and get matched with verified talent based on blockchain-verified skills.
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowOnboarding(true)}
-                                className="border-emerald-400 text-emerald-400 hover:bg-emerald-400 hover:text-white"
-                            >
-                                Take Tour
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                {
+                    showTour && (
+                        <Card className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border-emerald-600/30">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-white mb-2">
+                                            Find your next great hire! 🎯
+                                        </h2>
+                                        <p className="text-slate-300">
+                                            Post jobs and get matched with verified talent based on blockchain-verified skills.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowOnboarding(true)}
+                                        className="border-emerald-400 text-emerald-400 hover:bg-emerald-400 hover:text-white"
+                                    >
+                                        Take Tour
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                }
 
                 {/* Quick Actions */}
                 <div id="quick-actions">
@@ -139,19 +173,19 @@ export const OrganizationDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {[
-                                { status: 'success', message: 'Senior React Developer - 12 matches found', time: '2 min ago', color: 'bg-emerald-500' },
-                                { status: 'processing', message: 'Data Scientist - Processing matches', time: '15 min ago', color: 'bg-orange-500' },
-                                { status: 'success', message: 'UI/UX Designer - 8 matches found', time: '1 hour ago', color: 'bg-blue-500' },
-                                { status: 'success', message: 'DevOps Engineer - 15 matches found', time: '2 hours ago', color: 'bg-emerald-500' }
-                            ].map((activity, index) => (
+                            {recentJobPosts?.map((activity, index) => (
                                 <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 ${activity.color} rounded-full`}></div>
-                                        <span className="text-slate-300">{activity.message}</span>
+                                        <div className={`w-2 h-2 bg-emerald-500 rounded-full`}></div>
+                                        <span className="text-slate-300">{activity.title}</span>
                                     </div>
-                                    <Badge variant="secondary" className="text-xs text-slate-400">
-                                        {activity.time}
+                                    <Badge variant="default" className="text-xs text-white">
+                                        {/*2 hours ago*/}
+                                        {new Date(activity.createdAt || '').toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })}
                                     </Badge>
                                 </div>
                             ))}

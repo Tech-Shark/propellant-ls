@@ -27,7 +27,8 @@ export default function CVBuilder() {
         phone: '',
         address: '',
         professionalTitle: '',
-        professionalSummary: ''
+        professionalSummary: '',
+        jobDescription: '',
     });
     const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
     const [educations, setEducations] = useState<Education[]>([]);
@@ -437,6 +438,17 @@ export default function CVBuilder() {
                                 id="professionalSummary"
                                 value={personalInfo.professionalSummary}
                                 onChange={(e) => setPersonalInfo({...personalInfo, professionalSummary: e.target.value})}
+                                className="bg-slate-800 border-slate-600 text-white"
+                                required
+                                rows={4}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="jobDescription" className="text-slate-300">Job Description</Label>
+                            <Textarea
+                                id="jobDescription"
+                                value={personalInfo.jobDescription}
+                                onChange={(e) => setPersonalInfo({...personalInfo, jobDescription: e.target.value})}
                                 className="bg-slate-800 border-slate-600 text-white"
                                 required
                                 rows={4}

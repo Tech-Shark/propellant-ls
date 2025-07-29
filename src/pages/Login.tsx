@@ -66,10 +66,10 @@ const Login = () => {
                     setIsSignUp(false);
                 }
             } else {
-                const {status} = await login(email, password);
+                const {status, userRole} = await login(email, password);
 
                 if (status) {
-                    navigate(`/${role.toLowerCase()}`);
+                    navigate(`/${userRole.toLowerCase()}`);
                 }
             }
         } catch (error) {

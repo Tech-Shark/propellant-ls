@@ -56,6 +56,7 @@ export interface CV {
     email?: string;
     professionalTitle?: string;
     professionalSummary?: string;
+    jobDescription?: string;
     address?: string;
     github?: string;
     portfolio?: string;
@@ -143,4 +144,60 @@ export interface TalentPayment {
     "expiryDate": string,
     "cvv": number,
     "cardName": string
+}
+
+export interface JobListing {
+    _id?: string;
+    organization?: Organization;
+    title?: string;
+    location?: string;
+    salaryRange?: string;
+    jobType?: "FULL_TIME" | "PART_TIME" | "CONTRACT" | string;
+    description?: string;
+    requiredSkills?: string[];
+    isDeleted?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+}
+
+export interface Organization {
+    _id?: string;
+    email?: string;
+    emailVerified?: boolean;
+    profilePhoto?: string | null;
+    fullname?: string;
+    bio?: string;
+    phone?: string;
+    role?: "ORGANIZATION" | string;
+    authSource?: "EMAIL" | string;
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+    website?: string;
+    referralCode?: string;
+    totalReferrals?: number;
+    profileCompleted?: boolean;
+    lastLoginAt?: string | null;
+    isNewUser?: boolean;
+    termsAndConditionsAccepted?: boolean;
+    isDeleted?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+    companyName?: string;
+    companySize?: string;
+    description?: string;
+    industry?: string;
+    offers?: string[];
+    socials?: Social[];
+    tagline?: string;
+}
+
+export interface Social {
+    platform?: string;
+    url?: string;
 }
