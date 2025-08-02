@@ -22,6 +22,7 @@ import CompanyProfile from "@/pages/organization/CompanyProfile.tsx";
 import OrganizationAnalytics from "@/pages/organization/Analytics.tsx";
 import { OrganizationDashboard } from "@/pages/organization/OrganizationDashboard.tsx";
 import Messages from "@/pages/organization/Messages.tsx";
+import CredentialVerification from "@/pages/organization/CredentialVerification.tsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.tsx";
 import TermsAndConditions from "@/pages/TermsAndConditions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -61,13 +62,15 @@ export const router = createBrowserRouter([
           { path: "settings", element: <OrganizationSettings /> },
           { path: "payment", element: <OrganizationPayment /> },
           { path: "analytics", element: <OrganizationAnalytics /> },
+          { path: "credentials", element: <CredentialVerification /> },
+          { path: "credentials", element: <CredentialVerification /> },
         ],
       },
       {
         path: "admin",
         element: <AdminDashboard />,
       },
-    //   { path: "terms-and-conditions", element: <TermsAndConditions /> },
+      //   { path: "terms-and-conditions", element: <TermsAndConditions /> },
       { path: "privacypolicy", element: <PrivacyPolicy /> },
     ],
   },
