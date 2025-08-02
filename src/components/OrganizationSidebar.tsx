@@ -1,4 +1,3 @@
-
 import {
   Badge,
   Home,
@@ -10,7 +9,9 @@ import {
   MessageSquare,
   Plus,
   CreditCard,
-  ArrowLeft, LogOut
+  ArrowLeft,
+  LogOut,
+  Award,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,8 +25,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import {Link, useNavigate} from "react-router-dom";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext.tsx";
 
 const navigationItems = [
   {
@@ -42,6 +43,11 @@ const navigationItems = [
     title: "Talent Pool",
     url: "/organization/talent",
     icon: Users,
+  },
+  {
+    title: "Credential Verification",
+    url: "/organization/credentials",
+    icon: Award,
   },
   {
     title: "Messages",
@@ -85,18 +91,23 @@ export function OrganizationSidebar() {
           </div>
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
-            <p className="text-xs text-sidebar-foreground/70">Organization Portal</p>
+            <p className="text-xs text-sidebar-foreground/70">
+              Organization Portal
+            </p>
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/" className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300"
+                  >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Home</span>
                   </Link>
@@ -141,8 +152,8 @@ export function OrganizationSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button
-                      onClick={logout}
-                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                    onClick={logout}
+                    className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Log out</span>
