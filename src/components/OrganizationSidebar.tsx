@@ -66,11 +66,11 @@ const settingsItems = [
     url: "/organization/settings",
     icon: Settings,
   },
-  {
-    title: "Payment",
-    url: "/organization/payment",
-    icon: CreditCard,
-  },
+  // {
+  //   title: "Payment",
+  //   url: "/organization/payment",
+  //   icon: CreditCard,
+  // },
 ];
 
 export function OrganizationSidebar() {

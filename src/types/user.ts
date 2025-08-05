@@ -21,6 +21,14 @@ export interface User {
   location: string;
   twitter: string;
   instagram: string;
+  companyName?: string;
+  companySize?: string;
+  description?: string;
+  tagline?: string;
+  industry?: string;
+  offers?: string;
+  image?: string;
+  socials?: string;
   languages: string[];
   hobbies: string[];
   achievements: string[];
