@@ -87,6 +87,7 @@ export interface Credential {
     category?: string;
     file?: File;
     url?: string;
+    issuingOrganization?: string;
     description?: string;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
     createdAt?: string;
@@ -99,37 +100,39 @@ export interface Credential {
 }
 
 export interface CredentialsData {
-    _id?: string;
-    credentialId?: string;
-    subject?: string;
-    issuer?: string | { _id: string; email?: string };
-    name?: string;
-    title?: string;
-    type?: string;
-    category?: string;
-    file?: File;
-    url?: string;
-    imageUrl?: string;
-    description?: string;
-    credentialType?: number | string;
-    status?: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'MINTED' | string;
-    verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-    createdAt?: string;
-    updatedAt?: string;
-    verifiedAt?: string | null;
-    mintedAt?: string | null;
-    isDeleted?: boolean;
-    rejectionReason?: string;
-    ipfsHash?: string;
-    evidenceHash?: string;
-    revocable?: boolean;
-    visibility?: boolean;
+    name: string;
+    verifiedAt: boolean;
+    url: any;
+    _id: string;
+    credentialId: string;
+    title: string;
+    description: string;
+    type: string;
+    category: string;
+    issuer: string;
+    issueDate: string;
+    expiryDate: string;
+    verifyingOrganization: string;
+    verifyingEmail: string;
+    message: string;
+    externalUrl: string;
+    visibility: boolean;
+    status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    imageUrl: string;
+    createdAt: string;
+    reviewedAt: string | null;
+    subject: string;
+    evidenceHash: string;
+    updatedAt: string;
+    ipfsHash: string;
+    issuingOrganization: string;
 }
 
 export interface PaymentMethod {
     _id: string;
     name: string;
-    fee: number;
+        verifiedAt?: string | null;
+        url?: string;
     active: boolean;
     isDeleted: boolean;
     createdAt: string;
