@@ -6,37 +6,6 @@ import axiosInstance from "@/api/AxiosInstance.ts";
 import {isAxiosError} from "axios";
 import {TrendingUp} from "lucide-react";
 
-const metrics = [
-  {
-    title: "Active Job Posts",
-    value: "8",
-    description: "Currently recruiting",
-    trend: "+2",
-    color: "text-green-600"
-  },
-  // {
-  //   title: "Talent Contacted",
-  //   value: "45",
-  //   description: "This month",
-  //   trend: "+12",
-  //   color: "text-blue-600"
-  // },
-  // {
-  //   title: "Success Rate",
-  //   value: "68%",
-  //   description: "Response rate",
-  //   trend: "+5%",
-  //   color: "text-orange-600"
-  // },
-  // {
-  //   title: "Messages Started",
-  //   value: "23",
-  //   description: "Active conversations",
-  //   trend: "+8",
-  //   color: "text-purple-600"
-  // }
-];
-
 interface JobPostStats {
   total: number;
   activePosts: number;

@@ -29,8 +29,6 @@ export const OrganizationDashboard = () => {
         setShowTour(false);
     }, [setShowOnboarding]);
 
-
-
     useEffect(() => {
         handleFetchJobPosts();
     }, []);

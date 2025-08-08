@@ -77,6 +77,7 @@ export default function Credentials() {
       verifyingOrganization?: string;
       verifyingEmail?: string;
       message?: string;
+      externalUrl?: string; // Add externalUrl to state
     }
   >({
     title: "",
@@ -86,12 +87,13 @@ export default function Credentials() {
     description: "",
     visibility: true,
     file: null as File | null,
-    issuer: "",
+    issuingOrganization: "",
     issueDate: "",
     expiryDate: "",
     verifyingOrganization: "",
     verifyingEmail: "",
     message: "",
+    externalUrl: "", // Initialize externalUrl
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,12 +121,15 @@ export default function Credentials() {
     formData.append("type", newCredential.type);
     formData.append("category", newCredential.category);
     formData.append("description", newCredential.description);
-    formData.append("url", newCredential.url);
+    // Use externalUrl instead of url if you have it
+    if (newCredential.externalUrl) {
+      formData.append("externalUrl", newCredential.externalUrl);
+    }
     formData.append("visibility", newCredential.visibility.toString());
 
-    // Add new fields
-    if (newCredential.issuer) {
-      formData.append("issuer", newCredential.issuer);
+    // Add new fields (match backend exactly)
+    if (newCredential.issuingOrganization) {
+      formData.append("issuingOrganization", newCredential.issuingOrganization);
     }
     if (newCredential.issueDate) {
       formData.append("issueDate", newCredential.issueDate);
@@ -144,7 +149,6 @@ export default function Credentials() {
     if (newCredential.message) {
       formData.append("message", newCredential.message);
     }
-
     if (newCredential.file) {
       formData.append("file", newCredential.file);
     }
@@ -169,12 +173,13 @@ export default function Credentials() {
             description: "",
             visibility: true,
             file: null,
-            issuer: "",
+            issuingOrganization: "",
             issueDate: "",
             expiryDate: "",
             verifyingOrganization: "",
             verifyingEmail: "",
             message: "",
+            externalUrl: "",
           });
           return response?.data.message;
         },
@@ -344,11 +349,11 @@ export default function Credentials() {
                 </Label>
                 <Input
                   id="issuer"
-                  value={newCredential.issuer}
+                  value={newCredential.issuingOrganization}
                   onChange={(e) =>
                     setNewCredential({
                       ...newCredential,
-                      issuer: e.target.value,
+                      issuingOrganization: e.target.value,
                     })
                   }
                   placeholder="e.g., Tech Academy, Udemy, AWS"
@@ -450,9 +455,12 @@ export default function Credentials() {
                 </Label>
                 <Input
                   id="link"
-                  value={newCredential.url}
+                  value={newCredential.externalUrl}
                   onChange={(e) =>
-                    setNewCredential({ ...newCredential, url: e.target.value })
+                    setNewCredential({
+                      ...newCredential,
+                      externalUrl: e.target.value,
+                    })
                   }
                   placeholder="https://..."
                   className="bg-slate-800 border-slate-600 text-white"
@@ -714,7 +722,7 @@ export default function Credentials() {
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {/* Backend doesn't send issuer data, so show N/A */}
-                        {credential.issuer ||
+                        {credential.issuingOrganization ||
                           (credential as any).issuer ||
                           (credential as any).issuingOrganization ||
                           "N/A"}
@@ -728,7 +736,9 @@ export default function Credentials() {
                               "N/A"}
                           </p>
                           {credential.verifiedAt &&
-                            credential.status === "VERIFIED" && (
+                            credential.status === "VERIFIED" &&
+                            typeof credential.verifiedAt === "string" &&
+                            credential.verifiedAt !== "" && (
                               <p className="text-sm text-emerald-400">
                                 Verified on{" "}
                                 {new Date(
