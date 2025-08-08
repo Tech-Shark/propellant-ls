@@ -10,9 +10,9 @@ const axiosInstance = axios.create({
     },
 });
 
-// ensure all requests send cookies
-axiosInstance.defaults.withCredentials = false;
-axios.defaults.withCredentials = false;
+// ensure all requests send credentials (cookies, Authorization header, etc.)
+axiosInstance.defaults.withCredentials = true;
+axios.defaults.withCredentials = true;
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
