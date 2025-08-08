@@ -1098,7 +1098,8 @@ export default function CredentialVerification() {
                                     Rejected Credential
                                   </DialogTitle>
                                   <DialogDescription className="text-slate-400">
-                                    This credential was rejected. See the details and rejection reason below.
+                                    This credential was rejected. See the
+                                    details and rejection reason below.
                                   </DialogDescription>
                                 </DialogHeader>
                                 {selectedRequest && (
@@ -1111,12 +1112,27 @@ export default function CredentialVerification() {
                                       </h3>
                                       <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                          <p className="text-sm text-slate-400">Name</p>
-                                          <p className="text-white">{selectedRequest.user?.fullname || selectedRequest.talentName || selectedRequest.verifyingEmail || selectedRequest.user?._id || "-"}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Name
+                                          </p>
+                                          <p className="text-white">
+                                            {selectedRequest.user?.fullname ||
+                                              selectedRequest.talentName ||
+                                              selectedRequest.verifyingEmail ||
+                                              selectedRequest.user?._id ||
+                                              "-"}
+                                          </p>
                                         </div>
                                         <div>
-                                          <p className="text-sm text-slate-400">Email</p>
-                                          <p className="text-white">{selectedRequest.user?.email || selectedRequest.talentEmail || selectedRequest.verifyingEmail || "-"}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Email
+                                          </p>
+                                          <p className="text-white">
+                                            {selectedRequest.user?.email ||
+                                              selectedRequest.talentEmail ||
+                                              selectedRequest.verifyingEmail ||
+                                              "-"}
+                                          </p>
                                         </div>
                                       </div>
                                     </div>
@@ -1128,38 +1144,73 @@ export default function CredentialVerification() {
                                       </h3>
                                       <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                          <p className="text-sm text-slate-400">Title</p>
-                                          <p className="text-white">{selectedRequest.title}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Title
+                                          </p>
+                                          <p className="text-white">
+                                            {selectedRequest.title}
+                                          </p>
                                         </div>
                                         <div>
-                                          <p className="text-sm text-slate-400">Type</p>
-                                          <p className="text-white capitalize">{selectedRequest.type}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Type
+                                          </p>
+                                          <p className="text-white capitalize">
+                                            {selectedRequest.type}
+                                          </p>
                                         </div>
                                         <div>
-                                          <p className="text-sm text-slate-400">Issuer</p>
-                                          <p className="text-white">{selectedRequest.issuingOrganization}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Issuer
+                                          </p>
+                                          <p className="text-white">
+                                            {
+                                              selectedRequest.issuingOrganization
+                                            }
+                                          </p>
                                         </div>
                                         <div>
-                                          <p className="text-sm text-slate-400">Issue Date</p>
-                                          <p className="text-white">{selectedRequest.issueDate}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Issue Date
+                                          </p>
+                                          <p className="text-white">
+                                            {selectedRequest.issueDate}
+                                          </p>
                                         </div>
                                         {selectedRequest.expiryDate && (
                                           <div>
-                                            <p className="text-sm text-slate-400">Expiry Date</p>
-                                            <p className="text-white">{selectedRequest.expiryDate}</p>
+                                            <p className="text-sm text-slate-400">
+                                              Expiry Date
+                                            </p>
+                                            <p className="text-white">
+                                              {selectedRequest.expiryDate}
+                                            </p>
                                           </div>
                                         )}
                                         {selectedRequest.externalUrl && (
                                           <div className="col-span-2">
-                                            <p className="text-sm text-slate-400">Credential URL</p>
-                                            <a href={selectedRequest.externalUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 break-all">{selectedRequest.externalUrl}</a>
+                                            <p className="text-sm text-slate-400">
+                                              Credential URL
+                                            </p>
+                                            <a
+                                              href={selectedRequest.externalUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-400 hover:text-blue-300 break-all"
+                                            >
+                                              {selectedRequest.externalUrl}
+                                            </a>
                                           </div>
                                         )}
                                       </div>
                                       {selectedRequest.description && (
                                         <div className="mt-4">
-                                          <p className="text-sm text-slate-400">Description</p>
-                                          <p className="text-white">{selectedRequest.description}</p>
+                                          <p className="text-sm text-slate-400">
+                                            Description
+                                          </p>
+                                          <p className="text-white">
+                                            {selectedRequest.description}
+                                          </p>
                                         </div>
                                       )}
                                     </div>
@@ -1169,7 +1220,10 @@ export default function CredentialVerification() {
                                         <X className="w-4 h-4" />
                                         Rejection Reason
                                       </h3>
-                                      <p className="text-white whitespace-pre-line">{selectedRequest.message || "No reason provided."}</p>
+                                      <p className="text-white whitespace-pre-line">
+                                        {selectedRequest.message ||
+                                          "No reason provided."}
+                                      </p>
                                     </div>
                                   </div>
                                 )}
