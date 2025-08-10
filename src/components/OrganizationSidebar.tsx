@@ -49,11 +49,11 @@ const navigationItems = [
     url: "/organization/credentials",
     icon: Award,
   },
-  {
-    title: "Messages",
-    url: "/organization/messages",
-    icon: MessageSquare,
-  },
+  // {
+  //   title: "Messages",
+  //   url: "/organization/messages",
+  //   icon: MessageSquare,
+  // },
   {
     title: "Analytics",
     url: "/organization/analytics",

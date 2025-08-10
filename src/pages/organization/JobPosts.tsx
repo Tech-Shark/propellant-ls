@@ -1,3 +1,4 @@
+"use client";
 
 import {useEffect, useState} from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -15,10 +16,14 @@ import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
 import {JobListing} from "@/utils/global";
 import {toast} from "sonner";
+import { CubeSpinner } from "react-spinners-kit";
+import EditOrganizationJobPost from "@/components/organization/EditOrganizationJobPost.tsx";
+import {TableCell} from "@/components/ui/table.tsx";
 
 const JobPosts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isFetchingJobPosts, setIsFetchingJobPosts] = useState(false);
   const [jobPosts, setJobPosts] = useState<JobListing[]>([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -39,9 +44,11 @@ const JobPosts = () => {
   };
 
   const fetchJobPosts = async () => {
+    setIsFetchingJobPosts(true);
+
     try {
       const response = await axiosInstance.get('/job-post/organization');
-
+      console.log('Job posts fetched:', response.data);
       setJobPosts(response.data.data.data as JobListing[]);
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -50,6 +57,8 @@ const JobPosts = () => {
       } else {
         return "Something went wrong. Please try again later.";
       }
+    } finally {
+      setIsFetchingJobPosts(false);
     }
   }
 
@@ -136,6 +145,7 @@ const JobPosts = () => {
                 </div>
               </div>
 
+              {/*Dialog to create job post*/}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="bg-orange-600 hover:bg-orange-700 text-white">
@@ -190,10 +200,10 @@ const JobPosts = () => {
                           <SelectValue placeholder="Select job type" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-800 border-slate-600">
-                          <SelectItem value="full-time">Full-time</SelectItem>
-                          <SelectItem value="part-time">Part-time</SelectItem>
-                          <SelectItem value="contract">Contract</SelectItem>
-                          <SelectItem value="freelance">Freelance</SelectItem>
+                          <SelectItem value="FULL_TIME">Full-time</SelectItem>
+                          <SelectItem value="PART_TIME">Part-time</SelectItem>
+                          <SelectItem value="CONTRACT">Contract</SelectItem>
+                          <SelectItem value="FREELANCE">Freelance</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -262,8 +272,13 @@ const JobPosts = () => {
 
             {/* Job Posts Grid */}
             <div className="grid gap-6">
-              {jobPosts.map((job) => (
-                <Card key={job?._id} className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
+              {
+                isFetchingJobPosts ? (
+                    <div className="flex justify-center py-32">
+                      <CubeSpinner />
+                    </div>
+                ) : jobPosts && jobPosts.length > 0 ? jobPosts.map((job) => (
+                  <Card key={job?._id} className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
@@ -294,9 +309,10 @@ const JobPosts = () => {
                           {job?.isDeleted ? 'Inactive' : 'Active'}
                         </Badge>
                         <div className="flex gap-1">
-                          {/*<Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">*/}
-                          {/*  <Edit className="w-4 h-4" />*/}
-                          {/*</Button>*/}
+                          <EditOrganizationJobPost
+                            fetchJobPosts={fetchJobPosts}
+                            jobPost={job}
+                          />
                           <Button
                               onClick={() => handleDeleteJob(job?._id)}
                               variant="ghost" size="sm" className="text-slate-400 hover:text-red-400"
@@ -328,7 +344,16 @@ const JobPosts = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )) : (
+                    <Card className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
+                      <CardContent>
+                        <div className="px-4 py-8 text-center text-slate-400">
+                          No credentials found. Submit your first credential to get started.
+                        </div>
+                      </CardContent>
+                    </Card>
+                )
+              }
             </div>
           </div>
         </main>
