@@ -45,7 +45,7 @@ import { credentialTypes, credentialCategories } from "@/utils/constant";
 import { toast } from "sonner";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
-import { CircleSpinner, CubeSpinner } from "react-spinners-kit";
+import { CubeSpinner } from "react-spinners-kit";
 import { isPdfBySignature } from "@/utils/helperfunctions.ts";
 
 export default function Credentials() {
