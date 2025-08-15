@@ -4,7 +4,7 @@ import {getCookie} from "@/utils/CookieManagement";
 
 // Create Axios instance
 const axiosInstance = axios.create({
-    baseURL: "https://propellanthr.fly.dev/api/v1",
+    baseURL: "https://propellanthrr.fly.dev/api/v1",
     headers: {
         'Content-Type': 'application/json',
     },
