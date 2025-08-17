@@ -21,6 +21,7 @@ export interface User {
   location: string;
   twitter: string;
   instagram: string;
+  deactivated: boolean,
   companyName?: string;
   companySize?: string;
   description?: string;

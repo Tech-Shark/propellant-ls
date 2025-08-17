@@ -17,6 +17,8 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {useEffect, useState} from "react";
 
 const mockData = [
   { month: "Jan", users: 1200, orgs: 45, badges: 340 },
@@ -78,14 +80,14 @@ const MetricCard = ({
         <Icon className={`h-5 w-5 ${colorClasses[color].split(' ')[0]}`} />
       </CardHeader>
       <CardContent className={isMobile ? 'pt-0' : ''}>
-        <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>{value}</div>
+        <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-neutral-100`}>{value}</div>
         <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-1`}>{description}</p>
-        {trend && (
-          <div className="flex items-center mt-2">
-            <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
-            <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-emerald-600 font-medium`}>{trend}</span>
-          </div>
-        )}
+        {/*{trend && (*/}
+        {/*  <div className="flex items-center mt-2">*/}
+        {/*    <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />*/}
+        {/*    <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-emerald-600 font-medium`}>{trend}</span>*/}
+        {/*  </div>*/}
+        {/*)}*/}
       </CardContent>
     </Card>
   );
@@ -98,12 +100,54 @@ interface AdminMetricsProps {
 
 export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProps) {
   const isMobile = useIsMobile();
+
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalOrganizations, setTotalOrganizations] = useState(0);
+  const [pendingVerifications, setPendingVerifications] = useState(0);
+
+
+  useEffect(() => {
+    handleFetchAllUsers();
+    handleFetchAllOrganizations();
+    handleFetchPendingVerifications();
+  }, []);
+
+  const handleFetchAllUsers = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/all?isDeleted=false")
+
+      setTotalUsers(response.data.data.meta.total);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleFetchAllOrganizations = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/all-admins");
+
+      setTotalOrganizations(response.data.data.data.meta.total);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleFetchPendingVerifications = async () => {
+    try {
+      const response = await axiosInstance.get(
+          "/credentials/pending-verifications"
+      );
+      setPendingVerifications(response.data.data.meta.total);
+    } catch (error) {
+      console.log(error);
+    }
+  }
   
   const metrics = [
     {
       id: "users",
       title: "Total Users",
-      value: "2,847",
+      value: totalUsers,
       description: "Active platform users",
       icon: Users,
       trend: "+12% from last month",
@@ -112,69 +156,69 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
     {
       id: "organizations",
       title: "Organizations",
-      value: "156",
+      value: totalOrganizations,
       description: "Registered companies",
       icon: Building2,
       trend: "+8% from last month",
       color: "accent" as const
     },
-    {
-      id: "badges",
-      title: "NFT Badges",
-      value: "1,234",
-      description: "Total badges issued",
-      icon: Award,
-      trend: "+15% from last month",
-      color: "secondary" as const
-    },
+    // {
+    //   id: "badges",
+    //   title: "NFT Badges",
+    //   value: "nil",
+    //   description: "Total badges issued",
+    //   icon: Award,
+    //   trend: "+15% from last month",
+    //   color: "secondary" as const
+    // },
     {
       id: "verifications",
       title: "Pending Verifications",
-      value: "89",
+      value: pendingVerifications,
       description: "Awaiting admin review",
       icon: Clock,
       color: "destructive" as const
     },
-    {
-      id: "revenue",
-      title: "Monthly Revenue",
-      value: "$12,450",
-      description: "Platform subscriptions",
-      icon: DollarSign,
-      trend: "+22% from last month",
-      color: "accent" as const
-    },
-    {
-      id: "activity",
-      title: "Daily Active Users",
-      value: "1,456",
-      description: "Users active today",
-      icon: Activity,
-      trend: "+5% from yesterday",
-      color: "primary" as const
-    },
-    {
-      id: "security",
-      title: "Security Alerts",
-      value: "3",
-      description: "Require attention",
-      icon: Shield,
-      color: "destructive" as const
-    },
-    {
-      id: "performance",
-      title: "System Performance",
-      value: "99.8%",
-      description: "Uptime this month",
-      icon: Zap,
-      trend: "Excellent",
-      color: "accent" as const
-    }
+    // {
+    //   id: "revenue",
+    //   title: "Monthly Revenue",
+    //   value: "nil",
+    //   description: "Platform subscriptions",
+    //   icon: DollarSign,
+    //   trend: "+22% from last month",
+    //   color: "accent" as const
+    // },
+    // {
+    //   id: "activity",
+    //   title: "Daily Active Users",
+    //   value: "nil",
+    //   description: "Users active today",
+    //   icon: Activity,
+    //   trend: "+5% from yesterday",
+    //   color: "primary" as const
+    // },
+    // {
+    //   id: "security",
+    //   title: "Security Alerts",
+    //   value: "nil",
+    //   description: "Require attention",
+    //   icon: Shield,
+    //   color: "destructive" as const
+    // },
+    // {
+    //   id: "performance",
+    //   title: "System Performance",
+    //   value: "nil",
+    //   description: "Uptime this month",
+    //   icon: Zap,
+    //   trend: "Excellent",
+    //   color: "accent" as const
+    // }
   ];
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <div className={`grid gap-3 lg:gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
+      <div className={`grid gap-3 lg:gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
         {metrics.map((metric) => (
           <MetricCard
             key={metric.id}

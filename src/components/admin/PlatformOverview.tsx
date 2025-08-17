@@ -22,6 +22,8 @@ import {
   Cell,
   ResponsiveContainer
 } from "recharts";
+import {useEffect, useState} from "react";
+import axiosInstance from "@/api/AxiosInstance.ts";
 
 const recentActivity = [
   { action: "New user registration", user: "john@example.com", time: "2 minutes ago" },
@@ -50,39 +52,59 @@ const chartConfig = {
 };
 
 export function PlatformOverview() {
+  const [systemPerformance, setSystemPerformance] = useState<{
+    uptime: number;
+    status: string;
+    timeStamp: number;
+  } | null>(null);
+
+  useEffect(() => {
+    handleSystenPerformance();
+  }, []);
+
+  const handleSystenPerformance = async () => {
+    try {
+      const response = await axiosInstance.get("/health");
+      console.log(response.data.data);
+      setSystemPerformance(response.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div className="lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Badge Distribution</CardTitle>
-            <CardDescription>NFT badges issued by verification type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={badgeDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {badgeDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="grid md:grid-cols-1 lg:grid-cols-1">
+      {/*<div className="lg:col-span-2">*/}
+      {/*  <Card>*/}
+      {/*    <CardHeader>*/}
+      {/*      <CardTitle>Badge Distribution</CardTitle>*/}
+      {/*      <CardDescription>NFT badges issued by verification type</CardDescription>*/}
+      {/*    </CardHeader>*/}
+      {/*    <CardContent>*/}
+      {/*      <div className="h-[300px] flex items-center justify-center">*/}
+      {/*        <ResponsiveContainer width="100%" height="100%">*/}
+      {/*          <PieChart>*/}
+      {/*            <Pie*/}
+      {/*              data={badgeDistribution}*/}
+      {/*              cx="50%"*/}
+      {/*              cy="50%"*/}
+      {/*              labelLine={false}*/}
+      {/*              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}*/}
+      {/*              outerRadius={80}*/}
+      {/*              fill="#8884d8"*/}
+      {/*              dataKey="value"*/}
+      {/*            >*/}
+      {/*              {badgeDistribution.map((entry, index) => (*/}
+      {/*                <Cell key={`cell-${index}`} fill={entry.color} />*/}
+      {/*              ))}*/}
+      {/*            </Pie>*/}
+      {/*            <ChartTooltip />*/}
+      {/*          </PieChart>*/}
+      {/*        </ResponsiveContainer>*/}
+      {/*      </div>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
+      {/*</div>*/}
 
       <Card>
         <CardHeader>
@@ -90,50 +112,50 @@ export function PlatformOverview() {
           <CardDescription>Platform component status</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {systemHealth.map((item) => (
-            <div key={item.component} className="space-y-2">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{item.component}</span>
+                <span className="text-sm font-medium">API Server</span>
                 <Badge 
-                  variant={item.status === 'healthy' ? 'default' : 'destructive'}
+                  variant={systemPerformance?.status === 'ok' ? 'default' : 'destructive'}
                   className="text-xs"
                 >
-                  {item.status}
+                  {
+                    systemPerformance?.status === 'ok' ? 'healthy' : 'unhealthy'
+                  }
                 </Badge>
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Uptime</span>
-                  <span>{item.uptime}%</span>
+                  <span>{Number(systemPerformance?.uptime || "0")}ms</span>
                 </div>
-                <Progress value={item.uptime} className="h-2" />
+                {/*<Progress value={item.uptime} className="h-2" />*/}
               </div>
             </div>
-          ))}
         </CardContent>
       </Card>
 
-      <div className="lg:col-span-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest platform events and user actions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium text-sm">{activity.action}</div>
-                    <div className="text-xs text-gray-500">{activity.user}</div>
-                  </div>
-                  <div className="text-xs text-gray-500">{activity.time}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/*<div className="lg:col-span-3 mt-6">*/}
+      {/*  <Card>*/}
+      {/*    <CardHeader>*/}
+      {/*      <CardTitle>Recent Activity</CardTitle>*/}
+      {/*      <CardDescription>Latest platform events and user actions</CardDescription>*/}
+      {/*    </CardHeader>*/}
+      {/*    <CardContent>*/}
+      {/*      <div className="space-y-4">*/}
+      {/*        {recentActivity.map((activity, index) => (*/}
+      {/*          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">*/}
+      {/*            <div>*/}
+      {/*              <div className="font-medium text-sm">{activity.action}</div>*/}
+      {/*              <div className="text-xs text-gray-500">{activity.user}</div>*/}
+      {/*            </div>*/}
+      {/*            <div className="text-xs text-gray-500">{activity.time}</div>*/}
+      {/*          </div>*/}
+      {/*        ))}*/}
+      {/*      </div>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
+      {/*</div>*/}
     </div>
   );
 }

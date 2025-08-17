@@ -4,3 +4,7 @@ export async function isPdfBySignature(url: string): Promise<boolean> {
     const header = new TextDecoder().decode(buffer.slice(0, 5));
     return header === '%PDF-';
 }
+
+export const convertDate = (date: string) => {
+    return new Date(date).toLocaleDateString();
+}

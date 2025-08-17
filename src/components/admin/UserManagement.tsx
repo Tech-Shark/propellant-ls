@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,54 +19,107 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, UserCheck, UserX, Eye, Mail } from "lucide-react";
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "talent",
-    status: "active",
-    joinDate: "2024-01-15",
-    lastActive: "2024-06-05",
-    badges: 3
-  },
-  {
-    id: "2",
-    name: "TechCorp Inc",
-    email: "hr@techcorp.com",
-    role: "organization",
-    status: "active",
-    joinDate: "2024-02-20",
-    lastActive: "2024-06-04",
-    badges: 0
-  },
-  {
-    id: "3",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    role: "talent",
-    status: "suspended",
-    joinDate: "2024-03-10",
-    lastActive: "2024-05-28",
-    badges: 1
-  },
-];
+import {Search, MoreHorizontal, UserCheck, UserX, Eye, Mail, ChevronRight, ChevronLeft} from "lucide-react";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {UserType} from "@/utils/global";
+import {User} from "@/types/user.ts";
+import {convertDate} from "@/utils/helperfunctions.ts";
+import {toast} from "sonner";
 
 export function UserManagement() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredUsers = mockUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  const [pageData, setPageData] = useState<{
+    lastPage: number,
+    page: number,
+    size: number,
+    total: number
+  } | null>(null);
+
+  const [param, setParam] = useState({
+    page: 1,
+    size: 10,
+    isDeleted: "false",
+  })
+
+  const handleParamChange = (name: string, value: string) => {
+    setParam({
+      ...param,
+      [name]: value
+    })
+  }
+
+  const [totalUsers, setTotalUsers] = useState<User[] | null>(null);
+
+  useEffect(() => {
+    handleFetchAllUsers();
+  }, [param, roleFilter]);
+
+  const handleFetchAllUsers = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/all", {
+        params: {...param, role: roleFilter === "all" ? "" : roleFilter}
+      })
+
+      console.log(response.data);
+      setTotalUsers(response.data.data.data);
+      setPageData(response.data.data.meta)
+      console.log(response.data.data.meta)
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleSuspendUser = async (userId: string) => {
+    try {
+      const accountSuspensionReason = prompt("Enter the reason for suspending the user.");
+
+      if (!accountSuspensionReason) {
+        toast.error("Please enter a reason for suspending the user.");
+        alert("Please enter a reason for suspending the user.");
+      }
+
+      const suspendPromise = axiosInstance.patch(`/users/admin/suspend?_id=${userId}`, {
+        accountSuspensionReason
+      });
+
+      toast.promise(suspendPromise, {
+        loading: "Suspending user...",
+        success: (response) => {
+          handleFetchAllUsers();
+          console.log(response);
+          return "User suspended successfully."
+        },
+        error: (error) => {
+          console.log(error)
+          return "Failed to suspend user."
+        }
+      })
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleUnSuspendUser = async (userId: string) => {
+    try {
+      const unSuspendPromise = axiosInstance.patch(`/users/admin/suspend?_id=${userId}`);
+
+      toast.promise(unSuspendPromise, {
+        loading: "Unsuspending user...",
+        success: (response) => {
+          handleFetchAllUsers();
+          console.log(response);
+          return "User Unsuspended successfully."
+        },
+        error: (error) => {
+          console.log(error)
+          return "Failed to Unsuspend user."
+        }
+      })
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -77,35 +130,31 @@ export function UserManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            {/*<div className="relative flex-1">*/}
+            {/*  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />*/}
+            {/*  <Input*/}
+            {/*    placeholder="Search users by name or email..."*/}
+            {/*    value={searchTerm}*/}
+            {/*    name={"search"}*/}
+            {/*    onChange={(e) => handleParamChange(e.target.name, e.target.value)}*/}
+            {/*    onKeyDown={(e) => {*/}
+            {/*      if (e.key === "Enter") {*/}
+            {/*        handleFetchAllUsers();*/}
+            {/*      }*/}
+            {/*    }}*/}
+            {/*    onBlur={() => handleFetchAllUsers()}*/}
+            {/*    className="pl-10"*/}
+            {/*  />*/}
+            {/*</div>*/}
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="talent">Talent</SelectItem>
-                <SelectItem value="organization">Organization</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="TALENT">Talent</SelectItem>
+                <SelectItem value="ORGANIZATION">Organization</SelectItem>
+                <SelectItem value="ADMIN">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -116,35 +165,41 @@ export function UserManagement() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Total Referrals</TableHead>
                   <TableHead>Join Date</TableHead>
-                  <TableHead>Last Active</TableHead>
-                  <TableHead>Badges</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Suspended</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                {totalUsers?.map((user) => (
+                  <TableRow key={user._id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.name}</div>
+                        <div className="font-medium">{user.fullname}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'organization' ? 'secondary' : 'default'}>
+                      <Badge variant={user.role === 'ADMIN' ? 'destructive' : user.role === 'ORGANIZATION' ? 'secondary' : 'default'}>
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : user.status === 'suspended' ? 'destructive' : 'secondary'}>
-                        {user.status}
+                      {
+                        user.role === 'TALENT' ? user.totalReferrals : "N/A"
+                      }
+                    </TableCell>
+                    <TableCell>{convertDate(user.createdAt)}</TableCell>
+                    <TableCell>{convertDate(user.lastLoginAt)}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.deactivated ? 'destructive' : 'default'}>
+                        {
+                          user.deactivated ? 'True' : 'False'
+                        }
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.joinDate}</TableCell>
-                    <TableCell>{user.lastActive}</TableCell>
-                    <TableCell>{user.badges}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -161,13 +216,19 @@ export function UserManagement() {
                             <Mail className="mr-2 h-4 w-4" />
                             Send Message
                           </DropdownMenuItem>
-                          {user.status === 'active' ? (
-                            <DropdownMenuItem className="text-red-600">
+                          {!user.deactivated ? (
+                            <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleSuspendUser(user._id)}
+                            >
                               <UserX className="mr-2 h-4 w-4" />
                               Suspend User
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem className="text-green-600">
+                            <DropdownMenuItem
+                                onClick={() => handleUnSuspendUser(user._id)}
+                                className="text-green-600"
+                            >
                               <UserCheck className="mr-2 h-4 w-4" />
                               Activate User
                             </DropdownMenuItem>
@@ -179,9 +240,45 @@ export function UserManagement() {
                 ))}
               </TableBody>
             </Table>
+
+            <div className="flex items-center justify-end gap-5 px-4">
+              {
+                pageData?.page > 1 && (
+                  <div className="flex justify-center my-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="border flex items-center gap-2"
+                        onClick={() => handleParamChange("page", String(pageData?.page - 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <p>Previous Page</p>
+                    </Button>
+                  </div>
+                )
+              }
+
+              {
+                pageData?.page < pageData?.lastPage && (
+                  <div className="flex justify-center my-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="border flex items-center gap-2"
+                        onClick={() => handleParamChange("page", String(pageData?.page + 1))}
+                    >
+                      <p>
+                        Next Page
+                      </p>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )
+              }
+            </div>
           </div>
 
-          {filteredUsers.length === 0 && (
+          {totalUsers?.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               No users found matching your search criteria.
             </div>

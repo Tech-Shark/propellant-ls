@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,10 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { CheckCircle, XCircle, Clock, Search, Eye } from "lucide-react";
+import {CredentialsData} from "@/utils/global";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {convertDate} from "@/utils/helperfunctions.ts";
+import {toast} from "sonner";
 
 const mockVerifications = [
   {
@@ -49,6 +53,7 @@ const mockVerifications = [
 ];
 
 export function VerificationManagement() {
+  const [credentials, setCredentials] = useState<CredentialsData[]>();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -62,20 +67,72 @@ export function VerificationManagement() {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const handleApprove = (id: string) => {
-    console.log("Approving verification:", id);
-  };
-
-  const handleReject = (id: string) => {
-    console.log("Rejecting verification:", id);
-  };
-
   const getBadgeColor = (type: string) => {
     switch (type) {
       case 'employer': return 'bg-yellow-500';
       case 'colleague': return 'bg-orange-500';
       case 'client': return 'bg-gray-500';
       default: return 'bg-blue-500';
+    }
+  };
+
+  useEffect(() => {
+    const getCredentials = async () => {
+      axiosInstance
+          .get("/credentials/all")
+          .then((response) => {
+            setCredentials(response?.data.data.data);
+            console.log("Credentials:", response?.data.data.data);
+          })
+          .catch((error) => {
+            console.log("Error fetching credentials:", error);
+          });
+    };
+
+    getCredentials();
+  }, []);
+
+  const handleApprove = async (credentialId: string) => {
+    try {
+      const approvePromise = axiosInstance.post(`/credentials/${credentialId}/verify`, {
+        decision: "VERIFIED",
+      });
+
+      toast.promise(approvePromise, {
+        loading: "Approving...",
+        success: (response) => {
+          console.log(response);
+          return "Verification approved!";
+        },
+        error: (error) => {
+          console.log(error);
+          return error?.response.data.message || "Error approving verification!";
+        }
+      })
+    } catch (err) {
+      console.log(err)
+    }
+  };
+
+  const handleReject = async (credentialId: string) => {
+    try {
+      const rejectPromise = axiosInstance.post(`/credentials/${credentialId}/verify`, {
+        decision: "REJECTED",
+      });
+
+      toast.promise(rejectPromise, {
+        loading: "Rejecting...",
+        success: (response) => {
+          console.log(response);
+          return "Verification rejected!";
+        },
+        error: (error) => {
+          console.log(error);
+          return error?.response.data.message || "Error rejecting verification!";
+        }
+      })
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -135,11 +192,11 @@ export function VerificationManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredVerifications.map((verification) => (
-                  <TableRow key={verification.id}>
-                    <TableCell className="font-medium">{verification.talent}</TableCell>
-                    <TableCell>{verification.skill}</TableCell>
-                    <TableCell>{verification.verifier}</TableCell>
+                {credentials?.map((verification) => (
+                  <TableRow key={verification._id}>
+                    <TableCell className="font-medium">{verification?.user?.fullname}</TableCell>
+                    <TableCell>{verification.title}</TableCell>
+                    <TableCell>{verification.verifyingOrganization}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getBadgeColor(verification.type)}`}></div>
@@ -149,30 +206,30 @@ export function VerificationManagement() {
                     <TableCell>
                       <Badge 
                         variant={
-                          verification.status === 'approved' ? 'default' : 
-                          verification.status === 'rejected' ? 'destructive' : 
+                          verification.status === 'VERIFIED' ? 'default' :
+                          verification.status === 'REJECTED' ? 'destructive' :
                           'secondary'
                         }
                       >
-                        {verification.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                        {verification.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {verification.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
-                        {verification.status}
+                        {verification.status === 'PENDING' && <Clock className="w-3 h-3 mr-1" />}
+                        {verification.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 mr-1" />}
+                        {verification.status === 'REJECTED' && <XCircle className="w-3 h-3 mr-1" />}
+                        {verification.status.toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>{verification.submittedDate}</TableCell>
+                    <TableCell>{convertDate(verification.createdAt)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {verification.status === 'pending' && (
+                        {verification.status === 'PENDING' && (
                           <>
                             <Button 
                               variant="ghost" 
                               size="sm" 
                               className="text-green-600 hover:text-green-700"
-                              onClick={() => handleApprove(verification.id)}
+                              onClick={() => handleApprove(verification._id)}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </Button>
@@ -180,7 +237,7 @@ export function VerificationManagement() {
                               variant="ghost" 
                               size="sm" 
                               className="text-red-600 hover:text-red-700"
-                              onClick={() => handleReject(verification.id)}
+                              onClick={() => handleReject(verification._id)}
                             >
                               <XCircle className="w-4 h-4" />
                             </Button>
