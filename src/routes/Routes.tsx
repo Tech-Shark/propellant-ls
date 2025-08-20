@@ -24,7 +24,6 @@ import { OrganizationDashboard } from "@/pages/organization/OrganizationDashboar
 import Messages from "@/pages/organization/Messages.tsx";
 import CredentialVerification from "@/pages/organization/CredentialVerification.tsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.tsx";
-import TermsAndConditions from "@/pages/TermsAndConditions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 export const router = createBrowserRouter([

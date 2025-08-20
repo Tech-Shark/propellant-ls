@@ -1,3 +1,5 @@
+import {User} from "@/types/user.ts";
+
 declare type OTP = "RESET_PASSWORD" | "VERIFY_EMAIL" | "VERIFY_PHONE";
 
 declare type UserType = "SUPER_ADMIN" | "ADMIN" | "TALENT" | "ORGANIZATION";
@@ -100,6 +102,7 @@ export interface Credential {
 }
 
 export interface CredentialsData {
+    user: User
     name: string;
     verifiedAt: boolean;
     url: any;

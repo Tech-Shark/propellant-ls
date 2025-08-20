@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import {
   Card,
   CardContent,
@@ -27,14 +27,17 @@ import {
   CheckCircle,
   AlertTriangle,
   DollarSign,
-  Menu,
+  Menu, LogOut,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {useAuth} from "@/context/AuthContext.tsx";
+import axiosInstance from "@/api/AxiosInstance.ts";
 
 export default function AdminDashboard() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { logout } = useAuth();
 
   const MobileHeader = () => (
     <div className="lg:hidden">
@@ -66,7 +69,7 @@ export default function AdminDashboard() {
   const DesktopContent = () => (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AdminSidebar />
+        {/*<AdminSidebar />*/}
         <main className="flex-1 p-4 lg:p-8 overflow-auto">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6 lg:mb-8">
@@ -78,17 +81,20 @@ export default function AdminDashboard() {
                   Platform overview and management
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <div className="flex flex-wrap items-center gap-3 min-w-0">
                 <Badge
                   variant="secondary"
                   className="bg-gradient-to-r from-blue-500 to-purple-500 text-white whitespace-nowrap"
                 >
                   Super Admin
                 </Badge>
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-sm text-gray-600 hidden sm:inline whitespace-nowrap">
-                  System Online
-                </span>
+                <button
+                    onClick={logout}
+                    className="flex items-center gap-2 text-red-400"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log out</span>
+                </button>
               </div>
             </div>
 
