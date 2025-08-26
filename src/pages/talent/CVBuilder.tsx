@@ -270,7 +270,7 @@ export default function CVBuilder() {
             skills
         }
 
-        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
+        const downloadCvPromise = axiosInstance.post('/cv/generate/classic', data);
 
         toast.promise(downloadCvPromise, {
                 loading: 'Loading...',
