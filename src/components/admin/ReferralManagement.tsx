@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,78 +19,115 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Trophy, Users, Gift, TrendingUp } from "lucide-react";
+import {Search, MoreHorizontal, Trophy, Users, Gift, TrendingUp, ChevronLeft, ChevronRight} from "lucide-react";
 import type { LeaderboardEntry, ReferralData } from "@/types/referral";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import {ReferralLeaderboardEntry, ReferralRecord, ReferralStats} from "@/utils/global";
+import {convertDate} from "@/utils/helperfunctions.ts";
 
-const mockLeaderboard: LeaderboardEntry[] = [
-  {
-    userId: "1",
-    userName: "Alex Johnson",
-    userEmail: "alex@example.com",
-    totalReferrals: 25,
-    completedReferrals: 20,
-    totalRewards: 600,
-    rank: 1
-  },
-  {
-    userId: "2",
-    userName: "Sarah Wilson",
-    userEmail: "sarah@example.com",
-    totalReferrals: 18,
-    completedReferrals: 15,
-    totalRewards: 450,
-    rank: 2
-  },
-  {
-    userId: "3",
-    userName: "Mike Chen",
-    userEmail: "mike@example.com",
-    totalReferrals: 12,
-    completedReferrals: 8,
-    totalRewards: 240,
-    rank: 3
-  }
-];
-
-const mockReferrals: ReferralData[] = [
-  {
-    id: "1",
-    referrerId: "user1",
-    referredUserId: "user2",
-    referredUserEmail: "john@example.com",
-    referredUserName: "John Doe",
-    status: "completed",
-    createdAt: "2024-05-15",
-    completedAt: "2024-05-16",
-    reward: 30
-  },
-  {
-    id: "2",
-    referrerId: "user1",
-    referredUserId: "user3",
-    referredUserEmail: "jane@example.com",
-    referredUserName: "Jane Smith",
-    status: "pending",
-    createdAt: "2024-06-01"
-  }
-];
 
 export function ReferralManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<"leaderboard" | "referrals">("leaderboard");
 
-  const filteredReferrals = mockReferrals.filter(referral => {
-    const matchesSearch = referral.referredUserName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         referral.referredUserEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || referral.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
+  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<ReferralLeaderboardEntry[]>([]);
 
-  const totalReferrals = mockReferrals.length;
-  const completedReferrals = mockReferrals.filter(r => r.status === 'completed').length;
-  const totalRewards = mockReferrals.reduce((sum, r) => sum + (r.reward || 0), 0);
+  const [pageData, setPageData] = useState<{
+    lastPage: number,
+    page: number,
+    size: number,
+    total: number
+  } | null>(null);
+
+  const [param, setParam] = useState({
+    page: 1,
+    size: 10,
+    isDeleted: "false",
+  })
+
+  const handleParamChange = (name: string, value: string) => {
+    setParam({
+      ...param,
+      [name]: value
+    })
+  }
+
+  const [leaderPageData, setLeaderPageData] = useState<{
+    lastPage: number,
+    page: number,
+    size: number,
+    total: number
+  } | null>(null);
+
+  const [leaderParam, setLeaderParam] = useState({
+    page: 1,
+    size: 10,
+    isDeleted: "false",
+  })
+
+  const handleLeaderParamChange = (name: string, value: string) => {
+    setLeaderParam({
+      ...param,
+      [name]: value
+    })
+  }
+
+  const handleFetchAllReferrers = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/referrals", {
+        params: {...param}
+      })
+
+      console.log(response.data.data.data);
+      setReferrals(response.data.data.data);
+      setPageData(response.data.data.meta);
+      console.log(response.data.data.meta);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleFetchReferralStats = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/referrals/stats", {
+        params: {...param}
+      })
+
+      console.log(response.data.data);
+      setReferralStats(response.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const handleFetchLeaderboard = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/referrals/leaderboard?sortBy=totalReferrals", {
+        params: {...leaderParam}
+      })
+
+      setLeaderboard(response.data.data.data);
+      setLeaderPageData(response.data.data.meta);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    handleFetchAllReferrers();
+  }, [param]);
+
+  useEffect(() => {
+    handleFetchReferralStats();
+  }, []);
+
+  useEffect(() => {
+    handleFetchLeaderboard();
+  }, [leaderParam]);
+
 
   return (
     <div className="space-y-6">
@@ -102,7 +139,7 @@ export function ReferralManagement() {
               <Users className="w-8 h-8 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Referrals</p>
-                <p className="text-2xl font-bold">{totalReferrals}</p>
+                <p className="text-2xl font-bold">{referralStats?.totalReferrals}</p>
               </div>
             </div>
           </CardContent>
@@ -114,7 +151,7 @@ export function ReferralManagement() {
               <TrendingUp className="w-8 h-8 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-2xl font-bold">{completedReferrals}</p>
+                <p className="text-2xl font-bold">{referralStats?.completedReferrals}</p>
               </div>
             </div>
           </CardContent>
@@ -126,7 +163,7 @@ export function ReferralManagement() {
               <Gift className="w-8 h-8 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Rewards</p>
-                <p className="text-2xl font-bold">${totalRewards}</p>
+                <p className="text-2xl font-bold">{referralStats?.totalRewards} points</p>
               </div>
             </div>
           </CardContent>
@@ -138,7 +175,7 @@ export function ReferralManagement() {
               <Trophy className="w-8 h-8 text-yellow-600" />
               <div>
                 <p className="text-sm text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold">{mockLeaderboard.length}</p>
+                <p className="text-2xl font-bold">{referralStats?.activeUsers}</p>
               </div>
             </div>
           </CardContent>
@@ -150,75 +187,112 @@ export function ReferralManagement() {
         <Button
           variant={activeTab === "leaderboard" ? "default" : "ghost"}
           onClick={() => setActiveTab("leaderboard")}
-          className="flex-1"
+          className="flex-1 text-black"
         >
           Leaderboard
         </Button>
         <Button
           variant={activeTab === "referrals" ? "default" : "ghost"}
           onClick={() => setActiveTab("referrals")}
-          className="flex-1"
+          className="flex-1 text-black"
         >
           All Referrals
         </Button>
       </div>
 
       {activeTab === "leaderboard" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Referral Leaderboard</CardTitle>
-            <CardDescription>Top performing users by referrals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Total Referrals</TableHead>
-                  <TableHead>Completed</TableHead>
-                  <TableHead>Total Rewards</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockLeaderboard.map((entry) => (
-                  <TableRow key={entry.userId}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">#{entry.rank}</span>
-                        {entry.rank <= 3 && <Trophy className="w-4 h-4 text-yellow-500" />}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Referral Leaderboard</CardTitle>
+                <CardDescription>Top performing users by referrals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Total Referrals</TableHead>
+                      <TableHead>Completed</TableHead>
+                      <TableHead>Total Rewards</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaderboard && leaderboard.map((entry) => (
+                        <TableRow key={entry.rank}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">#{entry.rank}</span>
+                              {entry.rank <= 3 && <Trophy className="w-4 h-4 text-yellow-500" />}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{entry.user.fullname}</div>
+                              <div className="text-sm text-gray-500">{entry.user.email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{entry.user.totalReferrals}</TableCell>
+                          <TableCell>{entry.user.completedReferrals}</TableCell>
+                          <TableCell>${entry.user.referralPoint}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Send Bonus</DropdownMenuItem>
+                                <DropdownMenuItem>View Referrals</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <div className="flex items-center justify-end gap-5 px-4">
+              {
+                  leaderPageData?.page > 1 && (
+                      <div className="flex justify-center my-4">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="border flex items-center gap-2"
+                            onClick={() => handleLeaderParamChange("page", String(leaderPageData?.page - 1))}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          <p>Previous Page</p>
+                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{entry.userName}</div>
-                        <div className="text-sm text-gray-500">{entry.userEmail}</div>
+                  )
+              }
+
+              {
+                  leaderPageData?.page < leaderPageData?.lastPage && (
+                      <div className="flex justify-center my-4">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="border flex items-center gap-2"
+                            onClick={() => handleLeaderParamChange("page", String(leaderPageData?.page + 1))}
+                        >
+                          <p>
+                            Next Page
+                          </p>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>{entry.totalReferrals}</TableCell>
-                    <TableCell>{entry.completedReferrals}</TableCell>
-                    <TableCell>${entry.totalRewards}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Send Bonus</DropdownMenuItem>
-                          <DropdownMenuItem>View Referrals</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  )
+              }
+            </div>
+          </div>
       )}
 
       {activeTab === "referrals" && (
@@ -263,23 +337,23 @@ export function ReferralManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredReferrals.map((referral) => (
-                  <TableRow key={referral.id}>
+                {referrals.map((referral, index) => (
+                  <TableRow key={index}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{referral.referredUserName}</div>
-                        <div className="text-sm text-gray-500">{referral.referredUserEmail}</div>
+                        <div className="font-medium">{referral?.referredUser?.fullname}</div>
+                        <div className="text-sm text-gray-500">{referral?.referredUser?.email}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{referral.referrerId}</TableCell>
+                    <TableCell>{referral?.referrer?.fullname}</TableCell>
                     <TableCell>
                       <Badge variant={referral.status === 'completed' ? 'default' : 'secondary'}>
-                        {referral.status}
+                        {referral?.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{referral.createdAt}</TableCell>
+                    <TableCell>{convertDate(referral?.createdAt)}</TableCell>
                     <TableCell>
-                      {referral.reward ? `$${referral.reward}` : '-'}
+                      {referral?.referrer?.reward ? `$${referral?.referrer?.reward}` : '-'}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -300,6 +374,41 @@ export function ReferralManagement() {
               </TableBody>
             </Table>
           </CardContent>
+          <div className="flex items-center justify-end gap-5 px-4">
+            {
+                pageData?.page > 1 && (
+                    <div className="flex justify-center my-4">
+                      <Button
+                          variant="ghost"
+                          size="sm"
+                          className="border flex items-center gap-2"
+                          onClick={() => handleParamChange("page", String(pageData?.page - 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <p>Previous Page</p>
+                      </Button>
+                    </div>
+                )
+            }
+
+            {
+                pageData?.page < pageData?.lastPage && (
+                    <div className="flex justify-center my-4">
+                      <Button
+                          variant="ghost"
+                          size="sm"
+                          className="border flex items-center gap-2"
+                          onClick={() => handleParamChange("page", String(pageData?.page + 1))}
+                      >
+                        <p>
+                          Next Page
+                        </p>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                )
+            }
+          </div>
         </Card>
       )}
     </div>

@@ -207,3 +207,41 @@ export interface Social {
     platform?: string;
     url?: string;
 }
+
+export interface ReferralPerson {
+    id: string;
+    fullname: string;
+    email: string;
+    phone: string;
+    reward: number;
+}
+
+export interface ReferralRecord {
+    createdAt: string;
+    referredUser: ReferralPerson;
+    referrer: ReferralPerson;
+    status: "COMPLETED" | string;
+}
+
+export interface ReferralStats {
+    totalReferrals: number,
+    completedReferrals: number,
+    totalRewards: number,
+    activeUsers: number
+}
+
+export interface LeaderboardUser {
+    _id: string;
+    fullname: string;
+    email: string;
+    phone: string;
+    createdAt: string;          // ISO date string
+    totalReferrals: number;
+    completedReferrals: number;
+    referralPoint: number;
+}
+
+export interface ReferralLeaderboardEntry {
+    rank: number;
+    user: LeaderboardUser;
+}

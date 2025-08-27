@@ -63,35 +63,47 @@ export default function CredentialVerification() {
     const fetchAllCredentials = async () => {
         setLoading(true);
         try {
-            const [pendingRes, verifiedRes, rejectedRes] = await Promise.all([
-                axiosInstance.get(
-                    `/credentials/organization/retrieve?verificationStatus=PENDING&page=1&limit=20`
-                ),
-                axiosInstance.get(
-                    `/credentials/organization/retrieve?verificationStatus=VERIFIED&page=1&limit=20`
-                ),
-                axiosInstance.get(
-                    `/credentials/organization/retrieve?verificationStatus=REJECTED&page=1&limit=20`
-                ),
-            ]);
-            const pendingData = Array.isArray(pendingRes.data?.data?.data)
-                ? pendingRes.data.data.data
-                : [];
-            const verifiedData = Array.isArray(verifiedRes.data?.data?.data)
-                ? verifiedRes.data.data.data
-                : [];
-            const rejectedData = Array.isArray(rejectedRes.data?.data?.data)
-                ? rejectedRes.data.data.data
-                : [];
-            setPendingRequests(pendingData);
-            setVerifiedRequests(verifiedData);
-            setRejectedRequests(rejectedData);
+            // const [pendingRes, verifiedRes, rejectedRes] = await Promise.all([
+            //     axiosInstance.get(
+            //         `/credentials`
+            //     ),
+            //     // axiosInstance.get(
+            //     //     `/credentials?verificationStatus=PENDING&page=1&limit=20`
+            //     // ),
+            //     // axiosInstance.get(
+            //     //     `/credentials?verificationStatus=VERIFIED&page=1&limit=20`
+            //     // ),
+            //     // axiosInstance.get(
+            //     //     `/credentials?verificationStatus=REJECTED&page=1&limit=20`
+            //     // ),
+            // ]);
+            // const pendingData = Array.isArray(pendingRes.data?.data?.data)
+            //     ? pendingRes.data.data.data
+            //     : [];
+            // const verifiedData = Array.isArray(verifiedRes.data?.data?.data)
+            //     ? verifiedRes.data.data.data
+            //     : [];
+            // const rejectedData = Array.isArray(rejectedRes.data?.data?.data)
+            //     ? rejectedRes.data.data.data
+            //     : [];
+            // setPendingRequests(pendingData);
+            // console.log(pendingData);
+            // setVerifiedRequests(verifiedData);
+            // setRejectedRequests(rejectedData);
+            await axiosInstance.get(
+                `/credentials`
+            ).then(
+                (response) => {
+                    console.log(response);
+                }
+            )
         } catch (err) {
-            toast({
-                title: "Error loading credentials",
-                description: err.response?.data?.message || err.message,
-                variant: "destructive",
-            });
+            console.log(err)
+            // toast({
+            //     title: "Error loading credentials",
+            //     description: err.response?.data?.message || err.message,
+            //     variant: "destructive",
+            // });
         } finally {
             setLoading(false);
         }

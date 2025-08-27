@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSidebar } from "@/components/OrganizationSidebar";
@@ -11,9 +11,67 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Filter, MapPin, Star, MessageSquare, Award, Calendar, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {JobListing} from "@/utils/global";
+import axiosInstance from "@/api/AxiosInstance.ts";
+import axios from "axios";
 
 const TalentPool = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [isFetchingJobPosts, setIsFetchingJobPosts] = useState(true);
+  const [jobPosts, setJobPosts] = useState<JobListing[]>([]);
+  const [selectedJobPosts, setSelectedJobPosts] = useState<string | null>(null);
+
+  const fetchJobPosts = async () => {
+    setIsFetchingJobPosts(true);
+
+    try {
+      const response = await axiosInstance.get('/job-post/organization');
+      console.log('Job posts fetched:', response.data);
+      setJobPosts(response.data.data.data as JobListing[]);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        return error.response?.data.message;
+      } else {
+        return "Something went wrong. Please try again later.";
+      }
+    } finally {
+      setIsFetchingJobPosts(false);
+    }
+  }
+
+  const fetchMatchingJobPosts = async () => {
+    setIsFetchingJobPosts(true);
+
+    if (!selectedJobPosts) return;
+
+    try {
+      const response = await axiosInstance.get(`/job-post/${selectedJobPosts}/talents`);
+      console.log('Selected Job posts fetched:', response.data);
+      // setJobPosts(response.data.data.data as JobListing[]);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        return error.response?.data.message;
+      } else {
+        return "Something went wrong. Please try again later.";
+      }
+    } finally {
+      setIsFetchingJobPosts(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchJobPosts();
+  }, []);
+
+  useEffect(() => {
+    fetchMatchingJobPosts();
+  }, [selectedJobPosts]);
+
+  useEffect(() => {
+    if (selectedJobPosts) console.log(selectedJobPosts);
+  }, [selectedJobPosts]);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -95,36 +153,45 @@ const TalentPool = () => {
             <Card className="bg-slate-900 border-slate-700">
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search by skills, name, or location..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-slate-800 border-slate-600 text-white"
-                    />
-                  </div>
-                  <Select>
-                    <SelectTrigger className="w-48 bg-slate-800 border-slate-600 text-white">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Experience Level" />
+                  {/*<div className="flex-1 relative">*/}
+                  {/*  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />*/}
+                  {/*  <Input*/}
+                  {/*    placeholder="Search by skills, name, or location..."*/}
+                  {/*    value={searchTerm}*/}
+                  {/*    onChange={(e) => setSearchTerm(e.target.value)}*/}
+                  {/*    className="pl-10 bg-slate-800 border-slate-600 text-white"*/}
+                  {/*  />*/}
+                  {/*</div>*/}
+                  {/*<Select>*/}
+                  {/*  <SelectTrigger className="w-48 bg-slate-800 border-slate-600 text-white">*/}
+                  {/*    <Filter className="w-4 h-4 mr-2" />*/}
+                  {/*    <SelectValue placeholder="Experience Level" />*/}
+                  {/*  </SelectTrigger>*/}
+                  {/*  <SelectContent className="bg-slate-800 border-slate-600">*/}
+                  {/*    <SelectItem value="all">All Levels</SelectItem>*/}
+                  {/*    <SelectItem value="junior">Junior (1-3 years)</SelectItem>*/}
+                  {/*    <SelectItem value="mid">Mid (3-5 years)</SelectItem>*/}
+                  {/*    <SelectItem value="senior">Senior (5+ years)</SelectItem>*/}
+                  {/*  </SelectContent>*/}
+                  {/*</Select>*/}
+                  <Select
+                    onValueChange={(value) => setSelectedJobPosts(value)}
+                  >
+                    <SelectTrigger className="w-full bg-slate-800 border-slate-600 text-white">
+                      <SelectValue placeholder="Job Posts" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-600">
-                      <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="junior">Junior (1-3 years)</SelectItem>
-                      <SelectItem value="mid">Mid (3-5 years)</SelectItem>
-                      <SelectItem value="senior">Senior (5+ years)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select>
-                    <SelectTrigger className="w-48 bg-slate-800 border-slate-600 text-white">
-                      <SelectValue placeholder="Location" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
-                      <SelectItem value="all">All Locations</SelectItem>
-                      <SelectItem value="remote">Remote</SelectItem>
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="eu">Europe</SelectItem>
+                      {
+                        jobPosts?.map((post) => (
+                            <SelectItem value={post._id}>
+                              {post.title} - {post.salaryRange} - {post.jobType.split("_")[0]} {post.jobType.split("_")[1]}
+                            </SelectItem>
+                        ))
+                      }
+
+                      {/*<SelectItem value="remote">Remote</SelectItem>*/}
+                      {/*<SelectItem value="us">United States</SelectItem>*/}
+                      {/*<SelectItem value="eu">Europe</SelectItem>*/}
                     </SelectContent>
                   </Select>
                 </div>
