@@ -168,7 +168,8 @@ export default function CVBuilder() {
             education: educations,
             certifications,
             projects,
-            skills
+            skills,
+            jobDescription: personalInfo.jobDescription
         }
 
         const d = removeIdFromCv(data);
@@ -270,7 +271,7 @@ export default function CVBuilder() {
             skills
         }
 
-        const downloadCvPromise = axiosInstance.post('/cv/generate/classic', data);
+        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
 
         toast.promise(downloadCvPromise, {
                 loading: 'Loading...',
@@ -302,6 +303,7 @@ export default function CVBuilder() {
     const handleFetchDraft = async () => {
         try {
             const response = await axiosInstance.get('/cv/draft');
+            console.log(response);
 
             const cv = removeIdFromCv(response?.data?.data) as CV;
 

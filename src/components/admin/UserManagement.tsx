@@ -102,7 +102,16 @@ export function UserManagement() {
 
   const handleUnSuspendUser = async (userId: string) => {
     try {
-      const unSuspendPromise = axiosInstance.patch(`/users/admin/suspend?_id=${userId}`);
+      const accountSuspensionReason = prompt("Enter the reason for Unsuspending the user.");
+
+      if (!accountSuspensionReason) {
+        toast.error("Please enter a reason for Unsuspending the user.");
+        alert("Please enter a reason for Unsuspending the user.");
+      }
+
+      const unSuspendPromise = axiosInstance.patch(`/users/admin/unsuspend?_id=${userId}`,{
+        accountSuspensionReason
+      });
 
       toast.promise(unSuspendPromise, {
         loading: "Unsuspending user...",

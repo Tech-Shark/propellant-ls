@@ -400,3 +400,53 @@ export default function Payment() {
         </main>
     );
 }
+
+const plan = [
+    {
+        id: 1,
+        name: "Free",
+        price: 0,
+        features: [
+            "Basic profile creation",
+            "Upload up to 5 credentials",
+            "Basic CV generator",
+            "1 CV download per month",
+            "Email support"
+        ],
+        isCurrentPlan: true
+    },
+    {
+        id: 2,
+        name: "Professional",
+        price: 1,
+        period: "per month",
+        features: [
+            "Enhanced profile with portfolio",
+            "Unlimited credential uploads",
+            "AI-powered CV optimization",
+            "Unlimited CV downloads",
+            "NFT skill badges",
+            "Priority verification",
+            "Advanced analytics",
+            "Priority support"
+        ],
+        isCurrentPlan: false
+    },
+    {
+        id: 3,
+        name: "Premium",
+        price: 59,
+        period: "per month",
+        features: [
+            "Everything in Professional",
+            "Personal brand building tools",
+            "Advanced recommendation engine",
+            "Multiple CV templates",
+            "Interview preparation tools",
+            "Career coaching sessions",
+            "Premium support",
+            "API access"
+        ],
+        isCurrentPlan:  false
+    }
+]
