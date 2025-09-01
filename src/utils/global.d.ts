@@ -6,7 +6,7 @@ declare type UserType = "SUPER_ADMIN" | "ADMIN" | "TALENT" | "ORGANIZATION";
 
 declare type WaitlistType = "TALENT" | "ORGANIZATION" | "INVESTOR" | "VOLUNTEER" | "BETA_TESTER" | "AMBASSADOR";
 
-export type SkillLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type SkillLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
 
 export interface Skill {
     name: string;
@@ -22,7 +22,7 @@ export interface WorkExperience {
     location: string;
     title: string;
     isCurrentRole: boolean;
-
+    achievements: string[]; // Required array of achievements
 }
 
 export interface Education {
@@ -52,14 +52,17 @@ export interface Project {
 }
 
 export interface CV {
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    email?: string;
-    professionalTitle?: string;
-    professionalSummary?: string;
-    jobDescription?: string;
-    address?: string;
+    // These fields are typically required by the backend
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    professionalTitle: string;
+    professionalSummary: string;
+    jobDescription: string; // Required for CV optimization
+    address: string;
+    
+    // These fields are optional
     github?: string;
     portfolio?: string;
     website?: string;
@@ -68,11 +71,13 @@ export interface CV {
     languages?: string[];
     hobbies?: string[];
     achievements?: string[];
-    skills?: Skill[];
-    workExperience?: WorkExperience[];
-    education?: Education[];
-    certifications?: Certification[];
-    projects?: Project[];
+    
+    // These arrays may be required but can be empty
+    skills: Skill[];
+    workExperience: WorkExperience[];
+    education: Education[];
+    certifications: Certification[];
+    projects: Project[];
 }
 
 // Credentials
