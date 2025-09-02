@@ -417,12 +417,7 @@ export default function Verification() {
         </main>
         
         {/* OTP Verification Modal */}
-        <OTPVerification 
-          isVisible={showOTPModal}
-          onVerify={handleOTPVerify}
-          onResend={handleOTPResend}
-          onClose={() => setShowOTPModal(false)}
-        />
+        {showOTPModal && <OTPVerification />}
       </div>
     </SidebarProvider>
   );

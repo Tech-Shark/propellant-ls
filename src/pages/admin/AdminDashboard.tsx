@@ -16,6 +16,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
 import { PlatformOverview } from "@/components/admin/PlatformOverview";
 import { ReferralManagement } from "@/components/admin/ReferralManagement";
+import { EditsManagement } from "@/components/admin/EditsManagement";
 import {
   Users,
   Building2,
@@ -99,7 +100,7 @@ export default function AdminDashboard() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4 lg:space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 h-auto">
+              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
                 <TabsTrigger value="overview" className="text-xs lg:text-sm">
                   Overview
                 </TabsTrigger>
@@ -117,6 +118,9 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="text-xs lg:text-sm">
                   Analytics
+                </TabsTrigger>
+                <TabsTrigger value="edits" className="text-xs lg:text-sm">
+                  Edits
                 </TabsTrigger>
               </TabsList>
 
@@ -165,6 +169,10 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
               </TabsContent>
+
+              <TabsContent value="edits" className="space-y-4 lg:space-y-6">
+                <EditsManagement />
+              </TabsContent>
             </Tabs>
           </div>
         </main>
@@ -210,7 +218,7 @@ export default function AdminDashboard() {
               Users
             </TabsTrigger>
           </TabsList>
-          <TabsList className="grid w-full grid-cols-3 h-auto bg-white shadow-sm">
+            <TabsList className="grid w-full grid-cols-4 h-auto bg-white shadow-sm">
             <TabsTrigger value="verifications" className="text-xs">
               Verifications
             </TabsTrigger>
@@ -219,6 +227,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs">
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="edits" className="text-xs">
+              Edits
             </TabsTrigger>
           </TabsList>
 
@@ -259,6 +270,10 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="edits" className="space-y-4">
+            <EditsManagement />
           </TabsContent>
         </Tabs>
       </main>
