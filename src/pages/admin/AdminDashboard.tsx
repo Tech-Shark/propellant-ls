@@ -17,6 +17,7 @@ import { VerificationManagement } from "@/components/admin/VerificationManagemen
 import { PlatformOverview } from "@/components/admin/PlatformOverview";
 import { ReferralManagement } from "@/components/admin/ReferralManagement";
 import { EditsManagement } from "@/components/admin/EditsManagement";
+import { EmailManagement } from "@/components/admin/EmailManagement";
 import {
   Users,
   Building2,
@@ -28,7 +29,7 @@ import {
   CheckCircle,
   AlertTriangle,
   DollarSign,
-  Menu, LogOut,
+  Menu, LogOut, Mail,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4 lg:space-y-6">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto">
                 <TabsTrigger value="overview" className="text-xs lg:text-sm">
                   Overview
                 </TabsTrigger>
@@ -121,6 +122,9 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="edits" className="text-xs lg:text-sm">
                   Edits
+                </TabsTrigger>
+                <TabsTrigger value="emails" className="text-xs lg:text-sm">
+                  Emails
                 </TabsTrigger>
               </TabsList>
 
@@ -172,6 +176,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="edits" className="space-y-4 lg:space-y-6">
                 <EditsManagement />
+              </TabsContent>
+
+              <TabsContent value="emails" className="space-y-4 lg:space-y-6">
+                <EmailManagement />
               </TabsContent>
             </Tabs>
           </div>
@@ -231,6 +239,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="edits" className="text-xs">
               Edits
             </TabsTrigger>
+            <TabsTrigger value="emails" className="text-xs">
+              Emails
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -274,6 +285,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="edits" className="space-y-4">
             <EditsManagement />
+          </TabsContent>
+
+          <TabsContent value="emails" className="space-y-4">
+            <EmailManagement />
           </TabsContent>
         </Tabs>
       </main>
