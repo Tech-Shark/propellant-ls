@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Table, 
@@ -22,9 +22,11 @@ import {
   Users, 
   FileText,
   Edit3,
-  Plus
+  Plus,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cardTypes } from "@/utils/constant";
 
 const editButtons = [
   { id: "subscription", label: "Subscription Model", icon: CreditCard },
@@ -33,25 +35,52 @@ const editButtons = [
   { id: "system", label: "System Config", icon: Settings },
 ];
 
-// Mock subscription plans data
+// Mock subscription plans data with list-based descriptions
 const initialSubscriptionPlans = [
   {
     id: 1,
     name: "Free",
     amount: "$0",
-    description: "Basic profile creation, Upload up to 5 credentials, Basic CV generator, 1 CV download per month, Email support"
+    description: [
+      "Basic profile creation",
+      "Upload up to 5 credentials", 
+      "Basic CV generator",
+      "1 CV download per month",
+      "Email support"
+    ],
+    paymentMethod: "VISA"
   },
   {
     id: 2,
     name: "Professional", 
     amount: "$29",
-    description: "Enhanced profile with portfolio, Unlimited credential uploads, AI-powered CV optimization, Unlimited CV downloads, NFT skill badges, Priority verification, Advanced analytics, Priority support"
+    description: [
+      "Enhanced profile with portfolio",
+      "Unlimited credential uploads",
+      "AI-powered CV optimization", 
+      "Unlimited CV downloads",
+      "NFT skill badges",
+      "Priority verification",
+      "Advanced analytics",
+      "Priority support"
+    ],
+    paymentMethod: "MASTER_CARD"
   },
   {
     id: 3,
     name: "Premium",
     amount: "$59", 
-    description: "Everything in Professional, Personal brand building tools, Advanced recommendation engine, Multiple CV templates, Interview preparation tools, Career coaching sessions, Premium support, API access"
+    description: [
+      "Everything in Professional",
+      "Personal brand building tools",
+      "Advanced recommendation engine",
+      "Multiple CV templates",
+      "Interview preparation tools",
+      "Career coaching sessions",
+      "Premium support",
+      "API access"
+    ],
+    paymentMethod: "VERVE"
   }
 ];
 
@@ -61,7 +90,14 @@ export function EditsManagement() {
   const [editingPlan, setEditingPlan] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newPlan, setNewPlan] = useState({ name: "", amount: "", description: "" });
+  const [newPlan, setNewPlan] = useState({ 
+    name: "", 
+    amount: "", 
+    description: [""], 
+    paymentMethod: "" 
+  });
+  const [newPlanDescriptionItems, setNewPlanDescriptionItems] = useState([""]);
+  const [editPlanDescriptionItems, setEditPlanDescriptionItems] = useState<string[]>([]);
   const { toast } = useToast();
 
   const scrollLeft = () => {
@@ -78,20 +114,50 @@ export function EditsManagement() {
     }
   };
 
+  const addNewDescriptionItem = (isEdit = false) => {
+    if (isEdit) {
+      setEditPlanDescriptionItems(prev => [...prev, ""]);
+    } else {
+      setNewPlanDescriptionItems(prev => [...prev, ""]);
+    }
+  };
+
+  const removeDescriptionItem = (index: number, isEdit = false) => {
+    if (isEdit) {
+      setEditPlanDescriptionItems(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setNewPlanDescriptionItems(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateDescriptionItem = (index: number, value: string, isEdit = false) => {
+    if (isEdit) {
+      setEditPlanDescriptionItems(prev => prev.map((item, i) => i === index ? value : item));
+    } else {
+      setNewPlanDescriptionItems(prev => prev.map((item, i) => i === index ? value : item));
+    }
+  };
+
   const handleEditPlan = (plan: any) => {
-    setEditingPlan(plan);
+    setEditingPlan({ ...plan });
+    setEditPlanDescriptionItems([...plan.description]);
     setIsEditModalOpen(true);
   };
 
   const handleSaveEdit = () => {
     if (editingPlan) {
+      const updatedPlan = {
+        ...editingPlan,
+        description: editPlanDescriptionItems.filter(item => item.trim() !== "")
+      };
       setSubscriptionPlans(plans => 
         plans.map(plan => 
-          plan.id === editingPlan.id ? editingPlan : plan
+          plan.id === updatedPlan.id ? updatedPlan : plan
         )
       );
       setIsEditModalOpen(false);
       setEditingPlan(null);
+      setEditPlanDescriptionItems([]);
       toast({
         title: "Success",
         description: "Plan updated successfully",
@@ -100,14 +166,27 @@ export function EditsManagement() {
   };
 
   const handleAddPlan = () => {
-    if (newPlan.name && newPlan.amount && newPlan.description) {
+    const filteredDescription = newPlanDescriptionItems.filter(item => item.trim() !== "");
+    if (newPlan.name && newPlan.amount && filteredDescription.length > 0 && newPlan.paymentMethod) {
       const newId = Math.max(...subscriptionPlans.map(p => p.id)) + 1;
-      setSubscriptionPlans(plans => [...plans, { ...newPlan, id: newId }]);
-      setNewPlan({ name: "", amount: "", description: "" });
+      const planToAdd = {
+        ...newPlan,
+        description: filteredDescription,
+        id: newId
+      };
+      setSubscriptionPlans(plans => [...plans, planToAdd]);
+      setNewPlan({ name: "", amount: "", description: [""], paymentMethod: "" });
+      setNewPlanDescriptionItems([""]);
       setIsAddModalOpen(false);
       toast({
         title: "Success",
         description: "New plan added successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields including at least one description item",
+        variant: "destructive"
       });
     }
   };
@@ -135,6 +214,7 @@ export function EditsManagement() {
               <TableRow>
                 <TableHead>Plan Name</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Payment Method</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -158,10 +238,25 @@ export function EditsManagement() {
                       <span className="text-xs text-muted-foreground">/month</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {cardTypes.find(type => type.value === plan.paymentMethod)?.name || plan.paymentMethod}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="max-w-md">
-                    <div className="text-sm text-muted-foreground line-clamp-3">
-                      {plan.description}
-                    </div>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {plan.description.slice(0, 3).map((item, index) => (
+                        <li key={index} className="flex items-start gap-1">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                      {plan.description.length > 3 && (
+                        <li className="text-xs italic">
+                          +{plan.description.length - 3} more features...
+                        </li>
+                      )}
+                    </ul>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -198,7 +293,7 @@ export function EditsManagement() {
                 Add New Plan
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Subscription Plan</DialogTitle>
               </DialogHeader>
@@ -222,14 +317,56 @@ export function EditsManagement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="plan-description">Description</Label>
-                  <Textarea
-                    id="plan-description"
-                    value={newPlan.description}
-                    onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter plan description and features"
-                    rows={4}
-                  />
+                  <Label htmlFor="plan-payment-method">Payment Method</Label>
+                  <Select value={newPlan.paymentMethod} onValueChange={(value) => setNewPlan(prev => ({ ...prev, paymentMethod: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cardTypes.map((cardType) => (
+                        <SelectItem key={cardType.id} value={cardType.value}>
+                          {cardType.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Plan Features</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addNewDescriptionItem(false)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {newPlanDescriptionItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={item}
+                          onChange={(e) => updateDescriptionItem(index, e.target.value, false)}
+                          placeholder="Enter plan feature"
+                          className="flex-1"
+                        />
+                        {newPlanDescriptionItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeDescriptionItem(index, false)}
+                            className="h-8 w-8 p-0 shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-4">
                   <Button onClick={handleAddPlan} className="flex-1">
@@ -246,7 +383,7 @@ export function EditsManagement() {
 
         {/* Edit Plan Modal */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Subscription Plan</DialogTitle>
             </DialogHeader>
@@ -271,14 +408,56 @@ export function EditsManagement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-plan-description">Description</Label>
-                  <Textarea
-                    id="edit-plan-description"
-                    value={editingPlan.description}
-                    onChange={(e) => setEditingPlan(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter plan description and features"
-                    rows={4}
-                  />
+                  <Label htmlFor="edit-plan-payment-method">Payment Method</Label>
+                  <Select value={editingPlan.paymentMethod} onValueChange={(value) => setEditingPlan(prev => ({ ...prev, paymentMethod: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cardTypes.map((cardType) => (
+                        <SelectItem key={cardType.id} value={cardType.value}>
+                          {cardType.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Plan Features</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addNewDescriptionItem(true)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {editPlanDescriptionItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={item}
+                          onChange={(e) => updateDescriptionItem(index, e.target.value, true)}
+                          placeholder="Enter plan feature"
+                          className="flex-1"
+                        />
+                        {editPlanDescriptionItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeDescriptionItem(index, true)}
+                            className="h-8 w-8 p-0 shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-4">
                   <Button onClick={handleSaveEdit} className="flex-1">
