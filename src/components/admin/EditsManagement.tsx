@@ -30,6 +30,7 @@ import { cardTypes } from "@/utils/constant";
 
 const editButtons = [
   { id: "subscription", label: "Subscription Model", icon: CreditCard },
+  { id: "payment", label: "Payment Methods", icon: CreditCard },
   { id: "users", label: "User Settings", icon: Users },
   { id: "content", label: "Content Management", icon: FileText },
   { id: "system", label: "System Config", icon: Settings },
@@ -47,8 +48,7 @@ const initialSubscriptionPlans = [
       "Basic CV generator",
       "1 CV download per month",
       "Email support"
-    ],
-    paymentMethod: "VISA"
+    ]
   },
   {
     id: 2,
@@ -63,8 +63,7 @@ const initialSubscriptionPlans = [
       "Priority verification",
       "Advanced analytics",
       "Priority support"
-    ],
-    paymentMethod: "MASTER_CARD"
+    ]
   },
   {
     id: 3,
@@ -79,8 +78,41 @@ const initialSubscriptionPlans = [
       "Career coaching sessions",
       "Premium support",
       "API access"
+    ]
+  }
+];
+
+// Mock payment methods data
+const initialPaymentMethods = [
+  {
+    id: 1,
+    name: "Credit Card",
+    description: [
+      "Visa, MasterCard, American Express",
+      "Secure payment processing",
+      "Instant payment confirmation"
     ],
-    paymentMethod: "VERVE"
+    isActive: true
+  },
+  {
+    id: 2,
+    name: "PayPal",
+    description: [
+      "PayPal account payments",
+      "Buyer protection included",
+      "Easy refund process"
+    ],
+    isActive: false
+  },
+  {
+    id: 3,
+    name: "Stripe",
+    description: [
+      "Stripe payment gateway",
+      "Multiple currency support",
+      "Advanced fraud protection"
+    ],
+    isActive: false
   }
 ];
 
@@ -93,11 +125,23 @@ export function EditsManagement() {
   const [newPlan, setNewPlan] = useState({ 
     name: "", 
     amount: "", 
-    description: [""], 
-    paymentMethod: "" 
+    description: [""]
   });
   const [newPlanDescriptionItems, setNewPlanDescriptionItems] = useState([""]);
   const [editPlanDescriptionItems, setEditPlanDescriptionItems] = useState<string[]>([]);
+  
+  // Payment methods state
+  const [paymentMethods, setPaymentMethods] = useState(initialPaymentMethods);
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<any>(null);
+  const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
+  const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState({ 
+    name: "", 
+    description: [""]
+  });
+  const [newPaymentDescriptionItems, setNewPaymentDescriptionItems] = useState([""]);
+  const [editPaymentDescriptionItems, setEditPaymentDescriptionItems] = useState<string[]>([]);
+  
   const { toast } = useToast();
 
   const scrollLeft = () => {
@@ -167,7 +211,7 @@ export function EditsManagement() {
 
   const handleAddPlan = () => {
     const filteredDescription = newPlanDescriptionItems.filter(item => item.trim() !== "");
-    if (newPlan.name && newPlan.amount && filteredDescription.length > 0 && newPlan.paymentMethod) {
+    if (newPlan.name && newPlan.amount && filteredDescription.length > 0) {
       const newId = Math.max(...subscriptionPlans.map(p => p.id)) + 1;
       const planToAdd = {
         ...newPlan,
@@ -175,7 +219,7 @@ export function EditsManagement() {
         id: newId
       };
       setSubscriptionPlans(plans => [...plans, planToAdd]);
-      setNewPlan({ name: "", amount: "", description: [""], paymentMethod: "" });
+      setNewPlan({ name: "", amount: "", description: [""] });
       setNewPlanDescriptionItems([""]);
       setIsAddModalOpen(false);
       toast({
@@ -199,6 +243,82 @@ export function EditsManagement() {
     });
   };
 
+  // Payment Methods handlers
+  const handleEditPaymentMethod = (method: any) => {
+    setEditingPaymentMethod({ ...method });
+    setEditPaymentDescriptionItems([...method.description]);
+    setIsEditPaymentModalOpen(true);
+  };
+
+  const handleSavePaymentEdit = () => {
+    if (editingPaymentMethod) {
+      const updatedMethod = {
+        ...editingPaymentMethod,
+        description: editPaymentDescriptionItems.filter(item => item.trim() !== "")
+      };
+      setPaymentMethods(methods => 
+        methods.map(method => 
+          method.id === updatedMethod.id ? updatedMethod : method
+        )
+      );
+      setIsEditPaymentModalOpen(false);
+      setEditingPaymentMethod(null);
+      setEditPaymentDescriptionItems([]);
+      toast({
+        title: "Success",
+        description: "Payment method updated successfully",
+      });
+    }
+  };
+
+  const handleAddPaymentMethod = () => {
+    const filteredDescription = newPaymentDescriptionItems.filter(item => item.trim() !== "");
+    if (newPaymentMethod.name && filteredDescription.length > 0) {
+      const newId = Math.max(...paymentMethods.map(p => p.id)) + 1;
+      const methodToAdd = {
+        ...newPaymentMethod,
+        description: filteredDescription,
+        id: newId,
+        isActive: false
+      };
+      setPaymentMethods(methods => [...methods, methodToAdd]);
+      setNewPaymentMethod({ name: "", description: [""] });
+      setNewPaymentDescriptionItems([""]);
+      setIsAddPaymentModalOpen(false);
+      toast({
+        title: "Success",
+        description: "New payment method added successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields including at least one description item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeletePaymentMethod = (methodId: number) => {
+    setPaymentMethods(methods => methods.filter(method => method.id !== methodId));
+    toast({
+      title: "Success",
+      description: "Payment method deleted successfully",
+    });
+  };
+
+  const togglePaymentMethodActive = (methodId: number) => {
+    setPaymentMethods(methods => 
+      methods.map(method => ({
+        ...method,
+        isActive: method.id === methodId ? !method.isActive : false
+      }))
+    );
+    toast({
+      title: "Success",
+      description: "Payment method status updated",
+    });
+  };
+
   const renderSubscriptionModel = () => (
     <Card className="border-l-4 border-l-blue-500">
       <CardHeader>
@@ -214,7 +334,6 @@ export function EditsManagement() {
               <TableRow>
                 <TableHead>Plan Name</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Payment Method</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -237,11 +356,6 @@ export function EditsManagement() {
                     {plan.name !== "Free" && (
                       <span className="text-xs text-muted-foreground">/month</span>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {cardTypes.find(type => type.value === plan.paymentMethod)?.name || plan.paymentMethod}
-                    </Badge>
                   </TableCell>
                   <TableCell className="max-w-md">
                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -315,21 +429,6 @@ export function EditsManagement() {
                     onChange={(e) => setNewPlan(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="e.g. $29 or $0"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="plan-payment-method">Payment Method</Label>
-                  <Select value={newPlan.paymentMethod} onValueChange={(value) => setNewPlan(prev => ({ ...prev, paymentMethod: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cardTypes.map((cardType) => (
-                        <SelectItem key={cardType.id} value={cardType.value}>
-                          {cardType.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -408,21 +507,6 @@ export function EditsManagement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-plan-payment-method">Payment Method</Label>
-                  <Select value={editingPlan.paymentMethod} onValueChange={(value) => setEditingPlan(prev => ({ ...prev, paymentMethod: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cardTypes.map((cardType) => (
-                        <SelectItem key={cardType.id} value={cardType.value}>
-                          {cardType.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label>Plan Features</Label>
                     <Button
@@ -475,10 +559,238 @@ export function EditsManagement() {
     </Card>
   );
 
+  const renderPaymentMethods = () => (
+    <Card className="border-l-4 border-l-green-500">
+      <CardHeader>
+        <CardTitle className="text-lg lg:text-xl flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-green-500" />
+          Payment Methods Management
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Method Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paymentMethods.map((method) => (
+                <TableRow key={method.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {method.name}
+                      {method.isActive && (
+                        <Badge variant="default" className="text-xs bg-green-500">
+                          Active
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-md">
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {method.description.slice(0, 3).map((item, index) => (
+                        <li key={index} className="flex items-start gap-1">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                      {method.description.length > 3 && (
+                        <li className="text-xs italic">
+                          +{method.description.length - 3} more features...
+                        </li>
+                      )}
+                    </ul>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant={method.isActive ? "default" : "outline"}
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => togglePaymentMethodActive(method.id)}
+                    >
+                      {method.isActive ? "Active" : "Inactive"}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleEditPaymentMethod(method)}
+                      >
+                        <Edit3 className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-red-600 hover:text-red-700"
+                        onClick={() => handleDeletePaymentMethod(method.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t">
+          <Dialog open={isAddPaymentModalOpen} onOpenChange={setIsAddPaymentModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Payment Method
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Payment Method</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="payment-name">Method Name</Label>
+                  <Input
+                    id="payment-name"
+                    value={newPaymentMethod.name}
+                    onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter payment method name"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Method Features</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addNewDescriptionItem(false)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {newPaymentDescriptionItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={item}
+                          onChange={(e) => updateDescriptionItem(index, e.target.value, false)}
+                          placeholder="Enter method feature"
+                          className="flex-1"
+                        />
+                        {newPaymentDescriptionItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeDescriptionItem(index, false)}
+                            className="h-8 w-8 p-0 shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleAddPaymentMethod} className="flex-1">
+                    Add Method
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsAddPaymentModalOpen(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Edit Payment Method Modal */}
+        <Dialog open={isEditPaymentModalOpen} onOpenChange={setIsEditPaymentModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Payment Method</DialogTitle>
+            </DialogHeader>
+            {editingPaymentMethod && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-payment-name">Method Name</Label>
+                  <Input
+                    id="edit-payment-name"
+                    value={editingPaymentMethod.name}
+                    onChange={(e) => setEditingPaymentMethod(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter method name"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Method Features</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addNewDescriptionItem(true)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {editPaymentDescriptionItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={item}
+                          onChange={(e) => updateDescriptionItem(index, e.target.value, true)}
+                          placeholder="Enter method feature"
+                          className="flex-1"
+                        />
+                        {editPaymentDescriptionItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeDescriptionItem(index, true)}
+                            className="h-8 w-8 p-0 shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleSavePaymentEdit} className="flex-1">
+                    Save Changes
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditPaymentModalOpen(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+
   const renderSelectedContent = () => {
     switch (selectedEdit) {
       case "subscription":
         return renderSubscriptionModel();
+      case "payment":
+        return renderPaymentMethods();
       case "users":
         return (
           <Card className="border-l-4 border-l-green-500">
