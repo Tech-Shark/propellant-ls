@@ -182,6 +182,31 @@ export function EditsManagement() {
     }
   };
 
+  // Payment method description management functions
+  const addNewPaymentDescriptionItem = (isEdit = false) => {
+    if (isEdit) {
+      setEditPaymentDescriptionItems(prev => [...prev, ""]);
+    } else {
+      setNewPaymentDescriptionItems(prev => [...prev, ""]);
+    }
+  };
+
+  const removePaymentDescriptionItem = (index: number, isEdit = false) => {
+    if (isEdit) {
+      setEditPaymentDescriptionItems(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setNewPaymentDescriptionItems(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePaymentDescriptionItem = (index: number, value: string, isEdit = false) => {
+    if (isEdit) {
+      setEditPaymentDescriptionItems(prev => prev.map((item, i) => i === index ? value : item));
+    } else {
+      setNewPaymentDescriptionItems(prev => prev.map((item, i) => i === index ? value : item));
+    }
+  };
+
   const handleEditPlan = (plan: any) => {
     setEditingPlan({ ...plan });
     setEditPlanDescriptionItems([...plan.description]);
@@ -672,7 +697,7 @@ export function EditsManagement() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => addNewDescriptionItem(false)}
+                      onClick={() => addNewPaymentDescriptionItem(false)}
                       className="h-8 w-8 p-0"
                     >
                       <Plus className="h-4 w-4" />
@@ -683,7 +708,7 @@ export function EditsManagement() {
                       <div key={index} className="flex items-center gap-2">
                         <Input
                           value={item}
-                          onChange={(e) => updateDescriptionItem(index, e.target.value, false)}
+                          onChange={(e) => updatePaymentDescriptionItem(index, e.target.value, false)}
                           placeholder="Enter method feature"
                           className="flex-1"
                         />
@@ -692,7 +717,7 @@ export function EditsManagement() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => removeDescriptionItem(index, false)}
+                            onClick={() => removePaymentDescriptionItem(index, false)}
                             className="h-8 w-8 p-0 shrink-0"
                           >
                             <X className="h-4 w-4" />
@@ -739,7 +764,7 @@ export function EditsManagement() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => addNewDescriptionItem(true)}
+                      onClick={() => addNewPaymentDescriptionItem(true)}
                       className="h-8 w-8 p-0"
                     >
                       <Plus className="h-4 w-4" />
@@ -750,7 +775,7 @@ export function EditsManagement() {
                       <div key={index} className="flex items-center gap-2">
                         <Input
                           value={item}
-                          onChange={(e) => updateDescriptionItem(index, e.target.value, true)}
+                          onChange={(e) => updatePaymentDescriptionItem(index, e.target.value, true)}
                           placeholder="Enter method feature"
                           className="flex-1"
                         />
@@ -759,7 +784,7 @@ export function EditsManagement() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => removeDescriptionItem(index, true)}
+                            onClick={() => removePaymentDescriptionItem(index, true)}
                             className="h-8 w-8 p-0 shrink-0"
                           >
                             <X className="h-4 w-4" />
