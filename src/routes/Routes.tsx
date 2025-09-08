@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
           { path: "payment", element: <OrganizationPayment /> },
           { path: "analytics", element: <OrganizationAnalytics /> },
           { path: "credentials", element: <CredentialVerification /> },
-          { path: "credentials", element: <CredentialVerification /> },
+          // { path: "credentials", element: <CredentialVerification /> },
         ],
       },
       {

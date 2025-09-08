@@ -1,146 +1,162 @@
-import {useState} from 'react';
-import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
-import {OrganizationSidebar} from "@/components/OrganizationSidebar";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Input} from "@/components/ui/input";
-import {Textarea} from "@/components/ui/textarea";
-import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Badge} from "@/components/ui/badge";
-import {Avatar, AvatarFallback} from "@/components/ui/avatar";
-import {Building2, Globe, MapPin, Users, Calendar, Camera, Save, Plus, X, Edit} from "lucide-react";
+import { useState } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { OrganizationSidebar } from "@/components/OrganizationSidebar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Building2, Users, Camera, Save, Plus, X, Edit } from "lucide-react";
 import axiosInstance from "@/api/AxiosInstance.ts";
-import {toast} from "sonner";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext.tsx";
+import { safeParse } from "@/utils/helperfunctions.ts";
+
+type SocialLink = { platform: string; url: string };
 
 const CompanyProfile = () => {
-  const { user, fetchUser } = useAuth();
+    const { user, fetchUser } = useAuth();
 
     const [isEditing, setIsEditing] = useState(false);
-    const [socialLinks, setSocialLinks] = useState(user?.socials && JSON.parse(user?.socials || ""));
 
-    const [companyInfo, setCompanyInfo] = useState({
-        companyName: user?.companyName,
-        tagline: user?.tagline,
-        description: user?.description,
-        industry: "Technology",
-        companySize: user?.companySize,
-        offers: user?.offers && JSON.parse(user?.offers || ""),
-        image: user?.image
+    // Always produce an array, even if user?.socials is "", null, or invalid JSON
+    const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
+        safeParse<SocialLink[]>(user?.socials, [])
+    );
+
+    const [companyInfo, setCompanyInfo] = useState<{
+        companyName: string;
+        tagline: string;
+        description: string;
+        industry: string;
+        companySize: string;
+        offers: string[];
+        image: File | string | null;
+    }>({
+        companyName: user?.companyName ?? "",
+        tagline: user?.tagline ?? "",
+        description: user?.description ?? "",
+        industry: (user?.industry as string) ?? "Technology",
+        companySize: user?.companySize ?? "201-500",
+        offers: safeParse<string[]>(user?.offers, []),
+        image: (user?.image as string | null) ?? null,
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const {name, value} = e.target;
-        setCompanyInfo((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    }
+        const { name, value } = e.target;
+        setCompanyInfo((prev) => ({ ...prev, [name]: value }));
+    };
 
     const addSocialLink = () => {
-        setSocialLinks([...socialLinks, {platform: "", url: ""}]);
+        setSocialLinks((prev) => [...prev, { platform: "", url: "" }]);
     };
 
     const removeSocialLink = (index: number) => {
-        setSocialLinks(socialLinks.filter((_, i) => i !== index));
+        setSocialLinks((prev) => prev.filter((_, i) => i !== index));
     };
 
     const removeBenefit = (benefit: string) => {
         setCompanyInfo((prev) => ({
             ...prev,
-            offers: prev.offers.filter((b) => b !== benefit)
+            offers: (prev.offers ?? []).filter((b) => b !== benefit),
         }));
-    }
+    };
 
     const addBenefit = () => {
         const newBenefit = prompt("Enter new benefit:");
-        if (newBenefit) {
+        if (newBenefit?.trim()) {
             setCompanyInfo((prev) => ({
                 ...prev,
-                offers: [...prev.offers, newBenefit]
+                offers: [...(prev.offers ?? []), newBenefit.trim()],
             }));
         }
-    }
+    };
 
     const handleSaveChanges = () => {
         setIsEditing(true);
 
         const formData = new FormData();
-        formData.append("image", companyInfo.image);
+
+        // Only append image if it's a File; avoid clobbering with a string URL
+        if (companyInfo.image instanceof File) {
+            formData.append("image", companyInfo.image);
+        }
+
         formData.append("companyName", companyInfo.companyName);
         formData.append("tagline", companyInfo.tagline);
         formData.append("description", companyInfo.description);
         formData.append("industry", companyInfo.industry);
         formData.append("companySize", companyInfo.companySize);
-        formData.append("offers", JSON.stringify(companyInfo.offers));
-        formData.append("socials", JSON.stringify(socialLinks));
-        formData.append("image", companyInfo.image);
+        formData.append("offers", JSON.stringify(companyInfo.offers ?? []));
+        formData.append("socials", JSON.stringify(socialLinks ?? []));
 
         const savingProfilePromise = axiosInstance.patch("/users/profile", formData);
 
         toast.promise(savingProfilePromise, {
             loading: "Saving changes...",
-            success: (response => {
-                console.log(response);
+            success: () => {
                 setIsEditing(false);
                 fetchUser();
                 return "Profile updated successfully";
-            }),
+            },
             error: (error) => {
-              console.log(error);
-              return "Error updating profile";
-            }
-        })
-    }
+                console.log(error);
+                setIsEditing(false);
+                return "Error updating profile";
+            },
+        });
+    };
 
     return (
         <SidebarProvider>
             <div className="min-h-screen flex w-full bg-slate-950">
+                {/* If you actually want the sidebar visible, render it here */}
+                {/* <OrganizationSidebar /> */}
+
                 <main className="flex-1 overflow-auto">
                     {/* Header */}
                     <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-                      <div className="flex items-center justify-between p-6">
-                        <div className="flex items-center gap-4">
-                          <SidebarTrigger className="text-slate-400 hover:text-white"/>
-                          <div>
-                            <h1 className="text-2xl font-bold text-white">Company Profile</h1>
-                            <p className="text-slate-400">Manage your organization's public profile</p>
-                          </div>
+                        <div className="flex items-center justify-between p-6">
+                            <div className="flex items-center gap-4">
+                                <SidebarTrigger className="text-slate-400 hover:text-white" />
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white">Company Profile</h1>
+                                    <p className="text-slate-400">Manage your organization's public profile</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                {isEditing && (
+                                    <Button
+                                        onClick={() => setIsEditing(false)}
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                        <X className="w-4 h-4 mr-2" />
+                                        Cancel Changes
+                                    </Button>
+                                )}
+
+                                <Button
+                                    onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
+                                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                                >
+                                    {isEditing ? (
+                                        <>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Save Changes
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Edit className="w-4 h-4 mr-2" />
+                                            Edit Profile
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                          {
-                              isEditing && (
-                                  <Button
-                                      onClick={() => setIsEditing(false)}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                  >
-                                    <X className="w-4 h-4 mr-2"/>
-                                    Cancel Changes
-                                  </Button>
-                              )
-                          }
-
-                          <Button
-                              onClick={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
-                              className="bg-orange-600 hover:bg-orange-700 text-white"
-                          >
-                            {isEditing ? (
-                                <>
-                                  <Save className="w-4 h-4 mr-2"/>
-                                  Save Changes
-                                </>
-                            ) : (
-                                <>
-                                  <Edit className="w-4 h-4 mr-2"/>
-                                  Edit Profile
-                                </>
-                            )}
-                          </Button>
-                        </div>
-
-                      </div>
                     </div>
 
                     <div className="p-6 space-y-6">
@@ -159,7 +175,7 @@ const CompanyProfile = () => {
                                                 size="sm"
                                                 className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-slate-700 hover:bg-slate-600"
                                             >
-                                                <Camera className="w-4 h-4"/>
+                                                <Camera className="w-4 h-4" />
                                             </Button>
                                         )}
                                     </div>
@@ -168,41 +184,48 @@ const CompanyProfile = () => {
                                         {isEditing ? (
                                             <div className="space-y-3">
                                                 <div>
-                                                    <Label htmlFor="name" className="text-white">Company Name</Label>
+                                                    <Label htmlFor="name" className="text-white">
+                                                        Company Name
+                                                    </Label>
                                                     <Input
                                                         onChange={handleInputChange}
                                                         id="name"
                                                         name="companyName"
-                                                        defaultValue={companyInfo?.companyName}
+                                                        defaultValue={companyInfo.companyName}
                                                         className="bg-slate-800 border-slate-600 text-white"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="tagline" className="text-white">Tagline</Label>
+                                                    <Label htmlFor="tagline" className="text-white">
+                                                        Tagline
+                                                    </Label>
                                                     <Input
-                                                        onChange={handleInputChange} id="tagline"
-                                                        defaultValue={companyInfo?.tagline}
+                                                        onChange={handleInputChange}
+                                                        id="tagline"
                                                         name="tagline"
+                                                        defaultValue={companyInfo.tagline}
                                                         className="bg-slate-800 border-slate-600 text-white"
                                                     />
                                                 </div>
                                             </div>
                                         ) : (
                                             <div>
-                                                <h2 className="text-2xl font-bold text-white">{companyInfo?.companyName}</h2>
-                                                <p className="text-lg text-orange-400">{companyInfo?.tagline}</p>
+                                                <h2 className="text-2xl font-bold text-white">
+                                                    {companyInfo.companyName || "Your Company"}
+                                                </h2>
+                                                <p className="text-lg text-orange-400">{companyInfo.tagline || ""}</p>
                                             </div>
                                         )}
 
                                         <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-4 h-4" />
+                          {companyInfo.industry}
+                      </span>
                                             <span className="flex items-center gap-1">
-                                                <Building2 className="w-4 h-4"/>
-                                                {companyInfo?.industry}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Users className="w-4 h-4"/>
-                                                {companyInfo?.companySize}
-                                            </span>
+                        <Users className="w-4 h-4" />
+                                                {companyInfo.companySize}
+                      </span>
                                         </div>
                                     </div>
                                 </div>
@@ -222,31 +245,31 @@ const CompanyProfile = () => {
                                     {isEditing ? (
                                         <div className="space-y-4">
                                             <div>
-                                                <Label htmlFor="description" className="text-white">Description</Label>
+                                                <Label htmlFor="description" className="text-white">
+                                                    Description
+                                                </Label>
                                                 <Textarea
                                                     id="description"
-                                                    onChange={handleInputChange}
                                                     name="description"
+                                                    onChange={handleInputChange}
                                                     placeholder="Write a brief description of your company"
-                                                    defaultValue={companyInfo?.description}
+                                                    defaultValue={companyInfo.description}
                                                     className="bg-slate-800 border-slate-600 text-white min-h-32"
                                                 />
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <Label htmlFor="industry" className="text-white">Industry</Label>
+                                                    <Label htmlFor="industry" className="text-white">
+                                                        Industry
+                                                    </Label>
                                                     <Select
-                                                        onValueChange={(value) => {
-                                                            setCompanyInfo((prev) => ({
-                                                                ...prev,
-                                                                industry: value
-                                                            }));
-                                                        }}
-                                                        defaultValue={companyInfo?.industry.toLowerCase()}
+                                                        onValueChange={(value) =>
+                                                            setCompanyInfo((prev) => ({ ...prev, industry: value }))
+                                                        }
+                                                        defaultValue={(companyInfo.industry ?? "Technology").toLowerCase()}
                                                     >
-                                                        <SelectTrigger
-                                                            className="bg-slate-800 border-slate-600 text-white">
-                                                            <SelectValue/>
+                                                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                                                            <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent className="bg-slate-800 border-slate-600">
                                                             <SelectItem value="technology">Technology</SelectItem>
@@ -257,20 +280,18 @@ const CompanyProfile = () => {
                                                     </Select>
                                                 </div>
                                                 <div>
-                                                    <Label htmlFor="size" className="text-white">Company Size</Label>
+                                                    <Label htmlFor="size" className="text-white">
+                                                        Company Size
+                                                    </Label>
                                                     <Select
-                                                        onValueChange={(value) => {
-                                                            setCompanyInfo((prev) => ({
-                                                                ...prev,
-                                                                companySize: value
-                                                            }));
-                                                        }}
+                                                        onValueChange={(value) =>
+                                                            setCompanyInfo((prev) => ({ ...prev, companySize: value }))
+                                                        }
                                                         name="companySize"
-                                                        defaultValue="201-500"
+                                                        defaultValue={companyInfo.companySize || "201-500"}
                                                     >
-                                                        <SelectTrigger
-                                                            className="bg-slate-800 border-slate-600 text-white">
-                                                            <SelectValue/>
+                                                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                                                            <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent className="bg-slate-800 border-slate-600">
                                                             <SelectItem value="1-10">1-10 employees</SelectItem>
@@ -285,7 +306,9 @@ const CompanyProfile = () => {
                                         </div>
                                     ) : (
                                         <div>
-                                            <p className="text-slate-300 leading-relaxed">{companyInfo?.description}</p>
+                                            <p className="text-slate-300 leading-relaxed">
+                                                {companyInfo.description || "—"}
+                                            </p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -301,12 +324,18 @@ const CompanyProfile = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-wrap gap-2">
-                                        {companyInfo?.offers.map((benefit) => (
-                                            <Badge key={benefit} variant="outline"
-                                                   className="border-emerald-600/30 text-emerald-400">
+                                        {(companyInfo.offers ?? []).map((benefit) => (
+                                            <Badge
+                                                key={benefit}
+                                                variant="outline"
+                                                className="border-emerald-600/30 text-emerald-400"
+                                            >
                                                 {benefit}
                                                 {isEditing && (
-                                                    <X onClick={() => removeBenefit(benefit)} className="w-3 h-3 ml-1 cursor-pointer hover:text-red-400"/>
+                                                    <X
+                                                        onClick={() => removeBenefit(benefit)}
+                                                        className="w-3 h-3 ml-1 cursor-pointer hover:text-red-400"
+                                                    />
                                                 )}
                                             </Badge>
                                         ))}
@@ -317,7 +346,7 @@ const CompanyProfile = () => {
                                                 onClick={addBenefit}
                                                 className="border-slate-600 text-slate-300 hover:bg-slate-800"
                                             >
-                                                <Plus className="w-4 h-4 mr-1"/>
+                                                <Plus className="w-4 h-4 mr-1" />
                                                 Add Benefit
                                             </Button>
                                         )}
@@ -335,21 +364,20 @@ const CompanyProfile = () => {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {socialLinks.map((link, index) => (
+                                {(socialLinks ?? []).map((link, index) => (
                                     <div key={index} className="flex gap-3">
                                         {isEditing ? (
                                             <>
                                                 <Select
-                                                    defaultValue={link?.platform.toLowerCase()}
+                                                    defaultValue={(link?.platform ?? "").toLowerCase()}
                                                     onValueChange={(value) => {
-                                                        const updatedLinks = [...socialLinks];
-                                                        updatedLinks[index] = {...updatedLinks[index], platform: value};
-                                                        setSocialLinks(updatedLinks);
+                                                        const updated = [...socialLinks];
+                                                        updated[index] = { ...updated[index], platform: value };
+                                                        setSocialLinks(updated);
                                                     }}
                                                 >
-                                                    <SelectTrigger
-                                                        className="w-32 bg-slate-800 border-slate-600 text-white">
-                                                        <SelectValue placeholder="Platform"/>
+                                                    <SelectTrigger className="w-32 bg-slate-800 border-slate-600 text-white">
+                                                        <SelectValue placeholder="Platform" />
                                                     </SelectTrigger>
                                                     <SelectContent className="bg-slate-800 border-slate-600">
                                                         <SelectItem value="linkedin">LinkedIn</SelectItem>
@@ -359,11 +387,11 @@ const CompanyProfile = () => {
                                                     </SelectContent>
                                                 </Select>
                                                 <Input
-                                                    defaultValue={link.url}
+                                                    defaultValue={link?.url ?? ""}
                                                     onChange={(e) => {
-                                                        const updatedLinks = [...socialLinks];
-                                                        updatedLinks[index] = {...updatedLinks[index], url: e.target.value};
-                                                        setSocialLinks(updatedLinks);
+                                                        const updated = [...socialLinks];
+                                                        updated[index] = { ...updated[index], url: e.target.value };
+                                                        setSocialLinks(updated);
                                                     }}
                                                     name="url"
                                                     type="url"
@@ -376,16 +404,18 @@ const CompanyProfile = () => {
                                                     onClick={() => removeSocialLink(index)}
                                                     className="text-red-400 hover:text-red-300"
                                                 >
-                                                    <X className="w-4 h-4"/>
+                                                    <X className="w-4 h-4" />
                                                 </Button>
                                             </>
                                         ) : (
                                             <div className="flex items-center gap-3">
-                                                <Badge variant="outline"
-                                                       className="border-orange-600/30 text-orange-400">
-                                                    {link.platform}
+                                                <Badge
+                                                    variant="outline"
+                                                    className="border-orange-600/30 text-orange-400"
+                                                >
+                                                    {link?.platform || "—"}
                                                 </Badge>
-                                                <span className="text-slate-300">{link.url}</span>
+                                                <span className="text-slate-300">{link?.url || "—"}</span>
                                             </div>
                                         )}
                                     </div>
@@ -397,7 +427,7 @@ const CompanyProfile = () => {
                                         onClick={addSocialLink}
                                         className="border-slate-600 text-slate-300 hover:bg-slate-800"
                                     >
-                                        <Plus className="w-4 h-4 mr-2"/>
+                                        <Plus className="w-4 h-4 mr-2" />
                                         Add Social Link
                                     </Button>
                                 )}

@@ -348,7 +348,7 @@ const JobPosts = () => {
                     <Card className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-colors">
                       <CardContent>
                         <div className="px-4 py-8 text-center text-slate-400">
-                          No credentials found. Submit your first credential to get started.
+                          No Job post found. Upload your first Job post to get started.
                         </div>
                       </CardContent>
                     </Card>
