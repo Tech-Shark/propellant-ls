@@ -6,7 +6,7 @@ import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Textarea} from "@/components/ui/textarea";
-import {Download, Wand2, Plus, Trash2, Save} from "lucide-react";
+import {Download, Wand2, Plus, Trash2, Save, Palette} from "lucide-react";
 import {Certification, CV, Project, SkillLevel} from "@/utils/global";
 import {WorkExperience, Education, Skill} from "@/utils/global";
 import {Switch} from "@/components/ui/switch.tsx";
@@ -15,11 +15,14 @@ import {skillLevels} from "@/utils/constant.ts";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import {toast} from "sonner";
 import axios, {isAxiosError} from "axios";
+import {cvTemplates, generateCV} from "@/components/CVTemplates/CVTemplateEngine";
+import html2pdf from "html2pdf.js";
 
 export default function CVBuilder() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState('classic');
     const [personalInfo, setPersonalInfo] = useState<CV>({
         firstName: '',
         lastName: '',
@@ -262,42 +265,39 @@ export default function CVBuilder() {
     const handleDownload = async () => {
         setIsDownloading(true);
 
-        const data: CV = {
-            ...personalInfo,
-            workExperience: workExperiences,
-            education: educations,
-            certifications,
-            projects,
-            skills
+        try {
+            const html = generateCV(
+                personalInfo,
+                workExperiences,
+                educations,
+                certifications,
+                projects,
+                skills,
+                selectedTemplate
+            );
+
+            const opt = {
+                margin: [0.3, 0, 0.3, 0],
+                filename: `${personalInfo.firstName}_${personalInfo.lastName}_CV.pdf`,
+                image: { type: "jpeg", quality: 1 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+            };
+
+            const element = document.createElement("div");
+            element.innerHTML = html;
+            element.style.width = "8.27in";
+            element.style.padding = "0.3in";
+
+            await html2pdf().set(opt).from(element).save();
+
+            toast.success("CV downloaded successfully!");
+        } catch (error) {
+            console.error("Download error:", error);
+            toast.error("Failed to download CV. Please try again.");
+        } finally {
+            setIsDownloading(false);
         }
-
-        const downloadCvPromise = axiosInstance.post('/cv/download/classic', data);
-
-        toast.promise(downloadCvPromise, {
-                loading: 'Loading...',
-                success: (response) => {
-                    console.log(response?.data);
-                    const blob = new Blob([response.data], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(blob);
-                    window.open(url);
-                    return response?.data.message;
-                },
-                error: (error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log(error);
-                        return error.response?.data.message;
-                    } else {
-                        return "Something went wrong. Please try again later.";
-                    }
-                },
-                finally: () => {
-                    setIsDownloading(false);
-                }
-            },
-        );
-
-        await downloadCvPromise;
-        setIsDownloading(false);
     };
 
     const handleFetchDraft = async () => {
@@ -343,6 +343,21 @@ export default function CVBuilder() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                            <SelectTrigger className="w-[200px] bg-slate-800 border-slate-600 text-white">
+                                <SelectValue placeholder="Select template" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 border-slate-600">
+                                {cvTemplates.map((template) => (
+                                    <SelectItem key={template.id} value={template.id} className="text-white hover:bg-slate-700">
+                                        <div className="flex items-center">
+                                            <Palette className="w-4 h-4 mr-2" />
+                                            {template.name}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <Button variant="outline" disabled={isSaving} onClick={handleSave}
                                 className="border-slate-600 text-slate-300 hover:bg-slate-800">
                             <Save className="w-4 h-4 mr-2"/>

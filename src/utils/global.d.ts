@@ -49,6 +49,8 @@ export interface Project {
     technologies: string[];
     project: string;
     link: string;
+    repositoryUrl?: string;
+    liveUrl?: string;
 }
 
 export interface CV {
