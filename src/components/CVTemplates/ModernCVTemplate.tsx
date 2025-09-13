@@ -12,75 +12,23 @@ import {
   Briefcase,
 } from "lucide-react";
 
-export enum SkillLevel {
-  BEGINNER = "Beginner",
-  INTERMEDIATE = "Intermediate",
-  ADVANCED = "Advanced",
-  EXPERT = "Expert",
-}
+// Import types from global.d.ts instead of redefining them
+import {
+  CV,
+  Skill,
+  SkillLevel,
+  WorkExperience,
+  Education,
+  Certification,
+  Project,
+} from "../../utils/global.d";
 
-export interface Skill {
-  name: string;
-  level: SkillLevel;
-}
-
-export interface WorkExperience {
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-  location: string;
-  title: string;
-  isCurrentRole: boolean;
-}
-
-export interface Education {
-  institution: string;
-  degree: string;
-  fieldOfStudy: string;
-  startDate: string;
-  endDate: string;
-  grade: string;
-  description: string;
-}
-
-export interface Certification {
-  name: string;
-  issuer: string;
-  dateIssued: string;
-  credentialId: string;
-  credentialUrl: string;
-}
-
-export interface Project {
-  name: string;
-  description: string;
-  technologies: string[];
-  project: string;
-  link: string;
-}
-
-export interface CV {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  email?: string;
-  professionalTitle?: string;
-  professionalSummary?: string;
-  address?: string;
-  github?: string;
-  portfolio?: string;
-  website?: string;
-  languages?: string[];
-  hobbies?: string[];
-  achievements?: string[];
-  skills?: Skill[];
-  workExperience?: WorkExperience[];
-  education?: Education[];
-  certifications?: Certification[];
-  projects?: Project[];
-}
+// Map global SkillLevel enum values to display values
+const skillLevelDisplayMap: Record<SkillLevel, string> = {
+  BEGINNER: "Beginner",
+  INTERMEDIATE: "Intermediate",
+  ADVANCED: "Advanced",
+};
 
 const defaultCV: CV = {
   firstName: "Sarah",
@@ -112,14 +60,14 @@ const defaultCV: CV = {
     "Speaker at ReactConf 2023",
   ],
   skills: [
-    { name: "JavaScript/TypeScript", level: SkillLevel.EXPERT },
-    { name: "React/Next.js", level: SkillLevel.EXPERT },
-    { name: "Node.js", level: SkillLevel.ADVANCED },
-    { name: "Python", level: SkillLevel.INTERMEDIATE },
-    { name: "PostgreSQL", level: SkillLevel.ADVANCED },
-    { name: "AWS", level: SkillLevel.INTERMEDIATE },
-    { name: "Docker", level: SkillLevel.ADVANCED },
-    { name: "GraphQL", level: SkillLevel.INTERMEDIATE },
+    { name: "JavaScript/TypeScript", level: "ADVANCED" },
+    { name: "React/Next.js", level: "ADVANCED" },
+    { name: "Node.js", level: "ADVANCED" },
+    { name: "Python", level: "INTERMEDIATE" },
+    { name: "PostgreSQL", level: "ADVANCED" },
+    { name: "AWS", level: "INTERMEDIATE" },
+    { name: "Docker", level: "ADVANCED" },
+    { name: "GraphQL", level: "INTERMEDIATE" },
   ],
   workExperience: [
     {
@@ -214,13 +162,11 @@ const defaultCV: CV = {
 
 const getSkillLevelColor = (level: SkillLevel): string => {
   switch (level) {
-    case SkillLevel.EXPERT:
+    case "ADVANCED":
       return "bg-emerald-500";
-    case SkillLevel.ADVANCED:
-      return "bg-blue-500";
-    case SkillLevel.INTERMEDIATE:
+    case "INTERMEDIATE":
       return "bg-amber-500";
-    case SkillLevel.BEGINNER:
+    case "BEGINNER":
       return "bg-gray-400";
     default:
       return "bg-gray-400";
@@ -229,13 +175,11 @@ const getSkillLevelColor = (level: SkillLevel): string => {
 
 const getSkillLevelWidth = (level: SkillLevel): string => {
   switch (level) {
-    case SkillLevel.EXPERT:
-      return "w-full";
-    case SkillLevel.ADVANCED:
+    case "ADVANCED":
       return "w-3/4";
-    case SkillLevel.INTERMEDIATE:
+    case "INTERMEDIATE":
       return "w-1/2";
-    case SkillLevel.BEGINNER:
+    case "BEGINNER":
       return "w-1/4";
     default:
       return "w-1/4";
