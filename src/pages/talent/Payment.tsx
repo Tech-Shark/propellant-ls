@@ -15,7 +15,8 @@ import axiosInstance from "@/api/AxiosInstance.ts";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 
-const plans = [
+// Default plans to use as fallback if API fails
+const defaultPlans = [
   {
     id: "free",
     name: "Free",
@@ -77,7 +78,10 @@ export default function Payment() {
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [plans, setPlans] = useState(defaultPlans);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
+  // Fetch payment methods
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       try {
@@ -91,6 +95,73 @@ export default function Payment() {
     };
 
     fetchPaymentMethods();
+  }, []);
+
+  // Fetch subscription plans from settings
+  useEffect(() => {
+    const fetchSubscriptionPlans = async () => {
+      try {
+        setIsLoadingPlans(true);
+        const response = await axiosInstance.get("/settings");
+
+        // Handle both response formats
+        let settingsData;
+        if (response.data.data && response.data.data.app) {
+          settingsData = response.data.data;
+        } else {
+          settingsData = response.data || {};
+        }
+
+        // Check if we have subscription plans in the settings
+        if (
+          settingsData.app?.subscriptionPlans &&
+          Array.isArray(settingsData.app.subscriptionPlans) &&
+          settingsData.app.subscriptionPlans.length > 0
+        ) {
+          // Transform API subscription plans to match our UI format
+          const formattedPlans = settingsData.app.subscriptionPlans.map(
+            (plan, index) => {
+              // Start with a base plan from defaults to ensure we have all fields
+              const basePlan =
+                defaultPlans[index % defaultPlans.length] || defaultPlans[0];
+
+              return {
+                id:
+                  plan.name?.toLowerCase()?.replace(/\s+/g, "") ||
+                  `plan-${index}`,
+                name: plan.name || `Plan ${index + 1}`,
+                price: plan.price || 0,
+                period: "per month",
+                features: plan.features || [],
+                buttonText: index === 0 ? "Current Plan" : "Upgrade Now",
+                isCurrentPlan: index === 0,
+                isPopular: index === 1, // Mark second plan as popular
+              };
+            }
+          );
+
+          console.log(
+            "Using subscription plans from settings:",
+            formattedPlans
+          );
+          setPlans(formattedPlans);
+        } else {
+          console.log(
+            "No subscription plans found in settings, using defaults"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching subscription plans from settings:",
+          error
+        );
+        toast.error("Could not load subscription plans, using defaults");
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
+
+    fetchSubscriptionPlans();
   }, []);
 
   const handleUpgrade = (planId: string) => {
@@ -196,76 +267,83 @@ export default function Payment() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {plans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className={`relative p-6 rounded-lg border transition-all duration-300 ${
-                    plan.isPopular
-                      ? "border-blue-500 bg-blue-500/10"
-                      : plan.isCurrentPlan
-                      ? "border-emerald-500 bg-emerald-500/10"
-                      : "border-slate-700 bg-slate-800/50"
-                  }`}
-                >
-                  {plan.isPopular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-blue-600 text-white">
-                        <Star className="w-3 h-3 mr-1" />
-                        Most Popular
-                      </Badge>
-                    </div>
-                  )}
-
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-white">
-                      {plan.name}
-                    </h3>
-                    <div className="mt-2">
-                      <span className="text-3xl font-bold text-white">
-                        ${plan.price}
-                      </span>
-                      <span className="text-slate-400 ml-1">
-                        /{plan.period}
-                      </span>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center gap-2 text-slate-300"
-                      >
-                        <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    onClick={() =>
-                      !plan.isCurrentPlan && handleUpgrade(plan.id)
-                    }
-                    disabled={plan.isCurrentPlan}
-                    className={`w-full ${
+            {isLoadingPlans ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-400">Loading subscription plans...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {plans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className={`relative p-6 rounded-lg border transition-all duration-300 ${
                       plan.isPopular
-                        ? "bg-blue-600 hover:bg-blue-700"
+                        ? "border-blue-500 bg-blue-500/10"
                         : plan.isCurrentPlan
-                        ? "bg-emerald-600"
-                        : "bg-slate-700 hover:bg-slate-600"
-                    } text-white flex items-center gap-2`}
+                        ? "border-emerald-500 bg-emerald-500/10"
+                        : "border-slate-700 bg-slate-800/50"
+                    }`}
                   >
-                    {(plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM") ===
-                      selectedPlan && <Check className="w-4 h-4" />}
-                    {(plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM") ===
-                    selectedPlan
-                      ? "Selected Plan"
-                      : plan.buttonText}
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    {plan.isPopular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-blue-600 text-white">
+                          <Star className="w-3 h-3 mr-1" />
+                          Most Popular
+                        </Badge>
+                      </div>
+                    )}
+
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-bold text-white">
+                        {plan.name}
+                      </h3>
+                      <div className="mt-2">
+                        <span className="text-3xl font-bold text-white">
+                          ${plan.price}
+                        </span>
+                        <span className="text-slate-400 ml-1">
+                          /{plan.period}
+                        </span>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center gap-2 text-slate-300"
+                        >
+                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      onClick={() =>
+                        !plan.isCurrentPlan && handleUpgrade(plan.id)
+                      }
+                      disabled={plan.isCurrentPlan}
+                      className={`w-full ${
+                        plan.isPopular
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : plan.isCurrentPlan
+                          ? "bg-emerald-600"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      } text-white flex items-center gap-2`}
+                    >
+                      {selectedPlan === plan.id.toUpperCase() && (
+                        <Check className="w-4 h-4" />
+                      )}
+                      {selectedPlan === plan.id.toUpperCase()
+                        ? "Selected Plan"
+                        : plan.buttonText}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

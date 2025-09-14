@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -41,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cardTypes } from "@/utils/constant";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import { isAxiosError } from "axios";
+import { SystemConfigModal } from "./SystemConfigModal";
 
 // Types for payment methods that match the backend
 interface PaymentMethod {
@@ -51,9 +53,7 @@ interface PaymentMethod {
   active: boolean;
   imageUrl?: string;
   isDeleted?: boolean;
-}
-
-// PaymentProvidersEnum should match the backend
+} // PaymentProvidersEnum should match the backend
 enum PaymentProvidersEnum {
   PAYSTACK = "paystack",
   FLUTTERWAVE = "flutterwave",
@@ -180,6 +180,8 @@ export function EditsManagement() {
     useState<PaymentMethod | null>(null);
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
+  const [debugData, setDebugData] = useState(null);
   const [newPaymentMethod, setNewPaymentMethod] = useState<{
     name: string;
     description: string[];
@@ -220,8 +222,58 @@ export function EditsManagement() {
     try {
       setIsLoading((prev) => ({ ...prev, paymentMethods: true }));
       const response = await axiosInstance.get("/payment/admin");
+
+      // Log the entire response to understand its structure
+      console.log("Payment API response:", response.data);
+
       if (response.data && response.data.data) {
-        setPaymentMethods(response.data.data);
+        // In pagination responses, the actual data might be in data.data
+        let methodsArray;
+
+        if (Array.isArray(response.data.data)) {
+          methodsArray = response.data.data;
+        } else if (
+          response.data.data.data &&
+          Array.isArray(response.data.data.data)
+        ) {
+          // Handle nested data structure (pagination response)
+          methodsArray = response.data.data.data;
+        } else if (response.data.data) {
+          // Handle single object response
+          methodsArray = [response.data.data];
+        } else {
+          methodsArray = [];
+        }
+
+        console.log("Payment methods extracted:", methodsArray);
+
+        // Filter out any methods without a name and add detailed logging
+        const validMethods = methodsArray.filter((method) => {
+          if (!method) {
+            console.warn("Found undefined payment method", method);
+            return false;
+          }
+
+          if (!method.name) {
+            console.warn("Found payment method without name:", method);
+            return false;
+          }
+
+          return true;
+        });
+
+        if (methodsArray.length !== validMethods.length) {
+          console.warn(
+            `Found ${
+              methodsArray.length - validMethods.length
+            } payment methods with missing names`
+          );
+        }
+
+        setPaymentMethods(validMethods);
+      } else {
+        // Set empty array if no data received
+        setPaymentMethods([]);
       }
     } catch (error) {
       console.error("Error fetching payment methods:", error);
@@ -232,6 +284,8 @@ export function EditsManagement() {
           : "Failed to load payment methods",
         variant: "destructive",
       });
+      // Set empty array on error
+      setPaymentMethods([]);
     } finally {
       setIsLoading((prev) => ({ ...prev, paymentMethods: false }));
     }
@@ -242,21 +296,37 @@ export function EditsManagement() {
     try {
       setIsLoading((prev) => ({ ...prev, subscriptionPlans: true }));
       const response = await axiosInstance.get("/settings");
+      console.log("Settings response for subscription plans:", response.data);
+
+      // Check for the nested structure (data.app) first, then fall back to direct structure (app)
+      const appData = response.data.data?.app || response.data.app;
+
       if (
-        response.data &&
-        response.data.app &&
-        response.data.app.subscriptionPlans
+        appData &&
+        appData.subscriptionPlans &&
+        appData.subscriptionPlans.length > 0
       ) {
         // Transform subscription plans to match our UI format
-        const plans = response.data.app.subscriptionPlans.map((plan: any) => ({
+        const plans = appData.subscriptionPlans.map((plan: any) => ({
           ...plan,
           id: plan.name, // Use name as ID since backend doesn't have IDs for plans
           amount: `$${plan.price}`, // Format price for UI
         }));
         setSubscriptionPlans(plans);
+      } else {
+        // If no plans found, set empty array
+        console.log(
+          "No subscription plans found in settings response:",
+          response.data
+        );
+        setSubscriptionPlans([]);
       }
     } catch (error) {
       console.error("Error fetching subscription plans:", error);
+
+      // Create empty plans array when there's an error
+      setSubscriptionPlans([]);
+
       toast({
         title: "Error",
         description: isAxiosError(error)
@@ -363,7 +433,9 @@ export function EditsManagement() {
       try {
         // Get current settings first
         const settingsResponse = await axiosInstance.get("/settings");
-        const currentSettings = settingsResponse.data;
+        // Handle both response formats: {data: {app: {...}}} or {app: {...}}
+        const currentSettings =
+          settingsResponse.data.data || settingsResponse.data;
 
         // Format the updated plan
         const updatedPlanData = {
@@ -374,16 +446,38 @@ export function EditsManagement() {
           ),
         };
 
+        // Check if app and subscriptionPlans exist
+        if (!currentSettings.app?.subscriptionPlans) {
+          throw new Error("No subscription plans found to update");
+        }
+
         // Update the plan in the existing plans array
         const updatedPlans = currentSettings.app.subscriptionPlans.map(
           (plan: any) =>
             plan.name === updatedPlanData.name ? updatedPlanData : plan
         );
 
+        // Ensure all required fields and objects are included
+        const defaultUrls = {
+          webHomepage: "https://propellanthr.com",
+          waitlistPage: "https://propellanthr.com",
+        };
+
+        const defaultPoints = {
+          referral: 1,
+          signup: 3,
+          premium: 5,
+        };
+
         // Update settings with updated plans
         await axiosInstance.patch("/settings", {
           app: {
-            ...currentSettings.app,
+            ...(currentSettings.app || {}), // Use empty object if app doesn't exist
+            name: currentSettings.app?.name || "Propellant", // Ensure app name is included
+            supportEmail:
+              currentSettings.app?.supportEmail || "support@propellanthr.com", // Ensure supportEmail is included
+            urls: currentSettings.app?.urls || defaultUrls, // Ensure urls is included
+            points: currentSettings.app?.points || defaultPoints, // Ensure points is included
             subscriptionPlans: updatedPlans,
           },
         });
@@ -421,7 +515,9 @@ export function EditsManagement() {
       try {
         // Get current settings first
         const settingsResponse = await axiosInstance.get("/settings");
-        const currentSettings = settingsResponse.data;
+        // Handle both response formats: {data: {app: {...}}} or {app: {...}}
+        const currentSettings =
+          settingsResponse.data.data || settingsResponse.data;
 
         // Format the new plan
         const newPlanData = {
@@ -430,22 +526,50 @@ export function EditsManagement() {
           features: filteredDescription,
         };
 
-        // Add new plan to existing plans
-        const updatedPlans = [
-          ...currentSettings.app.subscriptionPlans,
-          newPlanData,
-        ];
+        console.log("Adding new subscription plan:", newPlanData);
+        console.log("Current settings structure:", currentSettings);
 
-        // Update settings with new plans
-        await axiosInstance.patch("/settings", {
+        // Check if app and subscriptionPlans exist, create if not
+        const existingPlans = currentSettings.app?.subscriptionPlans || [];
+
+        // Add new plan to existing plans
+        const updatedPlans = [...existingPlans, newPlanData];
+
+        // Ensure all required fields and objects are included
+        const defaultUrls = {
+          webHomepage: "https://propellanthr.com",
+          waitlistPage: "https://propellanthr.com",
+        };
+
+        const defaultPoints = {
+          referral: 1,
+          signup: 3,
+          premium: 5,
+        };
+
+        const payload = {
           app: {
-            ...currentSettings.app,
+            ...(currentSettings.app || {}), // Use empty object if app doesn't exist
+            name: currentSettings.app?.name || "Propellant HR", // Ensure app name is included
+            supportEmail:
+              currentSettings.app?.supportEmail || "support@propellanthr.com", // Ensure supportEmail is included
+            urls: currentSettings.app?.urls || defaultUrls, // Ensure urls is included
+            points: currentSettings.app?.points || defaultPoints, // Ensure points is included
             subscriptionPlans: updatedPlans,
           },
-        });
+        };
 
-        // Refresh subscription plans list
-        fetchSubscriptionPlans();
+        console.log("Updating settings with payload:", payload);
+
+        // Update settings with new plans
+        const updateResponse = await axiosInstance.patch("/settings", payload);
+        console.log("Update response:", updateResponse.data);
+
+        // Refresh subscription plans list with a slight delay to ensure data is updated
+        setTimeout(() => {
+          console.log("Refreshing subscription plans after adding new plan");
+          fetchSubscriptionPlans();
+        }, 500);
 
         // Reset form and close modal
         setNewPlan({ name: "", amount: "", description: [""] });
@@ -480,17 +604,41 @@ export function EditsManagement() {
     try {
       // Get current settings first
       const settingsResponse = await axiosInstance.get("/settings");
-      const currentSettings = settingsResponse.data;
+      // Handle both response formats: {data: {app: {...}}} or {app: {...}}
+      const currentSettings =
+        settingsResponse.data.data || settingsResponse.data;
+
+      // Check if app and subscriptionPlans exist
+      if (!currentSettings.app?.subscriptionPlans) {
+        throw new Error("No subscription plans found to delete");
+      }
 
       // Remove plan from existing plans
       const updatedPlans = currentSettings.app.subscriptionPlans.filter(
         (plan: any) => plan.name !== planName
       );
 
+      // Ensure all required fields and objects are included
+      const defaultUrls = {
+        webHomepage: "https://propellanthr.com",
+        waitlistPage: "https://propellanthr.com",
+      };
+
+      const defaultPoints = {
+        referral: 1,
+        signup: 3,
+        premium: 5,
+      };
+
       // Update settings with updated plans
       await axiosInstance.patch("/settings", {
         app: {
-          ...currentSettings.app,
+          ...(currentSettings.app || {}), // Use empty object if app doesn't exist
+          name: currentSettings.app?.name || "Propellant", // Ensure app name is included
+          supportEmail:
+            currentSettings.app?.supportEmail || "support@propellanthr.com", // Ensure supportEmail is included
+          urls: currentSettings.app?.urls || defaultUrls, // Ensure urls is included
+          points: currentSettings.app?.points || defaultPoints, // Ensure points is included
           subscriptionPlans: updatedPlans,
         },
       });
@@ -536,6 +684,8 @@ export function EditsManagement() {
         const updatedMethod = {
           ...editingPaymentMethod,
           description: filteredDescription.join(", "), // Join as string for backend
+          fee: (editingPaymentMethod.fee || 0).toString(), // Convert fee to string as required by API
+          active: editingPaymentMethod.active.toString(), // Convert active to string as required by API
         };
 
         await axiosInstance.patch(
@@ -577,8 +727,8 @@ export function EditsManagement() {
         const paymentData = {
           name: newPaymentMethod.name,
           description: filteredDescription.join(", "), // Join as string for backend
-          fee: newPaymentMethod.fee || 0,
-          active: newPaymentMethod.active || false,
+          fee: (newPaymentMethod.fee || 0).toString(), // Convert fee to string as required by API
+          active: (newPaymentMethod.active || false).toString(), // Convert active to string as required by API
         };
 
         await axiosInstance.post("/payment", paymentData);
@@ -649,7 +799,7 @@ export function EditsManagement() {
       if (!method) return;
 
       await axiosInstance.patch(`/payment/${methodId}`, {
-        active: !method.active,
+        active: (!method.active).toString(), // Convert to string as required by API
       });
 
       // Refresh payment methods list
@@ -793,6 +943,9 @@ export function EditsManagement() {
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Subscription Plan</DialogTitle>
+                <DialogDescription>
+                  Enter details for the new subscription plan
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -877,10 +1030,38 @@ export function EditsManagement() {
         </div>
 
         {/* Edit Plan Modal */}
+        {/* Debug Modal */}
+        <Dialog open={isDebugModalOpen} onOpenChange={setIsDebugModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Debug Payment Methods Data</DialogTitle>
+              <DialogDescription>
+                Raw payment methods data for debugging purposes
+              </DialogDescription>
+            </DialogHeader>
+            <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded overflow-auto max-h-[500px]">
+              <pre className="text-xs whitespace-pre-wrap">
+                {JSON.stringify(debugData, null, 2)}
+              </pre>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsDebugModalOpen(false)}
+                className="w-full"
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Subscription Plan</DialogTitle>
+              <DialogDescription>
+                Modify the details of the existing subscription plan
+              </DialogDescription>
             </DialogHeader>
             {editingPlan && (
               <div className="space-y-4">
@@ -980,6 +1161,19 @@ export function EditsManagement() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDebugData(paymentMethods);
+              setIsDebugModalOpen(true);
+            }}
+            className="text-xs"
+          >
+            Debug Payment Methods
+          </Button>
+        </div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1001,6 +1195,24 @@ export function EditsManagement() {
                     </div>
                   </TableCell>
                 </TableRow>
+              ) : !Array.isArray(paymentMethods) ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-4 text-muted-foreground"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <p>Invalid payment methods data received.</p>
+                      <Button
+                        onClick={fetchPaymentMethods}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : paymentMethods.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -1015,8 +1227,14 @@ export function EditsManagement() {
                   <TableRow key={method._id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {method.name.charAt(0).toUpperCase() +
-                          method.name.slice(1)}{" "}
+                        {method.name ? (
+                          method.name.charAt(0).toUpperCase() +
+                          method.name.slice(1)
+                        ) : (
+                          <span className="text-orange-500 font-medium">
+                            Unknown Method (ID: {method._id || "No ID"})
+                          </span>
+                        )}{" "}
                         {/* Capitalize first letter */}
                         {method.active && (
                           <Badge
@@ -1110,6 +1328,9 @@ export function EditsManagement() {
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Payment Method</DialogTitle>
+                <DialogDescription>
+                  Enter details for the new payment method
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -1221,6 +1442,9 @@ export function EditsManagement() {
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Payment Method</DialogTitle>
+              <DialogDescription>
+                Modify the details of the existing payment method
+              </DialogDescription>
             </DialogHeader>
             {editingPaymentMethod && (
               <div className="space-y-4">
@@ -1381,9 +1605,14 @@ export function EditsManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Settings className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-                <p>System configuration panel coming soon...</p>
+              <div className="space-y-6">
+                <p className="text-sm text-muted-foreground">
+                  Manage core application settings including name, support
+                  email, URLs, and point values.
+                </p>
+                <div className="flex flex-col items-center">
+                  <SystemConfigModal />
+                </div>
               </div>
             </CardContent>
           </Card>

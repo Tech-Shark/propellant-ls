@@ -111,6 +111,9 @@ const OrganizationPayment: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState("professional");
   const [plans, setPlans] = useState(defaultPlans);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   // Fetch subscription plans from settings
   useEffect(() => {
@@ -133,33 +136,102 @@ const OrganizationPayment: React.FC = () => {
           Array.isArray(settingsData.app.subscriptionPlans) &&
           settingsData.app.subscriptionPlans.length > 0
         ) {
-          // Transform API subscription plans to match our UI format
-          const formattedPlans = settingsData.app.subscriptionPlans.map(
-            (plan, index) => {
-              // Start with a base plan from defaults to ensure we have all fields
-              const basePlan =
-                defaultPlans[index % defaultPlans.length] || defaultPlans[0];
+          // Filter plans for organizations
+          // Use one of these strategies for filtering:
+          // 1. Look for organization-specific markers in features
+          // 2. Filter by name patterns
+          // 3. Filter by price ranges (organization plans typically cost more)
 
-              return {
-                id:
-                  plan.name?.toLowerCase()?.replace(/\s+/g, "") ||
-                  `plan-${index}`,
-                name: plan.name || `Plan ${index + 1}`,
-                price: plan.price || 0,
-                description:
-                  Array.isArray(plan.description) && plan.description.length > 0
-                    ? plan.description[0]
-                    : basePlan.description,
-                features: plan.features || [],
-                popular: index === 1, // Mark second plan as popular
-              };
+          const orgPlans = settingsData.app.subscriptionPlans.filter((plan) => {
+            // Strategy 1: Check for organization-specific markers
+            if (
+              plan.features.some(
+                (f) =>
+                  f === "[ORGANIZATION]" ||
+                  f.includes("for organizations") ||
+                  f.includes("For Organizations")
+              )
+            ) {
+              return true;
             }
-          );
 
-          console.log(
-            "Using subscription plans from settings:",
-            formattedPlans
-          );
+            // Strategy 2: Check for organization-specific names
+            const orgPlanNames = [
+              "basic",
+              "advanced",
+              "enterprise",
+              "business",
+              "corporate",
+            ];
+            if (
+              orgPlanNames.some((name) =>
+                plan.name.toLowerCase().includes(name)
+              )
+            ) {
+              return true;
+            }
+
+            // Strategy 3: If no explicit org plans found, don't use talent plans
+            if (
+              plan.features.some(
+                (f) =>
+                  f === "[TALENT]" ||
+                  f.includes("for talent") ||
+                  f.includes("For Talent")
+              )
+            ) {
+              return false;
+            }
+
+            // Strategy 4: Use job posting related features
+            if (
+              plan.features.some(
+                (f) =>
+                  f.includes("job post") ||
+                  f.includes("hiring") ||
+                  f.includes("recruit")
+              )
+            ) {
+              return true;
+            }
+
+            // Default: Use higher-priced plans for organizations if no other indicators
+            return plan.price >= 49;
+          });
+
+          // If no organization-specific plans found, fall back to defaults
+          const plansToUse =
+            orgPlans.length > 0 ? orgPlans : settingsData.app.subscriptionPlans;
+
+          // Transform API subscription plans to match our UI format
+          const formattedPlans = plansToUse.map((plan, index) => {
+            // Start with a base plan from defaults to ensure we have all fields
+            const basePlan =
+              defaultPlans[index % defaultPlans.length] || defaultPlans[0];
+
+            // Clean up any markers from the features list that we don't want to show to users
+            const cleanedFeatures = plan.features.filter(
+              (feature) =>
+                !feature.includes("[ORGANIZATION]") &&
+                !feature.includes("[TALENT]")
+            );
+
+            return {
+              id:
+                plan.name?.toLowerCase()?.replace(/\s+/g, "") ||
+                `plan-${index}`,
+              name: plan.name || `Plan ${index + 1}`,
+              price: plan.price || 0,
+              description:
+                Array.isArray(plan.description) && plan.description.length > 0
+                  ? plan.description[0]
+                  : basePlan.description,
+              features: cleanedFeatures,
+              popular: index === 1, // Mark second plan as popular
+            };
+          });
+
+          console.log("Using organization subscription plans:", formattedPlans);
           setPlans(formattedPlans);
         } else {
           console.log(
@@ -179,8 +251,59 @@ const OrganizationPayment: React.FC = () => {
       }
     };
 
+    // Fetch payment methods and subscription plans
+    const fetchPaymentMethods = async () => {
+      try {
+        const response = await axiosInstance.get("/payment");
+        console.log("Payment methods:", response.data);
+        if (response.data && response.data.data) {
+          setPaymentMethods(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+      }
+    };
+
+    fetchPaymentMethods();
     fetchSubscriptionPlans();
   }, []);
+
+  // Handle plan selection and payment
+  const handleUpgrade = (planId: string) => {
+    setSelectedPlan(planId);
+  };
+
+  const handlePayment = async () => {
+    setIsUpgrading(true);
+
+    try {
+      // Send the plan information to the backend
+      const response = await axiosInstance.post("/premium", {
+        plan: selectedPlan.toUpperCase(),
+      });
+
+      // Check if response contains a payment URL
+      if (
+        response.data &&
+        typeof response.data === "string" &&
+        response.data.startsWith("http")
+      ) {
+        // Redirect to payment gateway
+        window.location.href = response.data;
+      } else {
+        toast("Subscription updated successfully", {
+          description: "Your account has been updated with the new plan.",
+        });
+      }
+    } catch (error) {
+      console.error("Payment initialization error:", error);
+      toast("Payment failed", {
+        description: "Please try again or contact support.",
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -308,15 +431,35 @@ const OrganizationPayment: React.FC = () => {
                               ? "bg-orange-600 hover:bg-orange-700"
                               : "bg-slate-700 hover:bg-slate-600"
                           } text-white`}
-                          onClick={() => setSelectedPlan(plan.id)}
+                          onClick={() => handleUpgrade(plan.id)}
                         >
                           {selectedPlan === plan.id
-                            ? "Current Plan"
+                            ? "Selected"
                             : "Select Plan"}
                         </Button>
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              )}
+
+              {/* Continue to Payment button */}
+              {selectedPlan && (
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    disabled={isUpgrading}
+                    onClick={handlePayment}
+                    className="px-8 py-6 bg-orange-600 hover:bg-orange-700 text-white text-lg font-semibold"
+                  >
+                    {isUpgrading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      "Continue to Payment"
+                    )}
+                  </Button>
                 </div>
               )}
             </div>
