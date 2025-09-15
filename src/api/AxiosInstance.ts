@@ -20,7 +20,19 @@ axiosInstance.interceptors.request.use(
         const accessToken = getCookie('accessToken');
         if (accessToken) {
             config.headers['Authorization'] = `Bearer ${accessToken}`;
+            console.log('Auth token found and set in request header');
+        } else {
+            console.warn('No auth token found! Authentication may fail.');
         }
+        
+        // Log all request headers for debugging
+        console.log('Request headers:', config.headers);
+        
+        // For POST requests, log the request body
+        if (config.method?.toLowerCase() === 'post' && config.data) {
+            console.log('Request data:', typeof config.data === 'string' ? JSON.parse(config.data) : config.data);
+        }
+        
         return config;
     },
     (error) => Promise.reject(error)

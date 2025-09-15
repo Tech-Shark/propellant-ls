@@ -361,8 +361,14 @@ export default function CVBuilder() {
         position: exp.position,
         title: exp.title || exp.position,
         startDate: exp.startDate,
-        endDate: exp.endDate,
-        current: exp.isCurrentRole,
+        // Handle current roles - either use null or "Present" string based on your API expectation
+        endDate: exp.isCurrentRole
+          ? typeof exp.endDate === "string" && exp.endDate.trim()
+            ? exp.endDate
+            : "Present"
+          : exp.endDate,
+        // Ensure current is a proper boolean
+        current: Boolean(exp.isCurrentRole),
         location: exp.location,
         description: exp.description,
         achievements: exp.achievements || [],
@@ -379,11 +385,103 @@ export default function CVBuilder() {
       console.log(
         "Sending data for optimization:",
         JSON.stringify(apiFormattedData)
-      ); // Make the API call
-      const response = await axiosInstance.post(
-        "/cv/optimize",
-        apiFormattedData
       );
+
+      // Validate the data structure before sending
+      const validateData = () => {
+        // Check that jobDescription is a string
+        if (
+          typeof apiFormattedData.jobDescription !== "string" ||
+          !apiFormattedData.jobDescription.trim()
+        ) {
+          return "Job description is required and must be a non-empty string";
+        }
+
+        // Check that skills is an array
+        if (!Array.isArray(apiFormattedData.skills)) {
+          return "Skills must be an array";
+        }
+
+        // Check each skill has required properties
+        for (const skill of apiFormattedData.skills) {
+          if (!skill.name || !skill.level) {
+            return "Each skill must have a name and level";
+          }
+        }
+
+        // Check experiences is an array
+        if (!Array.isArray(apiFormattedData.experiences)) {
+          return "Experiences must be an array";
+        }
+
+        // Check each experience has required properties
+        for (const exp of apiFormattedData.experiences) {
+          if (!exp.company || !exp.position || !exp.description) {
+            return "Each experience must have company, position, and description";
+          }
+          if (!exp.startDate) {
+            return "Each experience must have a start date";
+          }
+          if (exp.current === false && !exp.endDate) {
+            return "Each non-current experience must have an end date";
+          }
+        }
+
+        return null; // No validation errors
+      };
+
+      const validationError = validateData();
+      if (validationError) {
+        toast.error(`Validation error: ${validationError}`);
+        setIsGenerating(false);
+        return;
+      }
+
+      // Make the API call with explicit content-type header and retry logic
+      let response;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          // Log the exact data being sent
+          console.log(
+            `Attempt ${retryCount + 1}: Sending CV optimization request`
+          );
+
+          response = await axiosInstance.post(
+            "/cv/optimize",
+            apiFormattedData,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              timeout: 30000,
+            }
+          );
+
+          // If successful, break out of retry loop
+          console.log("CV optimization request successful");
+          break;
+        } catch (err) {
+          retryCount++;
+          console.error(
+            `API call failed (attempt ${retryCount}/${maxRetries})`,
+            err
+          );
+
+          if (retryCount >= maxRetries) {
+            console.error("Max retries reached. Giving up.");
+            throw err; // Re-throw to be caught by outer try/catch
+          }
+
+          // Wait before retrying (exponential backoff)
+          const delay = 1000 * Math.pow(2, retryCount);
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
 
       // Log the entire response for debugging
       console.log("Optimization API Response:", response);
@@ -502,11 +600,32 @@ export default function CVBuilder() {
         if (error.response.status === 400) {
           // Log more diagnostic info
           console.log("CV Optimization 400 Error - Possible causes:");
+          console.log("Full error response:", error.response);
+
+          // Log what the server responded with (might contain validation errors)
+          if (error.response?.data) {
+            console.log("Server response data:", error.response.data);
+
+            // If there's a specific message or validation errors, show them
+            if (error.response.data.message) {
+              console.log("Server message:", error.response.data.message);
+              errorMessage = error.response.data.message;
+            }
+
+            if (error.response.data.errors) {
+              console.log("Validation errors:", error.response.data.errors);
+              errorMessage =
+                "Invalid data format: " +
+                Object.values(error.response.data.errors).join(", ");
+            }
+          }
 
           // Extract original request data from error config
           const requestData = error.config?.data
             ? JSON.parse(error.config.data)
             : null;
+
+          console.log("Request data sent to server:", requestData);
 
           // Check job description
           if (requestData?.jobDescription) {
@@ -541,7 +660,18 @@ export default function CVBuilder() {
         }
       }
 
-      toast.error(`We couldn't optimize your CV: ${errorMessage}`);
+      // Show a more user-friendly error message
+      toast.error(
+        `We couldn't optimize your CV at this time. Our AI service might be temporarily unavailable. ${
+          errorMessage !== "AI Optimization Failed. Try again later"
+            ? `Error: ${errorMessage}`
+            : "Please try again later or continue editing your CV manually."
+        }`
+      );
+
+      console.log(
+        "If this error persists, check the AI_URL configuration in your backend .env file"
+      );
     } finally {
       setIsGenerating(false);
     }
