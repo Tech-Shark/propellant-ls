@@ -294,7 +294,7 @@ const getCompleteHTML = (
   if (template.id === 'classic') {
     return `
       <h1>${transformedData.personalInfo.name || ''}</h1>
-      ${transformedData.professionalTitle ? `<div style="text-align: center; font-style: italic; font-size: 12pt; margin-bottom: 6px;">${transformedData.professionalTitle}</div>` : ''}
+      ${transformedData.professionalTitle ? `<div style="text-align: center; font-style: italic; font-size: 12pt; margin-bottom: 3px;">${transformedData.professionalTitle}</div>` : ''}
       <div class="contact-info">
         <div>
           ${transformedData.phone ? `📱 ${transformedData.phone}` : ''}
@@ -302,58 +302,103 @@ const getCompleteHTML = (
           ${transformedData.email ? ` | ✉️ ${transformedData.email}` : ''}
         </div>
       </div>
-      ${transformedData.professionalSummary ? `<div class="section"><h2>Summary</h2><p>${transformedData.professionalSummary}</p></div>` : ''}
-      ${skills.length > 0 ? `<div class="section"><h2>Skills</h2><div class="skills-grid">
+      ${transformedData.professionalSummary ? `<div class="section"><h2>Summary</h2><p style="margin-top: 4px;">${transformedData.professionalSummary}</p></div>` : ''}
+      ${skills.length > 0 ? `<div class="section"><h2 style="margin-bottom: 4px;">Skills</h2><div class="skills-grid" style="margin-top: 6px;">
         ${skills.map((skill) => `<div class="skill-item">• ${skill.name}</div>`).join('')}
       </div></div>` : ''}
-      ${workExperiences.length > 0 ? `<div class="section"><h2>Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div><strong>${job.position}</strong>${job.company ? `, ${job.company}` : ''}</div><div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><em>${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</em><span>${job.location || ''}</span></div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 6px;"><strong>Key Achievements:</strong><ul style="margin: 4px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
+      ${workExperiences.length > 0 ? `<div class="section" style="margin-top: 8px;"><h2>Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div><strong>${job.position}</strong>${job.company ? `, ${job.company}` : ''}</div><div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><em>${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</em><span>${job.location || ''}</span></div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 6px; margin-left: 10px;"><em style="font-weight: normal;">Achievements:</em><ul style="margin: 2px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
       ${educations.length > 0 ? `<div class="section"><h2>Education</h2>${educations.map((edu) => `<div class="education-entry"><div>${edu.startDate} - ${edu.endDate}</div><div>${edu.degree} in ${edu.fieldOfStudy}</div><div><strong>${edu.institution}</strong></div>${edu.grade ? `<div>Grade: ${edu.grade}</div>` : ''}${edu.description ? formatDescriptionAsBullets(edu.description) : ''}</div>`).join('')}</div>` : ''}
-      ${certifications.length > 0 ? `<div class="section"><h2>Certifications</h2>${certifications.map((cert) => `<div class="education-entry"><strong>${cert.name}</strong> - ${cert.issuer}<br>Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}${cert.credentialUrl ? `<br>🔗 URL: <a href='${cert.credentialUrl}' target="_blank" rel="noopener noreferrer">${cert.credentialUrl}</a>` : ''}</div>`).join('')}</div>` : ''}
-      ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry"><strong>${proj.name}</strong>${formatDescriptionAsBullets(proj.description)}<div>Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}</div>${proj.link ? `<div>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a></div>` : ''}</div>`).join('')}</div>` : ''}
+      ${certifications.length > 0 ? `<div class="section"><h2>Certifications</h2>${certifications.map((cert) => `<div class="education-entry">
+          <div>
+            <strong>${cert.name}</strong>
+          </div>
+          <div>Issued by: ${cert.issuer} | ${cert.dateIssued}</div>
+          ${cert.credentialId ? `<div style="font-size: 9pt; color: #666;">Credential ID: ${cert.credentialId}</div>` : ''}
+          ${cert.credentialUrl ? `<div style="font-size: 9pt; text-align: left; display: block; width: 100%;">
+  <a href='${cert.credentialUrl}' 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     style="color: #000; display: inline-block; text-align: left;">
+     ${cert.credentialUrl}
+  </a>
+</div>` : ''}
+        </div>`).join('')}</div>` : ''}
+      ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <strong>${proj.name}</strong>
+            ${proj.link ? `<a href='${proj.link}' target="_blank" rel="noopener noreferrer" style="font-size: 9pt; color: #2563eb;">View Project ↗</a>` : ''}
+          </div>
+          ${formatDescriptionAsBullets(proj.description)}
+          <div style="margin-top: 4px;">
+            <strong>Technologies:</strong> ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
+          </div>
+        </div>`).join('')}</div>` : ''}
     `;
   } else if (template.id === 'modern') {
     return `
       <h1>${transformedData.firstName || ''} ${transformedData.lastName || ''}</h1>
-      ${transformedData.professionalTitle ? `<div style="font-style: italic; font-size: 14pt; color: #7f8c8d; margin: 2px 0 6px 0;">${transformedData.professionalTitle}</div>` : ''}
+      ${transformedData.professionalTitle ? `<div style="font-style: italic; font-size: 14pt; color: #7f8c8d; margin: 0 0 4px 0;">${transformedData.professionalTitle}</div>` : ''}
       <div class="contact-info">
         <span>📱 ${transformedData.phone || ''}</span>
         <span>📍 ${transformedData.address || ''}</span>
         <span>✉️ ${transformedData.email || ''}</span>
       </div>
-      ${transformedData.professionalSummary ? `<div class="section"><h2>Professional Summary</h2><p>${transformedData.professionalSummary}</p></div>` : ''}
-      ${skills.length > 0 ? `<div class="section"><h2>Skills</h2><div class="skills-grid">${skills.map((skill) => `<div class="skill-item">• ${skill.name}</div>`).join('')}</div></div>` : ''}
-      ${workExperiences.length > 0 ? `<div class="section"><h2>Work Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div class="job-header"><span class="job-title">${job.position}${job.company ? ` at ${job.company}` : ''}</span><span style="font-size: 9pt; color: #7f8c8d;">${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</span></div><div style="font-size: 9pt; color: #95a5a6; margin-bottom: 6px;">${job.location || ''}</div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 6px;"><strong>Key Achievements:</strong><ul style="margin: 4px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
+      ${transformedData.professionalSummary ? `<div class="section"><h2 style="margin-bottom: 4px;">Professional Summary</h2><p style="margin-top: 4px;">${transformedData.professionalSummary}</p></div>` : ''}
+      ${skills.length > 0 ? `<div class="section"><h2 style="margin-bottom: 4px;">Skills</h2><div class="skills-grid" style="margin-top: 6px;">${skills.map((skill) => `<div class="skill-item">• ${skill.name}</div>`).join('')}</div></div>` : ''}
+      ${workExperiences.length > 0 ? `<div class="section"><h2 style="margin-bottom: 4px;">Work Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div class="job-header"><span class="job-title">${job.position}${job.company ? ` at ${job.company}` : ''}</span><span style="font-size: 9pt; color: #7f8c8d;">${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</span></div><div style="font-size: 9pt; color: #95a5a6; margin-bottom: 6px;">${job.location || ''}</div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 4px; margin-left: 10px;"><em style="font-weight: normal; color: #2c3e50;">Achievements:</em><ul style="margin: 2px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
       ${educations.length > 0 ? `<div class="section"><h2>Education</h2>${educations.map((edu) => `<div class="education-entry"><div style="font-weight: 600; color: #2c3e50;">${edu.degree} in ${edu.fieldOfStudy}</div><div style="font-size: 9pt; color: #7f8c8d;">${edu.institution} | ${edu.startDate} - ${edu.endDate}${edu.grade ? ` | Grade: ${edu.grade}` : ''}</div>${edu.description ? formatDescriptionAsBullets(edu.description) : ''}</div>`).join('')}</div>` : ''}
-      ${certifications.length > 0 ? `<div class="section"><h2>Certifications</h2>${certifications.map((cert) => `<div class="education-entry"><strong>${cert.name}</strong> - ${cert.issuer}<br>Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}${cert.credentialUrl ? `<br>🔗 <strong>URL:</strong> <a href='${cert.credentialUrl}' target="_blank" rel="noopener noreferrer">${cert.credentialUrl}</a>` : ''}</div>`).join('')}</div>` : ''}
-      ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry"><strong>${proj.name}</strong><br>${proj.description ? formatDescriptionAsBullets(proj.description) : ''}<br>Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}${proj.link ? `<br>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a>` : ''}</div>`).join('')}</div>` : ''}
+      ${certifications.length > 0 ? `<div class="section"><h2 style="margin-bottom: 4px;">Certifications</h2>${certifications.map((cert) => `<div class="education-entry">
+          <div>
+            <strong style="font-size: 10.5pt; color: #2c3e50;">${cert.name}</strong>
+          </div>
+          <div style="font-size: 9pt; color: #7f8c8d;">${cert.issuer} | Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}</div>
+          ${cert.credentialUrl ? `<div style="font-size: 9pt; text-align: left; display: block; width: 100%;">
+  <a href='${cert.credentialUrl}' 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     style="color: #3498db; display: inline-block; text-align: left;">
+     ${cert.credentialUrl}
+  </a>
+</div>` : ''}
+        </div>`).join('')}</div>` : ''}
+      ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 10.5pt; color: #2c3e50;">${proj.name}</strong>
+            ${proj.link ? `<a href='${proj.link}' target="_blank" rel="noopener noreferrer" style="font-size: 9pt; background-color: #e9f5f9; color: #3498db; padding: 2px 8px; border-radius: 4px; text-decoration: none;">View Project</a>` : ''}
+          </div>
+          ${proj.description ? formatDescriptionAsBullets(proj.description) : ''}
+          <div style="margin-top: 4px; font-size: 9pt; color: #7f8c8d;">
+            <strong>Technologies:</strong> ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
+          </div>
+        </div>`).join('')}</div>` : ''}
     `;
   } else if (template.id === 'executive') {
     return `
     <div class="cv-container">
         <h1>${transformedData.firstName || ''} ${transformedData.lastName || ''}</h1>
-        ${transformedData.professionalTitle ? `<div class="subtitle">${transformedData.professionalTitle}</div>` : ''}
+        ${transformedData.professionalTitle ? `<div class="subtitle" style="margin-bottom: 4px;">${transformedData.professionalTitle}</div>` : ''}
         <div class="contact-info">
           ${transformedData.phone ? `<span>📱 ${transformedData.phone}</span>` : ''}
           ${transformedData.email ? `<span>✉️ ${transformedData.email}</span>` : ''}
           ${transformedData.address ? `<span>📍 ${transformedData.address}</span>` : ''}
         </div>
         ${transformedData.professionalSummary && transformedData.professionalSummary.trim() !== '' ? `
-          <div class="highlight-box">
+          <div class="highlight-box" style="margin-top: 6px;">
             <strong>EXECUTIVE SUMMARY</strong>
-            <p style="margin-top: 6px;">${transformedData.professionalSummary}</p>
+            <p style="margin-top: 4px;">${transformedData.professionalSummary}</p>
           </div>
         ` : ''}
         ${skills.length > 0 ? `
           <div class="section">
-            <h2>Skills</h2>
-            <div class="skills-grid">
+            <h2 style="margin-bottom: 4px;">Skills</h2>
+            <div class="skills-grid" style="margin-top: 6px;">
               ${skills.map((skill) => `<div class="skill-item">${skill.name}</div>`).join('')}
             </div>
           </div>
         ` : ''}
         ${workExperiences.length > 0 ? `
-          <div class="section">
-            <h2>Professional Experience</h2>
+          <div class="section" style="margin-top: 8px;">
+            <h2 style="margin-bottom: 4px;">Professional Experience</h2>
             ${workExperiences.map((job) => `
               <div class="employment-entry">
                 <div class="job-title">${job.position}</div>
@@ -364,9 +409,9 @@ const getCompleteHTML = (
                 </div>
                 ${formatDescriptionAsBullets(job.description)}
                 ${Array.isArray(job.achievements) && job.achievements.length > 0 ? 
-                  `<div class="achievements">
-                    <strong>Key Achievements:</strong>
-                    <ul style="margin: 6px 0; padding-left: 20px;">
+                  `<div class="achievements" style="margin-left: 10px;">
+                    <em style="font-weight: normal;">Achievements:</em>
+                    <ul style="margin: 4px 0; padding-left: 20px;">
                       ${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
                     </ul>
                   </div>` 
@@ -389,12 +434,24 @@ const getCompleteHTML = (
         ` : ''}
         ${certifications.length > 0 ? `
           <div class="section">
-            <h2>Certifications</h2>
+            <h2 style="margin-bottom: 4px;">Certifications</h2>
             ${certifications.map((cert) => `
               <div class="education-entry">
-                <strong>${cert.name}</strong> - ${cert.issuer}<br>
-                Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}
-                ${cert.credentialUrl ? `<br>🔗 <strong>URL:</strong> <a href='${cert.credentialUrl}' target="_blank" rel="noopener noreferrer">${cert.credentialUrl}</a>` : ''}
+                <div style="margin-bottom: 2px;">
+                  <strong style="font-size: 11pt;">${cert.name}</strong>
+                </div>
+                <div>
+                  ${cert.issuer} | Issued: ${cert.dateIssued}
+                  ${cert.credentialId ? `<div style="font-size: 9pt; color: #555; margin-top: 2px;">Credential ID: ${cert.credentialId}</div>` : ''}
+                 <div style="font-size: 9pt; text-align: left; display: block; width: 100%;">
+                    <a href='${cert.credentialUrl}' 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style="color: #000; display: inline-block; text-align: left;">
+                      ${cert.credentialUrl}
+                    </a>
+                  </div>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -404,10 +461,14 @@ const getCompleteHTML = (
             <h2>Projects</h2>
             ${projects.map((proj) => `
               <div class="education-entry">
-                <strong>${proj.name}</strong><br>
-                ${proj.description ? formatDescriptionAsBullets(proj.description) : ''}<br>
-                Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
-                ${proj.link ? `<br>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a>` : ''}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <strong style="font-size: 11pt;">${proj.name}</strong>
+                  ${proj.link ? `<a href='${proj.link}' target="_blank" rel="noopener noreferrer" style="font-size: 9pt; background-color: #333; color: white; padding: 2px 10px; border-radius: 2px; text-decoration: none;">View Project</a>` : ''}
+                </div>
+                ${proj.description ? formatDescriptionAsBullets(proj.description) : ''}
+                <div style="margin-top: 4px; font-weight: 500;">
+                  <strong>Technologies:</strong> ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
+                </div>
               </div>
             `).join('')}
           </div>
@@ -416,7 +477,7 @@ const getCompleteHTML = (
   } else if (template.id === 'creative') {
     return `
       <h1>${transformedData.personalInfo.name || ''}</h1>
-      ${transformedData.professionalTitle ? `<div class="tagline">${transformedData.professionalTitle}</div>` : `<div class="tagline">Creative Professional • Innovation Driven • Results Focused</div>`}
+      ${transformedData.professionalTitle ? `<div class="tagline" style="margin-bottom: 4px;">${transformedData.professionalTitle}</div>` : `<div class="tagline" style="margin-bottom: 4px;">Creative Professional • Innovation Driven • Results Focused</div>`}
       <div class="contact-info">
         <span>📱 ${transformedData.phone || ''}</span>
         <span>📍 ${transformedData.address || ''}</span>
@@ -424,31 +485,31 @@ const getCompleteHTML = (
       </div>
       ${transformedData.professionalSummary ? `
       <div class="section">
-        <h2>About Me</h2>
-        <p>${transformedData.professionalSummary}</p>
+        <h2 style="margin-bottom: 4px;">About Me</h2>
+        <p style="margin-top: 4px;">${transformedData.professionalSummary}</p>
       </div>` : ''}
       ${skills.length > 0 ? `
       <div class="section">
-        <h2>Skills & Expertise</h2>
-        <div class="skills-grid">
+        <h2 style="margin-bottom: 4px;">Skills & Expertise</h2>
+        <div class="skills-grid" style="margin-top: 6px;">
           ${skills.map((skill) => `<div class="skill-item">${skill.name}</div>`).join('')}
         </div>
       </div>` : ''}
       ${workExperiences.length > 0 ? `
-      <div class="section">
-        <h2>Work Experience</h2>
+      <div class="section" style="margin-top: 8px;">
+        <h2 style="margin-bottom: 4px;">Work Experience</h2>
         ${workExperiences.map((job) => `
-          <div class="employment-entry">
-            <div class="job-header">
-              <div class="job-title">${job.position}</div>
+          <div class="employment-entry" style="margin-bottom: 10px; border-left: 3px solid #e74c3c; padding-left: 10px;">
+            <div style="margin-bottom: 2px;">
+              <div class="job-title" style="font-size: 11pt; color: #e74c3c; font-weight: bold;">${job.position}</div>
               <div class="job-meta">${job.company ? `${job.company} • ` : ''}${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</div>
             </div>
             <div class="job-meta">${job.location || ''}</div>
             ${formatDescriptionAsBullets(job.description)}
             ${Array.isArray(job.achievements) && job.achievements.length > 0 ? 
-              `<div class="achievements">
-                <strong>Key Achievements:</strong>
-                <ul style="margin: 6px 0; padding-left: 20px;">
+              `<div class="achievements" style="margin-left: 8px; margin-top: 4px;">
+                <em style="font-weight: normal; color: #e74c3c;">Achievements:</em>
+                <ul style="margin: 2px 0; padding-left: 20px;">
                   ${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
                 </ul>
               </div>` 
@@ -458,25 +519,59 @@ const getCompleteHTML = (
       </div>` : ''}
       ${educations.length > 0 ? `
       <div class="section">
-        <h2>Education</h2>
+        <h2 style="margin-bottom: 4px;">Education</h2>
         ${educations.map((edu) => `
-          <div class="education-entry">
-            <strong>${edu.degree}</strong> in ${edu.fieldOfStudy}<br>
-            ${edu.institution} • ${edu.startDate} - ${edu.endDate}
-            ${edu.grade ? `<br>Grade: ${edu.grade}` : ''}
+          <div class="education-entry" style="margin-bottom: 10px;">
+            <div style="margin-bottom: 2px;">
+              <strong style="font-size: 11pt; color: #e74c3c;">${edu.degree}</strong> in ${edu.fieldOfStudy}
+            </div>
+            <div class="job-meta">${edu.institution} • ${edu.startDate} - ${edu.endDate}</div>
+            ${edu.grade ? `<div style="font-size: 9pt; color: #7f8c8d; margin-top: 2px;">Grade: ${edu.grade}</div>` : ''}
             ${edu.description ? formatDescriptionAsBullets(edu.description) : ''}
+          </div>
+        `).join('')}
+      </div>` : ''}
+      ${certifications.length > 0 ? `
+      <div class="section">
+        <h2 style="margin-bottom: 4px;">Certifications</h2>
+        ${certifications.map((cert) => `
+          <div class="employment-entry" style="margin-bottom: 10px; border-left: 3px solid #e74c3c; padding-left: 10px;">
+            <div style="margin-bottom: 2px;">
+              <strong style="font-size: 11pt; color: #e74c3c;">${cert.name}</strong>
+            </div>
+            <div class="job-meta">${cert.issuer} • Issued: ${cert.dateIssued}</div>
+            ${cert.credentialId ? `<div style="font-size: 9pt; color: #7f8c8d; margin-top: 2px;">ID: ${cert.credentialId}</div>` : ''}
+            ${cert.credentialUrl ? `<div style="font-size: 9pt; text-align: left; display: block; width: 100%;">
+  <a href='${cert.credentialUrl}' 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     style="color: #e74c3c; display: inline-block; text-align: left;">
+     ${cert.credentialUrl}
+  </a>
+</div>` : ''}
           </div>
         `).join('')}
       </div>` : ''}
       ${projects.length > 0 ? `
       <div class="section">
-        <h2>Projects</h2>
+        <h2 style="margin-bottom: 4px;">Projects</h2>
         ${projects.map((proj) => `
-          <div class="education-entry">
-            <strong>${proj.name}</strong><br>
-            ${proj.description ? formatDescriptionAsBullets(proj.description) : ''}<br>
-            Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
-            ${proj.link ? `<br>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a>` : ''}
+          <div class="employment-entry" style="margin-bottom: 10px; border-left: 3px solid #e74c3c; padding-left: 10px;">
+            <div style="margin-bottom: 4px;">
+              <strong style="font-size: 11pt; color: #e74c3c;">${proj.name}</strong>
+            </div>
+            ${proj.description ? formatDescriptionAsBullets(proj.description) : ''}
+            <div style="font-size: 9pt; color: #7f8c8d; margin-top: 4px;">
+              <strong>Technologies:</strong> ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
+            </div>
+            ${proj.link ? `<div style="font-size: 9pt; text-align: left; display: block; width: 100%;">
+  <a href='${proj.link}' 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     style="color: #e74c3c; display: inline-block; text-align: left;">
+     ${proj.link}
+  </a>
+</div>` : ''}
           </div>
         `).join('')}
       </div>` : ''}

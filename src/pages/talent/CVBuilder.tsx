@@ -34,6 +34,30 @@ import {
 import { CVTemplateModal } from "@/components/CVTemplates/CVTemplateModal";
 import html2pdf from "html2pdf.js";
 
+// Helper function to validate URLs
+const isValidURL = (url: string): boolean => {
+  if (!url || url.trim() === "") return true; // Empty URLs are considered valid (optional field)
+
+  try {
+    new URL(url);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Helper function to format URLs properly
+const formatURL = (url: string): string => {
+  if (!url || url.trim() === "") return "";
+
+  // If URL doesn't have a protocol, add https://
+  if (!/^https?:\/\//i.test(url)) {
+    return `https://${url}`;
+  }
+
+  return url;
+};
+
 export default function CVBuilder() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -187,8 +211,14 @@ export default function CVBuilder() {
   const updateCertification = (
     index: number,
     field: keyof Certification,
-    value: string
+    value: string,
+    formatAsUrl: boolean = false
   ) => {
+    // If this is a URL field and formatAsUrl is true, format it properly
+    if (formatAsUrl && field === "credentialUrl") {
+      value = formatURL(value);
+    }
+
     setCertifications((prev) =>
       prev.map((cert, i) => (i === index ? { ...cert, [field]: value } : cert))
     );
@@ -212,8 +242,14 @@ export default function CVBuilder() {
   const updateProject = (
     index: number,
     field: keyof Project,
-    value: string
+    value: string,
+    formatAsUrl: boolean = false
   ) => {
+    // If this is a URL field and formatAsUrl is true, format it properly
+    if (formatAsUrl && (field === "link" || field === "project")) {
+      value = formatURL(value);
+    }
+
     setProjects((prev) =>
       prev.map((proj, i) => (i === index ? { ...proj, [field]: value } : proj))
     );
@@ -272,7 +308,7 @@ export default function CVBuilder() {
         !personalInfo.email
       ) {
         toast.error(
-          "Please fill in at least your first name, last name, and email address before optimizing."
+          "Please add your name and email before we can optimize your CV."
         );
         setIsGenerating(false);
         return;
@@ -304,7 +340,9 @@ export default function CVBuilder() {
         : ""; // Remove markdown formatting
 
       if (cleanJobDescription.trim() === "") {
-        toast.error("Job description is required for CV optimization");
+        toast.error(
+          "Please add a job description so we can tailor your CV to match it"
+        );
         setIsGenerating(false);
         return;
       }
@@ -429,11 +467,13 @@ export default function CVBuilder() {
           setSkills(cv.skills);
         }
 
-        toast.success("CV has been optimized successfully!");
+        toast.success(
+          "Your CV has been improved to match the job description!"
+        );
       } else {
         console.error("No CV data found in the response");
         toast.error(
-          "The optimization service returned no data. Please try again later."
+          "Sorry, we couldn't optimize your CV right now. Please try again in a few minutes."
         );
       }
     } catch (error) {
@@ -501,7 +541,7 @@ export default function CVBuilder() {
         }
       }
 
-      toast.error(`Optimization Failed: ${errorMessage}`);
+      toast.error(`We couldn't optimize your CV: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
     }
@@ -511,12 +551,61 @@ export default function CVBuilder() {
   const handleSave = async () => {
     setIsSaving(true);
 
-    const data: CV = {
+    // Validate all URLs before submission
+    const hasInvalidProjectUrls = projects.some(
+      (proj) =>
+        (proj.link && !isValidURL(proj.link)) ||
+        (proj.project && !isValidURL(proj.project))
+    );
+
+    const hasInvalidCredentialUrls = certifications.some(
+      (cert) => cert.credentialUrl && !isValidURL(cert.credentialUrl)
+    );
+
+    // Check personal profile URLs
+    const hasInvalidPersonalUrls =
+      (personalInfo.github && !isValidURL(personalInfo.github)) ||
+      (personalInfo.portfolio && !isValidURL(personalInfo.portfolio)) ||
+      (personalInfo.website && !isValidURL(personalInfo.website));
+
+    if (
+      hasInvalidProjectUrls ||
+      hasInvalidCredentialUrls ||
+      hasInvalidPersonalUrls
+    ) {
+      toast.error(
+        "Some links in your CV don't look right. Please check your website and profile links before saving."
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    // Format URLs properly before submission
+    const formattedProjects = projects.map((proj) => ({
+      ...proj,
+      link: formatURL(proj.link),
+      project: formatURL(proj.project),
+    }));
+
+    const formattedCertifications = certifications.map((cert) => ({
+      ...cert,
+      credentialUrl: formatURL(cert.credentialUrl),
+    }));
+
+    // Format personal profile URLs
+    const formattedPersonalInfo = {
       ...personalInfo,
+      github: formatURL(personalInfo.github),
+      portfolio: formatURL(personalInfo.portfolio),
+      website: formatURL(personalInfo.website),
+    };
+
+    const data: CV = {
+      ...formattedPersonalInfo,
       workExperience: workExperiences,
       education: educations,
-      certifications,
-      projects,
+      certifications: formattedCertifications,
+      projects: formattedProjects,
       skills,
     };
 
@@ -538,7 +627,7 @@ export default function CVBuilder() {
     const savedCvPromise = axiosInstance.post("/cv/save-draft", apiData);
 
     toast.promise(savedCvPromise, {
-      loading: "Loading...",
+      loading: "Saving your CV...",
       success: (response) => {
         // Get the CV data from the response
         const responseCV = removeIdFromCv(response?.data.data.data) as CV;
@@ -576,9 +665,9 @@ export default function CVBuilder() {
       error: (error) => {
         if (axios.isAxiosError(error)) {
           console.log(error);
-          return error.response?.data.message;
+          return "We couldn't save your CV. Please check your connection and try again.";
         } else {
-          return "Something went wrong. Please try again later.";
+          return "Something went wrong while saving. Please try again in a few minutes.";
         }
       },
       finally: () => {
@@ -631,10 +720,12 @@ export default function CVBuilder() {
 
       await html2pdf().set(opt).from(element).save();
 
-      toast.success("CV downloaded successfully!");
+      toast.success("Your CV has been downloaded successfully!");
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Failed to download CV. Please try again.");
+      toast.error(
+        "We couldn't download your CV. Please try again or check your browser settings."
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -1450,9 +1541,29 @@ export default function CVBuilder() {
                         e.target.value
                       )
                     }
-                    className="bg-slate-800 border-slate-600 text-white"
+                    onBlur={(e) => {
+                      if (e.target.value.trim() !== "") {
+                        // Format URL on blur
+                        updateCertification(
+                          index,
+                          "credentialUrl",
+                          formatURL(e.target.value)
+                        );
+                      }
+                    }}
+                    className={`bg-slate-800 border-slate-600 text-white ${
+                      cert.credentialUrl && !isValidURL(cert.credentialUrl)
+                        ? "border-red-500 focus:border-red-500"
+                        : ""
+                    }`}
+                    placeholder="https://credential.org/verify"
                     required
                   />
+                  {cert.credentialUrl && !isValidURL(cert.credentialUrl) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      Please enter a valid URL
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -1521,13 +1632,32 @@ export default function CVBuilder() {
                     <Input
                       value={proj.project}
                       onChange={(e) => {
-                        updateProject(index, "project", e.target.value);
-                        updateProject(index, "link", e.target.value);
+                        const value = e.target.value;
+                        updateProject(index, "project", value);
+                        updateProject(index, "link", value);
                       }}
-                      className="bg-slate-800 border-slate-600 text-white"
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        if (value.trim() !== "") {
+                          // Format URL on blur
+                          const formattedUrl = formatURL(value);
+                          updateProject(index, "project", formattedUrl);
+                          updateProject(index, "link", formattedUrl);
+                        }
+                      }}
+                      className={`bg-slate-800 border-slate-600 text-white ${
+                        proj.project && !isValidURL(proj.project)
+                          ? "border-red-500 focus:border-red-500"
+                          : ""
+                      }`}
                       placeholder="https://yourproject.com"
                       required
                     />
+                    {proj.project && !isValidURL(proj.project) && (
+                      <p className="text-red-500 text-xs mt-1">
+                        Please enter a valid URL (e.g., https://yourproject.com)
+                      </p>
+                    )}
                   </div>
                 </div>
 
