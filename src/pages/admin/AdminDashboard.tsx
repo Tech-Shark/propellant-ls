@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,6 +16,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
 import { PlatformOverview } from "@/components/admin/PlatformOverview";
 import { ReferralManagement } from "@/components/admin/ReferralManagement";
+import { NFTManagement } from "@/components/admin/NFTManagement";
 import { EditsManagement } from "@/components/admin/EditsManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
 import {
@@ -29,11 +30,13 @@ import {
   CheckCircle,
   AlertTriangle,
   DollarSign,
-  Menu, LogOut, Mail,
+  Menu,
+  LogOut,
+  Mail,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { useAuth } from "@/context/AuthContext.tsx";
 import axiosInstance from "@/api/AxiosInstance.ts";
 
 export default function AdminDashboard() {
@@ -91,8 +94,8 @@ export default function AdminDashboard() {
                   Super Admin
                 </Badge>
                 <button
-                    onClick={logout}
-                    className="flex items-center gap-2 text-red-400"
+                  onClick={logout}
+                  className="flex items-center gap-2 text-red-400"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Log out</span>
@@ -101,7 +104,7 @@ export default function AdminDashboard() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4 lg:space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 h-auto">
                 <TabsTrigger value="overview" className="text-xs lg:text-sm">
                   Overview
                 </TabsTrigger>
@@ -116,6 +119,9 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="referrals" className="text-xs lg:text-sm">
                   Referrals
+                </TabsTrigger>
+                <TabsTrigger value="nftlimits" className="text-xs lg:text-sm">
+                  NFT Limits
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="text-xs lg:text-sm">
                   Analytics
@@ -149,6 +155,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="referrals" className="space-y-4 lg:space-y-6">
                 <ReferralManagement />
+              </TabsContent>
+
+              <TabsContent value="nftlimits" className="space-y-4 lg:space-y-6">
+                <NFTManagement />
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
@@ -226,13 +236,18 @@ export default function AdminDashboard() {
               Users
             </TabsTrigger>
           </TabsList>
-            <TabsList className="grid w-full grid-cols-4 h-auto bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 h-auto bg-white shadow-sm">
             <TabsTrigger value="verifications" className="text-xs">
               Verifications
             </TabsTrigger>
             <TabsTrigger value="referrals" className="text-xs">
               Referrals
             </TabsTrigger>
+            <TabsTrigger value="nftlimits" className="text-xs">
+              NFT Limits
+            </TabsTrigger>
+          </TabsList>
+          <TabsList className="grid w-full grid-cols-3 h-auto bg-white shadow-sm">
             <TabsTrigger value="analytics" className="text-xs">
               Analytics
             </TabsTrigger>
@@ -262,6 +277,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="referrals" className="space-y-4">
             <ReferralManagement />
+          </TabsContent>
+
+          <TabsContent value="nftlimits" className="space-y-4">
+            <NFTManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">

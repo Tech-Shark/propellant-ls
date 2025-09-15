@@ -71,6 +71,7 @@ export default function CVBuilder() {
       location: "",
       title: "",
       isCurrentRole: false,
+      achievements: [],
     };
     setWorkExperiences([...workExperiences, newExp]);
   };
@@ -78,10 +79,66 @@ export default function CVBuilder() {
   const updateWorkExperience = (
     index: number,
     field: keyof WorkExperience,
-    value: string | boolean
+    value: string | boolean | string[]
   ) => {
     setWorkExperiences((prev) =>
       prev.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp))
+    );
+  };
+
+  // Function to add achievement to a work experience entry
+  const addAchievement = (experienceIndex: number) => {
+    setWorkExperiences((prev) =>
+      prev.map((exp, i) => {
+        if (i === experienceIndex) {
+          return {
+            ...exp,
+            achievements: [...exp.achievements, ""],
+          };
+        }
+        return exp;
+      })
+    );
+  };
+
+  // Function to update a specific achievement
+  const updateAchievement = (
+    experienceIndex: number,
+    achievementIndex: number,
+    value: string
+  ) => {
+    setWorkExperiences((prev) =>
+      prev.map((exp, i) => {
+        if (i === experienceIndex) {
+          const updatedAchievements = [...exp.achievements];
+          updatedAchievements[achievementIndex] = value;
+          return {
+            ...exp,
+            achievements: updatedAchievements,
+          };
+        }
+        return exp;
+      })
+    );
+  };
+
+  // Function to remove an achievement
+  const removeAchievement = (
+    experienceIndex: number,
+    achievementIndex: number
+  ) => {
+    setWorkExperiences((prev) =>
+      prev.map((exp, i) => {
+        if (i === experienceIndex) {
+          return {
+            ...exp,
+            achievements: exp.achievements.filter(
+              (_, j) => j !== achievementIndex
+            ),
+          };
+        }
+        return exp;
+      })
     );
   };
 
@@ -207,49 +264,247 @@ export default function CVBuilder() {
   const handleAIGenerate = async () => {
     setIsGenerating(true);
 
-    const data: CV = {
-      ...personalInfo,
-      workExperience: workExperiences,
-      education: educations,
-      certifications,
-      projects,
-      skills,
-      jobDescription: personalInfo.jobDescription,
-    };
-
-    const d = removeIdFromCv(data);
-
-    const generatedCv = axiosInstance.post("/cv/optimize", d);
-
-    toast.promise(generatedCv, {
-      loading: "Loading...",
-      success: (response) => {
-        console.log(response?.data.data);
-        const cv = removeIdFromCv(response?.data.data) as CV;
-        setPersonalInfo({ ...cv });
-        setWorkExperiences(cv.workExperience);
-        setEducations(cv.education);
-        setCertifications(cv.certifications);
-        setProjects(cv.projects);
-        setSkills(cv.skills);
-
-        return response?.data.message;
-      },
-      error: (error) => {
-        if (axios.isAxiosError(error)) {
-          console.log(error);
-          return error.response?.data.message;
-        } else {
-          return "Something went wrong. Please try again later.";
-        }
-      },
-      finally: () => {
+    try {
+      // Validate required fields
+      if (
+        !personalInfo.firstName ||
+        !personalInfo.lastName ||
+        !personalInfo.email
+      ) {
+        toast.error(
+          "Please fill in at least your first name, last name, and email address before optimizing."
+        );
         setIsGenerating(false);
-      },
-    });
+        return;
+      }
 
-    await generatedCv;
-    setIsGenerating(false);
+      // Validate job description
+      if (!personalInfo.jobDescription) {
+        toast.error(
+          "Please enter a job description to optimize your CV for that position."
+        );
+        setIsGenerating(false);
+        return;
+      }
+
+      const data: CV = {
+        ...personalInfo,
+        workExperience: workExperiences,
+        education: educations,
+        certifications,
+        projects,
+        skills,
+      };
+
+      // Format data according to the required API structure
+
+      // Clean the job description - remove markdown and ensure it's properly formatted
+      const cleanJobDescription = personalInfo.jobDescription
+        ? personalInfo.jobDescription.replace(/\*\*/g, "").trim()
+        : ""; // Remove markdown formatting
+
+      if (cleanJobDescription.trim() === "") {
+        toast.error("Job description is required for CV optimization");
+        setIsGenerating(false);
+        return;
+      }
+
+      // Transform skills to match expected format
+      const formattedSkills = skills.map((skill, index) => ({
+        id: (index + 1).toString(),
+        name: skill.name,
+        level: skill.level,
+      }));
+
+      // Transform work experiences to match expected format
+      const formattedExperiences = workExperiences.map((exp, index) => ({
+        id: (index + 1).toString(),
+        company: exp.company,
+        position: exp.position,
+        title: exp.title || exp.position,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        current: exp.isCurrentRole,
+        location: exp.location,
+        description: exp.description,
+        achievements: exp.achievements || [],
+      }));
+
+      // Create the API-formatted data structure
+      const apiFormattedData = {
+        jobDescription: cleanJobDescription,
+        skills: formattedSkills,
+        experiences: formattedExperiences,
+      };
+
+      // Log what we're sending (for debugging)
+      console.log(
+        "Sending data for optimization:",
+        JSON.stringify(apiFormattedData)
+      ); // Make the API call
+      const response = await axiosInstance.post(
+        "/cv/optimize",
+        apiFormattedData
+      );
+
+      // Log the entire response for debugging
+      console.log("Optimization API Response:", response);
+
+      // Check for data in various possible response structures
+      // The backend returns data in format { data: { optimizedCV } } or { data: optimizedCV }
+      const optimizedData = response?.data?.data || response?.data;
+
+      if (optimizedData) {
+        console.log("Received optimized CV:", optimizedData);
+
+        // Convert the optimized data back to our CV format
+        const optimizedCV: CV = {
+          firstName: personalInfo.firstName,
+          lastName: personalInfo.lastName,
+          email: personalInfo.email,
+          phone: personalInfo.phone,
+          address: personalInfo.address,
+          professionalTitle: personalInfo.professionalTitle,
+          professionalSummary:
+            optimizedData.summary || personalInfo.professionalSummary,
+          jobDescription:
+            optimizedData.jobDescription || personalInfo.jobDescription,
+          workExperience:
+            optimizedData.experiences?.map((exp) => ({
+              company: exp.company || "",
+              position: exp.position || "",
+              title: exp.title || exp.position || "",
+              startDate: exp.startDate || "",
+              endDate: exp.endDate || "",
+              description: exp.description || "",
+              location: exp.location || "",
+              isCurrentRole: !!exp.current,
+              achievements: Array.isArray(exp.achievements)
+                ? exp.achievements
+                : [],
+            })) || workExperiences,
+          skills:
+            optimizedData.skills?.map((skill) => ({
+              name: skill.name || "",
+              level: skill.level || "BEGINNER",
+            })) || skills,
+        };
+
+        const cv = optimizedCV;
+
+        // Update state with the optimized data, with fallbacks
+        setPersonalInfo({
+          ...personalInfo,
+          ...(cv.firstName ? { firstName: cv.firstName } : {}),
+          ...(cv.lastName ? { lastName: cv.lastName } : {}),
+          ...(cv.email ? { email: cv.email } : {}),
+          ...(cv.phone ? { phone: cv.phone } : {}),
+          ...(cv.address ? { address: cv.address } : {}),
+          ...(cv.professionalTitle
+            ? { professionalTitle: cv.professionalTitle }
+            : {}),
+          ...(cv.professionalSummary
+            ? { professionalSummary: cv.professionalSummary }
+            : {}),
+        });
+
+        // Only update these arrays if they exist and are arrays in the response
+        if (Array.isArray(cv.workExperience) && cv.workExperience.length > 0) {
+          setWorkExperiences(cv.workExperience);
+        }
+
+        if (Array.isArray(cv.education) && cv.education.length > 0) {
+          setEducations(cv.education);
+        }
+
+        if (Array.isArray(cv.certifications) && cv.certifications.length > 0) {
+          setCertifications(cv.certifications);
+        }
+
+        if (Array.isArray(cv.projects) && cv.projects.length > 0) {
+          setProjects(cv.projects);
+        }
+
+        if (Array.isArray(cv.skills) && cv.skills.length > 0) {
+          setSkills(cv.skills);
+        }
+
+        toast.success("CV has been optimized successfully!");
+      } else {
+        console.error("No CV data found in the response");
+        toast.error(
+          "The optimization service returned no data. Please try again later."
+        );
+      }
+    } catch (error) {
+      console.error("CV Optimization Error:", error);
+
+      let errorMessage =
+        "There was an error optimizing your CV. Please try again later.";
+
+      if (axios.isAxiosError(error) && error.response) {
+        // Log detailed error info for debugging
+        console.error("API Error Response:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+
+        // Get user-friendly error message
+        if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+
+        // Add specific guidance based on error patterns
+        if (error.response.status === 400) {
+          // Log more diagnostic info
+          console.log("CV Optimization 400 Error - Possible causes:");
+
+          // Extract original request data from error config
+          const requestData = error.config?.data
+            ? JSON.parse(error.config.data)
+            : null;
+
+          // Check job description
+          if (requestData?.jobDescription) {
+            if (requestData.jobDescription.length > 5000) {
+              console.log(
+                "- Job description may be too long:",
+                requestData.jobDescription.length,
+                "characters"
+              );
+              errorMessage =
+                "Your job description may be too long. Please shorten it and try again.";
+            } else if (requestData.jobDescription.includes("**")) {
+              console.log("- Job description contains markdown formatting");
+              errorMessage =
+                "Your job description contains special formatting. Please remove any markdown and try again.";
+            }
+          } else {
+            console.log("- Missing job description");
+            errorMessage = "A job description is required for CV optimization.";
+          }
+          if (!personalInfo.jobDescription) {
+            errorMessage = "Job description is required for AI optimization";
+          }
+        } else if (error.response.status === 401) {
+          errorMessage = "Authentication error. Please log in again.";
+        } else if (error.response.status === 403) {
+          errorMessage =
+            "You need to upgrade your plan or earn more points for this feature.";
+        } else if (error.response.status === 429) {
+          errorMessage =
+            "You've reached the API rate limit. Please try again later.";
+        }
+      }
+
+      toast.error(`Optimization Failed: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Function to handle CV saving
@@ -265,22 +520,56 @@ export default function CVBuilder() {
       skills,
     };
 
+    // Save the complete data with achievements to localStorage
     const d = removeIdFromCv(data);
-
     localStorage.setItem("cv", JSON.stringify(d));
 
-    const savedCvPromise = axiosInstance.post("/cv/save-draft", d);
+    // Create a modified version for the backend API that doesn't include achievements
+    // since the backend doesn't accept that field yet
+    const apiData = {
+      ...d,
+      workExperience: d.workExperience?.map((exp) => {
+        // Create a copy without the achievements property
+        const { achievements, ...expWithoutAchievements } = exp;
+        return expWithoutAchievements;
+      }),
+    };
+
+    const savedCvPromise = axiosInstance.post("/cv/save-draft", apiData);
 
     toast.promise(savedCvPromise, {
       loading: "Loading...",
       success: (response) => {
-        const cv = removeIdFromCv(response?.data.data.data) as CV;
-        setPersonalInfo({ ...cv });
-        setWorkExperiences(cv.workExperience);
-        setEducations(cv.education);
-        setCertifications(cv.certifications);
-        setProjects(cv.projects);
-        setSkills(cv.skills);
+        // Get the CV data from the response
+        const responseCV = removeIdFromCv(response?.data.data.data) as CV;
+
+        // Merge the response data with our local achievements data
+        // This is necessary because the backend doesn't store achievements
+        const mergedWorkExperience = responseCV.workExperience?.map(
+          (exp, index) => {
+            // Find matching experience in our local state
+            const matchingLocalExp = workExperiences.find(
+              (local) =>
+                local.company === exp.company &&
+                local.position === exp.position &&
+                local.startDate === exp.startDate
+            );
+
+            // Merge the response data with achievements from our local data
+            return {
+              ...exp,
+              achievements: matchingLocalExp?.achievements || [],
+            };
+          }
+        );
+
+        // Update state with merged data
+        setPersonalInfo({ ...responseCV });
+        setWorkExperiences(mergedWorkExperience || []);
+        setEducations(responseCV.education);
+        setCertifications(responseCV.certifications);
+        setProjects(responseCV.projects);
+        setSkills(responseCV.skills);
 
         return response?.data.message;
       },
@@ -376,7 +665,14 @@ export default function CVBuilder() {
           });
 
           if (Array.isArray(cv.workExperience)) {
-            setWorkExperiences(cv.workExperience);
+            // Make sure each work experience has an achievements array
+            const workExpsWithAchievements = cv.workExperience.map((exp) => ({
+              ...exp,
+              achievements: Array.isArray(exp.achievements)
+                ? exp.achievements
+                : [],
+            }));
+            setWorkExperiences(workExpsWithAchievements);
           }
 
           if (Array.isArray(cv.education)) {
@@ -839,9 +1135,73 @@ export default function CVBuilder() {
                       updateWorkExperience(index, "description", e.target.value)
                     }
                     className="bg-slate-800 border-slate-600 text-white"
+                    placeholder="Describe your overall responsibilities and role. What were your day-to-day duties? What teams did you work with? What tools or technologies did you use regularly?"
                     rows={3}
                     required
                   />
+                </div>
+
+                {/* Achievements Section */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <Label className="text-slate-300">Achievements</Label>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Specific, measurable accomplishments that show your
+                        impact
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => addAchievement(index)}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-blue-400 border-blue-500 hover:bg-blue-700 hover:text-white"
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Add Achievement
+                    </Button>
+                  </div>
+
+                  {exp.achievements.length === 0 && (
+                    <div className="text-sm text-slate-400 italic">
+                      Add key achievements with measurable results (e.g.,
+                      "Increased sales by 20%", "Reduced costs by $50K", "Led
+                      team of 5 developers").
+                    </div>
+                  )}
+
+                  {exp.achievements.map((achievement, achievementIndex) => (
+                    <div
+                      key={achievementIndex}
+                      className="flex items-center gap-2"
+                    >
+                      <Input
+                        value={achievement}
+                        onChange={(e) =>
+                          updateAchievement(
+                            index,
+                            achievementIndex,
+                            e.target.value
+                          )
+                        }
+                        className="bg-slate-800 border-slate-600 text-white flex-1"
+                        placeholder={`Achievement ${
+                          achievementIndex + 1
+                        }: e.g., "Increased revenue by 20%" or "Implemented process that saved 15 hours weekly"`}
+                      />
+                      <Button
+                        onClick={() =>
+                          removeAchievement(index, achievementIndex)
+                        }
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -972,6 +1332,7 @@ export default function CVBuilder() {
                       updateEducation(index, "description", e.target.value)
                     }
                     className="bg-slate-800 border-slate-600 text-white"
+                    placeholder="Describe what you studied, key courses, research projects or any notable academic achievements"
                     required
                     rows={3}
                   />
@@ -1206,7 +1567,7 @@ export default function CVBuilder() {
                 <div className="w-full flex flex-wrap gap-2">
                   {proj.technologies.map((tech, i) => (
                     <Badge
-                      key={index}
+                      key={`tech-${index}-${i}`}
                       variant="secondary"
                       className="bg-blue-600/20 text-blue-400 border-blue-600/30 cursor-pointer hover:bg-red-600/20 hover:text-red-400"
                       onClick={() => removeTechnology(i, index)}
@@ -1335,98 +1696,86 @@ export default function CVBuilder() {
   );
 }
 
+/**
+ * Removes ID fields from CV data and ensures proper array handling
+ * This function is critical for API compatibility as the backend expects
+ * arrays to be handled in a specific way
+ */
 const removeIdFromCv = (data: CV): CV => {
-  return (
-    // workExperiences: data.workExperience.forEach((exp, index) => {
-    //     return {
-    //         company: exp.company,
-    //         position: exp.position,
-    //         startDate: exp.startDate,
-    //         endDate: exp.endDate,
-    //         description: exp.description,
-    //         location: exp.location,
-    //         title: exp.title,
-    //         isCurrentRole: exp.isCurrentRole
-    //     }
-    // }),
-    // educations: data.education.forEach((edu, index) => {
-    //     return {
-    //         institution: edu.institution,
-    //         degree: edu.degree,
-    //         fieldOfStudy: edu.fieldOfStudy,
-    //         startDate: edu.startDate,
-    //         endDate: edu.endDate,
-    //         grade: edu.grade,
-    //         description: edu.description
-    //     }
-    // }),
-    // certifications: data.certifications.forEach((cert, index) => {
-    //     return {
-    //         name: cert.name,
-    //         issuer: cert.issuer,
-    //         dateIssued: cert.dateIssued,
-    //         credentialId: cert.credentialId,
-    //         credentialUrl: cert.credentialUrl
-    //     }
-    // }),
-    // projects: data.projects.forEach((proj, index) => {
-    //     return {
-    //         name: proj.name,
-    //         description: proj.description,
-    //         technologies: proj.technologies,
-    //         project: proj.project,
-    //         link: proj.link
-    //     }
-    // }),
-    // skills: data.skills.map(skill => ({
-    //     name: skill.name,
-    //     level: skill.level as SkillLevel
-    // }))
-    {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phone: data.phone,
-      address: data.address,
-      professionalTitle: data.professionalTitle,
-      professionalSummary: data.professionalSummary,
-      workExperience: data.workExperience.map((exp) => ({
-        company: exp.company,
-        position: exp.position,
-        startDate: exp.startDate,
-        endDate: exp.endDate,
-        description: exp.description,
-        location: exp.location,
-        title: exp.title,
-        isCurrentRole: exp.isCurrentRole,
-      })),
-      education: data.education.map((edu) => ({
-        institution: edu.institution,
-        degree: edu.degree,
-        fieldOfStudy: edu.fieldOfStudy,
-        startDate: edu.startDate,
-        endDate: edu.endDate,
-        grade: edu.grade,
-        description: edu.description,
-      })),
-      certifications: data.certifications.map((cert) => ({
-        name: cert.name,
-        issuer: cert.issuer,
-        dateIssued: cert.dateIssued,
-        credentialId: cert.credentialId,
-        credentialUrl: cert.credentialUrl,
-      })),
-      projects: data.projects.map((proj) => ({
-        name: proj.name,
-        description: proj.description,
-        technologies: proj.technologies,
-        project: proj.project,
-        link: proj.link,
-      })),
-      skills: data.skills.map((skill) => ({
-        name: skill.name,
-        level: skill.level as SkillLevel,
-      })),
-    }
-  );
+  // Create a clean object with basic personal info
+  const cleanCV: CV = {
+    firstName: data.firstName || "",
+    lastName: data.lastName || "",
+    email: data.email || "",
+    phone: data.phone || "",
+    address: data.address || "",
+    professionalTitle: data.professionalTitle || "",
+    professionalSummary: data.professionalSummary || "",
+  };
+
+  // Handle arrays safely with defensive programming
+  if (data.workExperience && Array.isArray(data.workExperience)) {
+    cleanCV.workExperience = data.workExperience.map((exp) => ({
+      company: exp.company || "",
+      position: exp.position || "",
+      title: exp.title || exp.position || "",
+      startDate: exp.startDate || "",
+      endDate: exp.endDate || "",
+      description: exp.description || "",
+      location: exp.location || "",
+      isCurrentRole: !!exp.isCurrentRole,
+      achievements: Array.isArray(exp.achievements) ? exp.achievements : [],
+    }));
+  } else {
+    cleanCV.workExperience = [];
+  }
+
+  if (data.education && Array.isArray(data.education)) {
+    cleanCV.education = data.education.map((edu) => ({
+      institution: edu.institution || "",
+      degree: edu.degree || "",
+      fieldOfStudy: edu.fieldOfStudy || "",
+      startDate: edu.startDate || "",
+      endDate: edu.endDate || "",
+      grade: edu.grade || "",
+      description: edu.description || "",
+    }));
+  } else {
+    cleanCV.education = [];
+  }
+
+  if (data.certifications && Array.isArray(data.certifications)) {
+    cleanCV.certifications = data.certifications.map((cert) => ({
+      name: cert.name || "",
+      issuer: cert.issuer || "",
+      dateIssued: cert.dateIssued || "",
+      credentialId: cert.credentialId || "",
+      credentialUrl: cert.credentialUrl || "",
+    }));
+  } else {
+    cleanCV.certifications = [];
+  }
+
+  if (data.projects && Array.isArray(data.projects)) {
+    cleanCV.projects = data.projects.map((proj) => ({
+      name: proj.name || "",
+      description: proj.description || "",
+      technologies: Array.isArray(proj.technologies) ? proj.technologies : [],
+      project: proj.project || "",
+      link: proj.link || "",
+    }));
+  } else {
+    cleanCV.projects = [];
+  }
+
+  if (data.skills && Array.isArray(data.skills)) {
+    cleanCV.skills = data.skills.map((skill) => ({
+      name: skill.name || "",
+      level: skill.level || ("BEGINNER" as SkillLevel),
+    }));
+  } else {
+    cleanCV.skills = [];
+  }
+
+  return cleanCV;
 };

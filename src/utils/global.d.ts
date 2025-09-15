@@ -22,7 +22,7 @@ export interface WorkExperience {
     location: string;
     title: string;
     isCurrentRole: boolean;
-
+    achievements: string[];
 }
 
 export interface Education {
@@ -131,6 +131,21 @@ export interface CredentialsData {
     updatedAt: string;
     ipfsHash: string;
     issuingOrganization: string;
+    
+    // Blockchain-related properties
+    walletAddress?: string;
+    userWalletAddress?: string;
+    talentWalletAddress?: string;
+    walletAddr?: string;
+    owner?: string; // Wallet address of the credential owner
+    transactionHash?: string; // Transaction hash of the minting transaction
+    blockchainCredentialId?: number; // ID of the credential on the blockchain
+    blockchainStatus?: string; // Status of the blockchain transaction
+    nftTokenURI?: string; // URI to the NFT token metadata
+    blockNumber?: number; // Block number where the transaction was confirmed
+    verificationTransactionId?: string; // Transaction ID for credential verification
+    blockchainTransactionId?: string; // Transaction ID for blockchain operation
+    nftTokenId?: string | number; // Token ID for the NFT
 }
 
 export interface PaymentMethod {

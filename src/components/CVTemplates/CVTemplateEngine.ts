@@ -48,7 +48,8 @@ const transformCVData = (data: CV, workExperiences: WorkExperience[], educations
     summary: data.professionalSummary,
     workExperience: workExperiences.map(exp => ({
       ...exp,
-      responsibilities: exp.description ? [exp.description] : []
+      responsibilities: exp.description ? [exp.description] : [],
+      achievements: Array.isArray(exp.achievements) ? exp.achievements : []
     })),
     experience: workExperiences.map(exp => ({
       position: exp.position,
@@ -56,7 +57,8 @@ const transformCVData = (data: CV, workExperiences: WorkExperience[], educations
       location: exp.location,
       startDate: exp.startDate,
       endDate: exp.isCurrentRole ? 'Present' : exp.endDate,
-      description: exp.description ? [exp.description] : []
+      description: exp.description ? [exp.description] : [],
+      achievements: Array.isArray(exp.achievements) ? exp.achievements : []
     })),
     education: educations.map(edu => ({
       degree: edu.degree,
@@ -304,7 +306,7 @@ const getCompleteHTML = (
       ${skills.length > 0 ? `<div class="section"><h2>Skills</h2><div class="skills-grid">
         ${skills.map((skill) => `<div class="skill-item">• ${skill.name}</div>`).join('')}
       </div></div>` : ''}
-      ${workExperiences.length > 0 ? `<div class="section"><h2>Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div><strong>${job.position}</strong>${job.company ? `, ${job.company}` : ''}</div><div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><em>${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</em><span>${job.location || ''}</span></div>${formatDescriptionAsBullets(job.description)}</div>`).join('')}</div>` : ''}
+      ${workExperiences.length > 0 ? `<div class="section"><h2>Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div><strong>${job.position}</strong>${job.company ? `, ${job.company}` : ''}</div><div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><em>${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</em><span>${job.location || ''}</span></div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 6px;"><strong>Key Achievements:</strong><ul style="margin: 4px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
       ${educations.length > 0 ? `<div class="section"><h2>Education</h2>${educations.map((edu) => `<div class="education-entry"><div>${edu.startDate} - ${edu.endDate}</div><div>${edu.degree} in ${edu.fieldOfStudy}</div><div><strong>${edu.institution}</strong></div>${edu.grade ? `<div>Grade: ${edu.grade}</div>` : ''}${edu.description ? formatDescriptionAsBullets(edu.description) : ''}</div>`).join('')}</div>` : ''}
       ${certifications.length > 0 ? `<div class="section"><h2>Certifications</h2>${certifications.map((cert) => `<div class="education-entry"><strong>${cert.name}</strong> - ${cert.issuer}<br>Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}${cert.credentialUrl ? `<br>🔗 URL: <a href='${cert.credentialUrl}' target="_blank" rel="noopener noreferrer">${cert.credentialUrl}</a>` : ''}</div>`).join('')}</div>` : ''}
       ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry"><strong>${proj.name}</strong>${formatDescriptionAsBullets(proj.description)}<div>Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}</div>${proj.link ? `<div>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a></div>` : ''}</div>`).join('')}</div>` : ''}
@@ -320,7 +322,7 @@ const getCompleteHTML = (
       </div>
       ${transformedData.professionalSummary ? `<div class="section"><h2>Professional Summary</h2><p>${transformedData.professionalSummary}</p></div>` : ''}
       ${skills.length > 0 ? `<div class="section"><h2>Skills</h2><div class="skills-grid">${skills.map((skill) => `<div class="skill-item">• ${skill.name}</div>`).join('')}</div></div>` : ''}
-      ${workExperiences.length > 0 ? `<div class="section"><h2>Work Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div class="job-header"><span class="job-title">${job.position}${job.company ? ` at ${job.company}` : ''}</span><span style="font-size: 9pt; color: #7f8c8d;">${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</span></div><div style="font-size: 9pt; color: #95a5a6; margin-bottom: 6px;">${job.location || ''}</div>${formatDescriptionAsBullets(job.description)}</div>`).join('')}</div>` : ''}
+      ${workExperiences.length > 0 ? `<div class="section"><h2>Work Experience</h2>${workExperiences.map((job) => `<div class="employment-entry"><div class="job-header"><span class="job-title">${job.position}${job.company ? ` at ${job.company}` : ''}</span><span style="font-size: 9pt; color: #7f8c8d;">${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}</span></div><div style="font-size: 9pt; color: #95a5a6; margin-bottom: 6px;">${job.location || ''}</div>${formatDescriptionAsBullets(job.description)}${Array.isArray(job.achievements) && job.achievements.length > 0 ? `<div class="achievements" style="margin-top: 6px;"><strong>Key Achievements:</strong><ul style="margin: 4px 0; padding-left: 20px;">${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}</ul></div>` : ''}</div>`).join('')}</div>` : ''}
       ${educations.length > 0 ? `<div class="section"><h2>Education</h2>${educations.map((edu) => `<div class="education-entry"><div style="font-weight: 600; color: #2c3e50;">${edu.degree} in ${edu.fieldOfStudy}</div><div style="font-size: 9pt; color: #7f8c8d;">${edu.institution} | ${edu.startDate} - ${edu.endDate}${edu.grade ? ` | Grade: ${edu.grade}` : ''}</div>${edu.description ? formatDescriptionAsBullets(edu.description) : ''}</div>`).join('')}</div>` : ''}
       ${certifications.length > 0 ? `<div class="section"><h2>Certifications</h2>${certifications.map((cert) => `<div class="education-entry"><strong>${cert.name}</strong> - ${cert.issuer}<br>Issued: ${cert.dateIssued}${cert.credentialId ? ` | ID: ${cert.credentialId}` : ''}${cert.credentialUrl ? `<br>🔗 <strong>URL:</strong> <a href='${cert.credentialUrl}' target="_blank" rel="noopener noreferrer">${cert.credentialUrl}</a>` : ''}</div>`).join('')}</div>` : ''}
       ${projects.length > 0 ? `<div class="section"><h2>Projects</h2>${projects.map((proj) => `<div class="education-entry"><strong>${proj.name}</strong><br>${proj.description ? formatDescriptionAsBullets(proj.description) : ''}<br>Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}${proj.link ? `<br>🔗 <strong>Link:</strong> <a href='${proj.link}' target="_blank" rel="noopener noreferrer">${proj.link}</a>` : ''}</div>`).join('')}</div>` : ''}
@@ -361,6 +363,14 @@ const getCompleteHTML = (
                   ${(job.company || job.location) ? ' | ' : ''}${job.startDate} - ${job.isCurrentRole ? 'Present' : job.endDate}
                 </div>
                 ${formatDescriptionAsBullets(job.description)}
+                ${Array.isArray(job.achievements) && job.achievements.length > 0 ? 
+                  `<div class="achievements">
+                    <strong>Key Achievements:</strong>
+                    <ul style="margin: 6px 0; padding-left: 20px;">
+                      ${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
+                    </ul>
+                  </div>` 
+                : ''}
               </div>
             `).join('')}
           </div>
@@ -435,6 +445,14 @@ const getCompleteHTML = (
             </div>
             <div class="job-meta">${job.location || ''}</div>
             ${formatDescriptionAsBullets(job.description)}
+            ${Array.isArray(job.achievements) && job.achievements.length > 0 ? 
+              `<div class="achievements">
+                <strong>Key Achievements:</strong>
+                <ul style="margin: 6px 0; padding-left: 20px;">
+                  ${job.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
+                </ul>
+              </div>` 
+            : ''}
           </div>
         `).join('')}
       </div>` : ''}

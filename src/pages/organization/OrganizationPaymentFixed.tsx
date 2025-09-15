@@ -8,10 +8,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,100 +19,211 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  CreditCard,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Check,
   Star,
   Download,
   Calendar,
-  DollarSign,
+  AlertCircle,
+  XCircle,
+  CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 // Default plans to use as fallback if API fails
+// Default organization-specific subscription plans
 const defaultPlans = [
+  {
+    id: "freemium",
+    name: "Freemium",
+    price: 0,
+    description: "Basic access for organizations getting started",
+    features: [
+      "Up to 2 job posts per month",
+      "Limited talent search",
+      "Community support",
+      "Basic dashboard",
+      "7-day history",
+    ],
+    popular: false,
+    isFree: true,
+    forOrganization: true,
+  },
   {
     id: "basic",
     name: "Basic",
-    price: 49,
+    price: 149,
     description: "Perfect for small organizations getting started",
     features: [
-      "Up to 5 job posts per month",
-      "Basic talent search",
+      "Up to 10 job posts per month",
+      "Basic talent search & matching",
       "Email support",
-      "Standard analytics",
-      "Basic messaging",
+      "Standard analytics dashboard",
+      "Basic candidate management",
+      "Single user account",
     ],
     popular: false,
+    forOrganization: true,
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: 99,
+    id: "intermediate",
+    name: "Intermediate",
+    price: 299,
     description: "Ideal for growing companies with regular hiring needs",
     features: [
       "Unlimited job posts",
-      "Advanced talent search & filters",
+      "Advanced talent search & AI matching",
       "Priority support",
       "Advanced analytics & reporting",
-      "Unlimited messaging",
+      "Complete candidate management",
+      "Up to 5 user accounts",
       "Verified talent pool access",
-      "AI-powered matching",
+      "Interview scheduling tools",
     ],
     popular: true,
+    forOrganization: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 199,
+    id: "advanced",
+    name: "Advanced",
+    price: 599,
     description: "For large organizations with complex hiring requirements",
     features: [
-      "Everything in Professional",
+      "Everything in Intermediate",
       "Dedicated account manager",
       "Custom integrations",
       "White-label options",
       "Advanced security features",
       "Custom reporting",
+      "Unlimited user accounts",
       "API access",
+      "Talent pipeline automation",
+      "Bulk hiring tools",
     ],
     popular: false,
+    forOrganization: true,
   },
 ];
 
-const billingHistory = [
-  {
-    date: "2024-01-01",
-    amount: "$99.00",
-    status: "Paid",
-    invoice: "INV-2024-001",
-  },
-  {
-    date: "2023-12-01",
-    amount: "$99.00",
-    status: "Paid",
-    invoice: "INV-2023-012",
-  },
-  {
-    date: "2023-11-01",
-    amount: "$99.00",
-    status: "Paid",
-    invoice: "INV-2023-011",
-  },
-  {
-    date: "2023-10-01",
-    amount: "$99.00",
-    status: "Paid",
-    invoice: "INV-2023-010",
-  },
-];
+// Transaction interface based on the backend schema
+interface Transaction {
+  _id: string;
+  user: string | any;
+  reference: string;
+  type:
+    | "SUBSCRIPTION"
+    | "ACCOUNT_CREATION"
+    | "CREDENTIAL_ISSUANCE"
+    | "CREDENTIAL_VERIFICATION"
+    | "CREDENTIAL_REVOCATION";
+  plan: string;
+  description?: string;
+  totalAmount: number;
+  paymentMethod?: string;
+  status:
+    | "PENDING"
+    | "PROCESSING"
+    | "COMPLETED"
+    | "CONFIRMED"
+    | "FAILED"
+    | "Failed";
+  errorMessage?: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Bill history item interface for UI
+interface BillingHistoryItem {
+  date: string;
+  amount: string;
+  status: string;
+  invoice: string;
+  reference: string;
+  description?: string;
+  errorMessage?: string;
+}
 
 const OrganizationPayment: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState("professional");
   const [plans, setPlans] = useState(defaultPlans);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>(
+    []
+  );
+  const [allTransactions, setAllTransactions] = useState<BillingHistoryItem[]>(
+    []
+  );
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<BillingHistoryItem | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const transactionsPerPage = 5;
+
+  // Current user subscription info
+  interface UserSubscription {
+    plan: string;
+    status: string;
+    nextBillingDate?: string;
+    amount?: number;
+    createdAt?: string;
+    updatedAt?: string;
+  }
+
+  const [currentSubscription, setCurrentSubscription] =
+    useState<UserSubscription | null>(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+
+  // Helper function to get plan info based on subscription
+  const getPlanInfo = (plan: string | undefined) => {
+    if (!plan || plan === "FREE" || plan === "FREEMIUM") {
+      return {
+        name: plan === "FREEMIUM" ? "Freemium" : "Free Tier",
+        price: 0,
+        description: "Basic access with limited features",
+        isFree: true,
+      };
+    }
+
+    // Try to find matching plan in our plans array
+    const matchedPlan = plans.find(
+      (p) =>
+        p.id.toLowerCase() === plan.toLowerCase() ||
+        p.name.toLowerCase() === plan.toLowerCase()
+    );
+
+    if (matchedPlan) {
+      return {
+        name: matchedPlan.name,
+        price: matchedPlan.price,
+        description: matchedPlan.description,
+        isFree: false,
+      };
+    }
+
+    // Return the plan name as-is if we can't match it
+    return {
+      name: plan,
+      price: currentSubscription?.amount || 0,
+      description: "Custom plan",
+      isFree: false,
+    };
+  };
 
   // Fetch subscription plans from settings
   useEffect(() => {
@@ -136,72 +246,59 @@ const OrganizationPayment: React.FC = () => {
           Array.isArray(settingsData.app.subscriptionPlans) &&
           settingsData.app.subscriptionPlans.length > 0
         ) {
-          // Filter plans for organizations
-          // Use one of these strategies for filtering:
-          // 1. Look for organization-specific markers in features
-          // 2. Filter by name patterns
-          // 3. Filter by price ranges (organization plans typically cost more)
-
+          // ONLY look for organization-specific plans
           const orgPlans = settingsData.app.subscriptionPlans.filter((plan) => {
             // Strategy 1: Check for organization-specific markers
             if (
+              plan.features &&
+              Array.isArray(plan.features) &&
               plan.features.some(
                 (f) =>
                   f === "[ORGANIZATION]" ||
-                  f.includes("for organizations") ||
-                  f.includes("For Organizations")
+                  f.includes("Organization") ||
+                  f.includes("organization") ||
+                  f.includes("ORGANIZATION")
               )
             ) {
               return true;
             }
 
             // Strategy 2: Check for organization-specific names
-            const orgPlanNames = [
-              "basic",
-              "advanced",
-              "enterprise",
-              "business",
-              "corporate",
-            ];
+            if (plan.name && typeof plan.name === "string") {
+              const name = plan.name.toLowerCase();
+              if (
+                name.includes("organization") ||
+                name.includes("business") ||
+                name.includes("corporate") ||
+                name.includes("company") ||
+                name.includes("enterprise")
+              ) {
+                return true;
+              }
+            }
+
+            // Strategy 3: Check for organization-specific features
             if (
-              orgPlanNames.some((name) =>
-                plan.name.toLowerCase().includes(name)
+              plan.features &&
+              Array.isArray(plan.features) &&
+              plan.features.some(
+                (f) =>
+                  typeof f === "string" &&
+                  (f.includes("job post") ||
+                    f.includes("recruitment") ||
+                    f.includes("hiring") ||
+                    f.includes("candidate") ||
+                    f.includes("employer"))
               )
             ) {
               return true;
             }
 
-            // Strategy 3: If no explicit org plans found, don't use talent plans
-            if (
-              plan.features.some(
-                (f) =>
-                  f === "[TALENT]" ||
-                  f.includes("for talent") ||
-                  f.includes("For Talent")
-              )
-            ) {
-              return false;
-            }
-
-            // Strategy 4: Use job posting related features
-            if (
-              plan.features.some(
-                (f) =>
-                  f.includes("job post") ||
-                  f.includes("hiring") ||
-                  f.includes("recruit")
-              )
-            ) {
-              return true;
-            }
-
-            // Default: Use higher-priced plans for organizations if no other indicators
-            return plan.price >= 49;
+            return false; // Skip if no organization-specific markers
           });
 
-          // If no organization-specific plans found, fall back to defaults
-          const plansToUse =
-            orgPlans.length > 0 ? orgPlans : settingsData.app.subscriptionPlans;
+          // Always use the defaults if no organization plans found
+          const plansToUse = orgPlans.length > 0 ? orgPlans : defaultPlans;
 
           // Transform API subscription plans to match our UI format
           const formattedPlans = plansToUse.map((plan, index) => {
@@ -210,33 +307,54 @@ const OrganizationPayment: React.FC = () => {
               defaultPlans[index % defaultPlans.length] || defaultPlans[0];
 
             // Clean up any markers from the features list that we don't want to show to users
-            const cleanedFeatures = plan.features.filter(
-              (feature) =>
-                !feature.includes("[ORGANIZATION]") &&
-                !feature.includes("[TALENT]")
-            );
+            const cleanedFeatures =
+              plan.features && Array.isArray(plan.features)
+                ? plan.features.filter(
+                    (feature) =>
+                      typeof feature === "string" &&
+                      !feature.includes("[") &&
+                      !feature.includes("]")
+                  )
+                : basePlan.features;
 
             return {
               id:
-                plan.name?.toLowerCase()?.replace(/\s+/g, "") ||
-                `plan-${index}`,
-              name: plan.name || `Plan ${index + 1}`,
-              price: plan.price || 0,
+                plan.name && typeof plan.name === "string"
+                  ? plan.name.toLowerCase().replace(/\s+/g, "")
+                  : `plan-${index}`,
+              name:
+                plan.name && typeof plan.name === "string"
+                  ? plan.name
+                  : `Plan ${index + 1}`,
+              price: plan.price || basePlan.price,
               description:
                 Array.isArray(plan.description) && plan.description.length > 0
                   ? plan.description[0]
+                  : typeof plan.description === "string"
+                  ? plan.description
                   : basePlan.description,
               features: cleanedFeatures,
               popular: index === 1, // Mark second plan as popular
             };
           });
 
-          console.log("Using organization subscription plans:", formattedPlans);
+          // Sort the plans by price (lowest to highest)
+          formattedPlans.sort((a, b) => a.price - b.price);
+
+          console.log(
+            "Using organization subscription plans (sorted by price):",
+            formattedPlans
+          );
           setPlans(formattedPlans);
         } else {
           console.log(
             "No subscription plans found in settings, using defaults"
           );
+          // Sort default plans by price (lowest to highest)
+          const sortedDefaults = [...defaultPlans].sort(
+            (a, b) => a.price - b.price
+          );
+          setPlans(sortedDefaults);
         }
       } catch (error) {
         console.error(
@@ -246,33 +364,259 @@ const OrganizationPayment: React.FC = () => {
         toast("Could not load subscription plans, using defaults", {
           description: "Please try again later or contact support.",
         });
+        // Sort default plans by price (lowest to highest)
+        const sortedDefaults = [...defaultPlans].sort(
+          (a, b) => a.price - b.price
+        );
+        setPlans(sortedDefaults);
       } finally {
         setIsLoadingPlans(false);
       }
     };
 
-    // Fetch payment methods and subscription plans
-    const fetchPaymentMethods = async () => {
+    // Fetch current subscription information
+    const fetchCurrentSubscription = async () => {
+      setIsLoadingSubscription(true);
       try {
-        const response = await axiosInstance.get("/payment");
-        console.log("Payment methods:", response.data);
-        if (response.data && response.data.data) {
-          setPaymentMethods(response.data.data);
+        // Try first from user endpoint as it might have subscription info
+        const userResponse = await axiosInstance.get("/users");
+        console.log("User info:", userResponse.data);
+
+        if (
+          userResponse.data &&
+          userResponse.data.data &&
+          userResponse.data.data.subscription
+        ) {
+          const subInfo = userResponse.data.data.subscription;
+          setCurrentSubscription({
+            plan: subInfo.plan || "FREE",
+            status: subInfo.status || "ACTIVE",
+            nextBillingDate: subInfo.nextBillingDate,
+            amount: subInfo.amount || 0,
+            createdAt: subInfo.createdAt,
+            updatedAt: subInfo.updatedAt,
+          });
+        } else {
+          // Try alternate subscription endpoint if available
+          try {
+            const subResponse = await axiosInstance.get(
+              "/subscriptions/current"
+            );
+            if (subResponse.data && subResponse.data.data) {
+              setCurrentSubscription(subResponse.data.data);
+            } else {
+              // Set to default free plan if no subscription found
+              setCurrentSubscription({
+                plan: "FREE",
+                status: "ACTIVE",
+              });
+            }
+          } catch (subError) {
+            console.log("No specific subscription endpoint available");
+            // Set to default free plan
+            setCurrentSubscription({
+              plan: "FREE",
+              status: "ACTIVE",
+            });
+          }
         }
       } catch (error) {
-        console.error("Error fetching payment methods:", error);
+        console.error("Error fetching current subscription:", error);
+        // Set to default free plan on error
+        setCurrentSubscription({
+          plan: "FREE",
+          status: "ACTIVE",
+        });
+      } finally {
+        setIsLoadingSubscription(false);
       }
     };
 
-    fetchPaymentMethods();
+    // Fetch transaction history for billing history
+    const fetchTransactionHistory = async () => {
+      setIsLoadingTransactions(true);
+      try {
+        const response = await axiosInstance.get("/transactions/all");
+        console.log("Transaction history:", response.data);
+
+        if (
+          response.data &&
+          response.data.data &&
+          Array.isArray(response.data.data)
+        ) {
+          // Format transactions for the billing history UI
+          const formattedHistory = response.data.data.map(
+            (transaction: Transaction) => {
+              // Format the date - handle both string and Date objects
+              let dateStr = transaction.approvedAt || transaction.createdAt;
+              let formattedDate = "";
+
+              try {
+                formattedDate = format(new Date(dateStr), "yyyy-MM-dd");
+              } catch (e) {
+                formattedDate = dateStr ? dateStr.substring(0, 10) : "N/A";
+              }
+
+              // Format amount with currency symbol
+              const amount = `$${transaction.totalAmount.toFixed(2)}`;
+
+              // Map transaction status to UI status
+              let status = "";
+              switch (transaction.status) {
+                case "COMPLETED":
+                case "CONFIRMED":
+                  status = "Paid";
+                  break;
+                case "PENDING":
+                case "PROCESSING":
+                  status = "Pending";
+                  break;
+                case "FAILED":
+                case "Failed":
+                  status = "Failed";
+                  break;
+                default:
+                  status = transaction.status;
+              }
+
+              return {
+                date: formattedDate,
+                amount: amount,
+                status: status,
+                invoice: transaction.reference, // Use reference as invoice ID
+                reference: transaction.reference,
+                description:
+                  transaction.description ||
+                  `${transaction.type} - ${transaction.plan}`,
+                errorMessage: transaction.errorMessage,
+              };
+            }
+          );
+
+          // Sort by date, newest first
+          formattedHistory.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          setAllTransactions(formattedHistory);
+
+          // Set total pages and transactions count
+          setTotalTransactions(formattedHistory.length);
+          setTotalPages(
+            Math.ceil(formattedHistory.length / transactionsPerPage)
+          );
+
+          // Set current page transactions
+          const indexOfLastTransaction = currentPage * transactionsPerPage;
+          const indexOfFirstTransaction =
+            indexOfLastTransaction - transactionsPerPage;
+          setBillingHistory(
+            formattedHistory.slice(
+              indexOfFirstTransaction,
+              indexOfLastTransaction
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching transaction history:", error);
+        toast("Could not load billing history", {
+          description: "Please try again later or contact support.",
+        });
+        // Use empty array if there's an error
+        setBillingHistory([]);
+      } finally {
+        setIsLoadingTransactions(false);
+      }
+    };
+
+    fetchCurrentSubscription();
     fetchSubscriptionPlans();
+    fetchTransactionHistory();
   }, []);
 
   // Handle plan selection and payment
   const handleUpgrade = (planId: string) => {
+    // Check if this is the current plan
+    if (
+      currentSubscription &&
+      currentSubscription.plan &&
+      currentSubscription.plan.toLowerCase() === planId.toLowerCase()
+    ) {
+      toast("This is your current plan", {
+        description: "You are already subscribed to this plan.",
+      });
+      return;
+    }
+
     setSelectedPlan(planId);
+
+    // Scroll to payment section
+    const paymentSection = document.getElementById("payment-section");
+    if (paymentSection) {
+      paymentSection.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
+  // Filter transactions by status
+  const handleFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when filter changes
+
+    let filtered;
+    if (status === "all") {
+      filtered = allTransactions;
+    } else {
+      filtered = allTransactions.filter((transaction) => {
+        if (status === "paid") return transaction.status === "Paid";
+        if (status === "pending") return transaction.status === "Pending";
+        if (status === "failed") return transaction.status === "Failed";
+        return true;
+      });
+    }
+
+    setTotalTransactions(filtered.length);
+    setTotalPages(Math.ceil(filtered.length / transactionsPerPage));
+
+    // Get current page transactions
+    const indexOfLastTransaction = 1 * transactionsPerPage;
+    const indexOfFirstTransaction =
+      indexOfLastTransaction - transactionsPerPage;
+    setBillingHistory(
+      filtered.slice(indexOfFirstTransaction, indexOfLastTransaction)
+    );
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+
+    // Get filtered transactions first
+    let filtered;
+    if (statusFilter === "all") {
+      filtered = allTransactions;
+    } else {
+      filtered = allTransactions.filter((transaction) => {
+        if (statusFilter === "paid") return transaction.status === "Paid";
+        if (statusFilter === "pending") return transaction.status === "Pending";
+        if (statusFilter === "failed") return transaction.status === "Failed";
+        return true;
+      });
+    }
+
+    // Get current page transactions
+    const indexOfLastTransaction = page * transactionsPerPage;
+    const indexOfFirstTransaction =
+      indexOfLastTransaction - transactionsPerPage;
+    setBillingHistory(
+      filtered.slice(indexOfFirstTransaction, indexOfLastTransaction)
+    );
+  };
+
+  // Handle transaction click to view details
+  const handleTransactionClick = (transaction: BillingHistoryItem) => {
+    setSelectedTransaction(transaction);
+    setIsTransactionModalOpen(true);
+  };
   const handlePayment = async () => {
     setIsUpgrading(true);
 
@@ -294,6 +638,35 @@ const OrganizationPayment: React.FC = () => {
         toast("Subscription updated successfully", {
           description: "Your account has been updated with the new plan.",
         });
+
+        // Refresh subscription info to show the new plan
+        try {
+          setIsLoadingSubscription(true);
+          const userResponse = await axiosInstance.get("/users");
+
+          if (
+            userResponse.data &&
+            userResponse.data.data &&
+            userResponse.data.data.subscription
+          ) {
+            const subInfo = userResponse.data.data.subscription;
+            setCurrentSubscription({
+              plan: subInfo.plan || selectedPlan,
+              status: subInfo.status || "ACTIVE",
+              nextBillingDate: subInfo.nextBillingDate,
+              amount:
+                subInfo.amount ||
+                plans.find((p) => p.id === selectedPlan)?.price ||
+                0,
+              createdAt: subInfo.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing subscription info:", refreshError);
+        } finally {
+          setIsLoadingSubscription(false);
+        }
       }
     } catch (error) {
       console.error("Payment initialization error:", error);
@@ -305,9 +678,214 @@ const OrganizationPayment: React.FC = () => {
     }
   };
 
+  const fetchTransactionHistory = async (
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    setIsLoadingTransactions(true);
+    try {
+      const response = await axiosInstance.get("/transactions/all");
+      console.log("Transaction history:", response.data);
+
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        // Format transactions for the billing history UI
+        const formattedHistory = response.data.data.map(
+          (transaction: Transaction) => {
+            // Format the date - handle both string and Date objects
+            let dateStr = transaction.approvedAt || transaction.createdAt;
+            let formattedDate = "";
+
+            try {
+              formattedDate = format(new Date(dateStr), "yyyy-MM-dd");
+            } catch (e) {
+              formattedDate = dateStr ? dateStr.substring(0, 10) : "N/A";
+            }
+
+            // Format amount with currency symbol
+            const amount = `$${transaction.totalAmount.toFixed(2)}`;
+
+            // Map transaction status to UI status
+            let status = "";
+            switch (transaction.status) {
+              case "COMPLETED":
+              case "CONFIRMED":
+                status = "Paid";
+                break;
+              case "PENDING":
+              case "PROCESSING":
+                status = "Pending";
+                break;
+              case "FAILED":
+              case "Failed":
+                status = "Failed";
+                break;
+              default:
+                status = transaction.status;
+            }
+
+            return {
+              date: formattedDate,
+              amount: amount,
+              status: status,
+              invoice: transaction.reference, // Use reference as invoice ID
+              reference: transaction.reference,
+              description:
+                transaction.description ||
+                `${transaction.type} - ${transaction.plan}`,
+              errorMessage: transaction.errorMessage,
+            };
+          }
+        );
+
+        // Sort by date, newest first
+        formattedHistory.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setAllTransactions(formattedHistory);
+
+        // Apply current filters
+        let filtered = formattedHistory;
+        if (statusFilter !== "all") {
+          filtered = formattedHistory.filter((transaction) => {
+            if (statusFilter === "paid") return transaction.status === "Paid";
+            if (statusFilter === "pending")
+              return transaction.status === "Pending";
+            if (statusFilter === "failed")
+              return transaction.status === "Failed";
+            return true;
+          });
+        }
+
+        // Set total pages and transactions count
+        setTotalTransactions(filtered.length);
+        setTotalPages(Math.ceil(filtered.length / transactionsPerPage));
+
+        // Set current page transactions
+        const indexOfLastTransaction = currentPage * transactionsPerPage;
+        const indexOfFirstTransaction =
+          indexOfLastTransaction - transactionsPerPage;
+        setBillingHistory(
+          filtered.slice(indexOfFirstTransaction, indexOfLastTransaction)
+        );
+
+        toast("Transaction history refreshed", {
+          description: "Latest transaction data has been loaded.",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      toast("Could not load billing history", {
+        description: "Please try again later or contact support.",
+      });
+      // Use empty array if there's an error
+      setBillingHistory([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-950">
+        {/* Transaction Details Modal */}
+        <Dialog
+          open={isTransactionModalOpen}
+          onOpenChange={setIsTransactionModalOpen}
+        >
+          <DialogContent className="bg-slate-900 text-white border-slate-700 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">
+                Transaction Details
+              </DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Complete information about this transaction
+              </DialogDescription>
+            </DialogHeader>
+            {selectedTransaction && (
+              <div className="space-y-4 py-2">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-slate-400">Transaction ID</div>
+                  <div className="font-mono text-slate-300 text-sm">
+                    {selectedTransaction.reference}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-slate-400">Date</div>
+                  <div className="text-slate-300">
+                    {selectedTransaction.date}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-slate-400">Amount</div>
+                  <div className="text-slate-300 font-semibold">
+                    {selectedTransaction.amount}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-slate-400">Status</div>
+                  <Badge
+                    variant="outline"
+                    className={`${
+                      selectedTransaction.status === "Paid"
+                        ? "border-emerald-600/30 text-emerald-400"
+                        : selectedTransaction.status === "Failed"
+                        ? "border-red-600/30 text-red-400"
+                        : "border-amber-600/30 text-amber-400"
+                    }`}
+                  >
+                    {selectedTransaction.status}
+                  </Badge>
+                </div>
+
+                {selectedTransaction.description && (
+                  <div className="space-y-1">
+                    <div className="text-sm text-slate-400">Description</div>
+                    <div className="p-2 bg-slate-800 rounded text-slate-300 text-sm">
+                      {selectedTransaction.description}
+                    </div>
+                  </div>
+                )}
+
+                {selectedTransaction.errorMessage && (
+                  <div className="space-y-1">
+                    <div className="text-sm text-slate-400">Error Message</div>
+                    <div className="p-2 bg-red-900/20 border border-red-900/30 rounded text-red-400 text-sm">
+                      {selectedTransaction.errorMessage}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              {selectedTransaction && selectedTransaction.status === "Paid" && (
+                <Button
+                  variant="outline"
+                  className="bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Invoice
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsTransactionModalOpen(false)}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <main className="flex-1 overflow-auto">
           {/* Header */}
           <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
@@ -329,268 +907,151 @@ const OrganizationPayment: React.FC = () => {
           <div className="p-6 space-y-8">
             {/* Current Plan */}
             <Card className="bg-gradient-to-r from-orange-600/20 to-emerald-600/20 border-orange-600/30">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white mb-2">
-                      Current Plan: Professional
-                    </h2>
-                    <p className="text-slate-300 mb-4">
-                      Your subscription renews on January 15, 2024
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2 text-2xl">
+                  <Star className="w-5 h-5 text-amber-400" />
+                  Current Subscription
+                </CardTitle>
+                <CardDescription className="text-slate-300">
+                  Your active organization subscription details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                {isLoadingSubscription ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="w-8 h-8 border-2 border-slate-600 border-t-orange-500 rounded-full animate-spin mr-2"></div>
+                    <p className="text-slate-300">
+                      Loading subscription info...
                     </p>
-                    <div className="flex items-center gap-4">
-                      <Badge className="bg-emerald-600 text-white">
-                        Active
-                      </Badge>
-                      <span className="text-2xl font-bold text-white">
-                        $99/month
-                      </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-4">
+                      <h2 className="text-2xl font-bold text-white">
+                        Free Tier
+                      </h2>
+
+                      <div className="flex items-center gap-4">
+                        <Badge className="bg-emerald-600 text-white px-3 py-1 text-sm font-medium">
+                          Active
+                        </Badge>
+                        <span className="text-3xl font-bold text-white">
+                          Free
+                        </span>
+                      </div>
+
+                      {currentSubscription?.createdAt && (
+                        <div className="text-sm text-slate-400">
+                          Registered since{" "}
+                          {format(
+                            new Date(currentSubscription.createdAt),
+                            "MMMM d, yyyy"
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 mt-4 md:mt-0">
+                      <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <p className="text-slate-300 text-sm">
+                          Premium plans with advanced features will be available
+                          soon.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Button
-                      variant="outline"
-                      className="border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white mb-2"
-                    >
-                      Manage Subscription
-                    </Button>
-                    <p className="text-sm text-slate-400">
-                      Next billing: $99.00
-                    </p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Subscription Plans */}
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Choose Your Plan
-              </h2>
+            <div id="plans-section">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">
+                  Organization Plan
+                </h2>
+              </div>
 
               {isLoadingPlans ? (
                 <div className="flex flex-col items-center justify-center py-12 bg-slate-900 border border-slate-700 rounded-lg">
                   <div className="w-10 h-10 border-2 border-slate-600 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-400">
-                    Loading subscription plans...
-                  </p>
+                  <p className="text-slate-400">Loading subscription info...</p>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-3">
-                  {plans.map((plan) => (
-                    <Card
-                      key={plan.id}
-                      className={`relative bg-slate-900 border-slate-700 ${
-                        plan.popular
-                          ? "border-orange-500 shadow-lg shadow-orange-500/20"
-                          : ""
-                      } ${
-                        selectedPlan === plan.id ? "ring-2 ring-orange-500" : ""
-                      }`}
-                    >
-                      {plan.popular && (
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                          <Badge className="bg-orange-600 text-white">
-                            <Star className="w-3 h-3 mr-1" />
-                            Most Popular
-                          </Badge>
-                        </div>
-                      )}
+                <div className="flex justify-center">
+                  <Card className="relative bg-slate-900 border-slate-700 max-w-xl w-full">
+                    <div className="absolute -top-3 right-3">
+                      <Badge className="bg-emerald-600 text-white">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Current Plan
+                      </Badge>
+                    </div>
 
-                      <CardHeader className="text-center">
-                        <CardTitle className="text-white text-xl">
-                          {plan.name}
-                        </CardTitle>
-                        <div className="text-3xl font-bold text-white">
-                          ${plan.price}
-                          <span className="text-lg font-normal text-slate-400">
-                            /month
-                          </span>
-                        </div>
-                        <CardDescription className="text-slate-400">
-                          {plan.description}
-                        </CardDescription>
-                      </CardHeader>
+                    <CardHeader className="text-center">
+                      <CardTitle className="text-white text-xl">
+                        Free Tier
+                      </CardTitle>
+                      <div className="text-3xl font-bold text-white">
+                        $0
+                        <span className="text-lg font-normal text-slate-400">
+                          /month
+                        </span>
+                      </div>
+                      <CardDescription className="text-slate-400">
+                        Basic access for organizations getting started
+                      </CardDescription>
+                    </CardHeader>
 
-                      <CardContent className="space-y-4">
-                        <ul className="space-y-2">
-                          {plan.features.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-300">{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    <CardContent className="space-y-4">
+                      <ul className="space-y-2">
+                        {defaultPlans[0].features.map((feature, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 text-sm"
+                          >
+                            <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                            <span className="text-slate-300">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
 
-                        <Button
-                          className={`w-full ${
-                            selectedPlan === plan.id
-                              ? "bg-orange-600 hover:bg-orange-700"
-                              : "bg-slate-700 hover:bg-slate-600"
-                          } text-white`}
-                          onClick={() => handleUpgrade(plan.id)}
-                        >
-                          {selectedPlan === plan.id
-                            ? "Selected"
-                            : "Select Plan"}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700 mt-4 text-center">
+                        <p className="text-slate-300">
+                          Premium plans will be available soon with advanced
+                          features for growing organizations.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
-              {/* Continue to Payment button */}
-              {selectedPlan && (
-                <div className="mt-6 flex justify-center">
-                  <Button
-                    disabled={isUpgrading}
-                    onClick={handlePayment}
-                    className="px-8 py-6 bg-orange-600 hover:bg-orange-700 text-white text-lg font-semibold"
-                  >
-                    {isUpgrading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      "Continue to Payment"
-                    )}
-                  </Button>
-                </div>
-              )}
+              {/* Continue to Payment section - removed */}
             </div>
-
-            {/* Payment Method */}
-            <Card className="bg-slate-900 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-blue-400" />
-                  Payment Method
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Manage your payment information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-700 rounded flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">VISA</span>
-                    </div>
-                    <div>
-                      <p className="text-white font-medium">
-                        •••• •••• •••• 4242
-                      </p>
-                      <p className="text-sm text-slate-400">Expires 12/25</p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-emerald-600/30 text-emerald-400"
-                  >
-                    Default
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cardNumber" className="text-white">
-                      Card Number
-                    </Label>
-                    <Input
-                      id="cardNumber"
-                      placeholder="1234 5678 9012 3456"
-                      className="bg-slate-800 border-slate-600 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="expiryDate" className="text-white">
-                      Expiry Date
-                    </Label>
-                    <Input
-                      id="expiryDate"
-                      placeholder="MM/YY"
-                      className="bg-slate-800 border-slate-600 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cvv" className="text-white">
-                      CVV
-                    </Label>
-                    <Input
-                      id="cvv"
-                      placeholder="123"
-                      className="bg-slate-800 border-slate-600 text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="nameOnCard" className="text-white">
-                      Name on Card
-                    </Label>
-                    <Input
-                      id="nameOnCard"
-                      placeholder="John Doe"
-                      className="bg-slate-800 border-slate-600 text-white"
-                    />
-                  </div>
-                </div>
-
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Update Payment Method
-                </Button>
-              </CardContent>
-            </Card>
 
             {/* Billing History */}
             <Card className="bg-slate-900 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-purple-400" />
-                  Billing History
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Your recent payments and invoices
-                </CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-purple-400" />
+                      Billing History
+                    </CardTitle>
+                    <CardDescription className="text-slate-400">
+                      Your billing information
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {billingHistory.map((bill, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-emerald-600/20 rounded-full flex items-center justify-center">
-                          <DollarSign className="w-4 h-4 text-emerald-400" />
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">
-                            {bill.amount}
-                          </p>
-                          <p className="text-sm text-slate-400">{bill.date}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-600/30 text-emerald-400"
-                        >
-                          {bill.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-slate-400 hover:text-white"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-slate-400 mb-2">
+                    No billing history available
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    You are currently on the free tier with no payment required.
+                  </p>
                 </div>
               </CardContent>
             </Card>

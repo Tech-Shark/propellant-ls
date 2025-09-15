@@ -17,7 +17,7 @@ import OrganizationLayout from "@/pages/organization/OrganizationLayout.tsx";
 import JobPosts from "@/pages/organization/JobPosts.tsx";
 import TalentPool from "@/pages/organization/TalentPool.tsx";
 import OrganizationSettings from "@/pages/organization/OrganizationSettings.tsx";
-import OrganizationPayment from "@/pages/organization/OrganizationPayment.tsx";
+import OrganizationPayment from "@/pages/organization/OrganizationPaymentFixed.tsx";
 import CompanyProfile from "@/pages/organization/CompanyProfile.tsx";
 import OrganizationAnalytics from "@/pages/organization/Analytics.tsx";
 import { OrganizationDashboard } from "@/pages/organization/OrganizationDashboard.tsx";
@@ -61,7 +61,6 @@ export const router = createBrowserRouter([
           { path: "settings", element: <OrganizationSettings /> },
           { path: "payment", element: <OrganizationPayment /> },
           { path: "analytics", element: <OrganizationAnalytics /> },
-          { path: "credentials", element: <CredentialVerification /> },
           { path: "credentials", element: <CredentialVerification /> },
         ],
       },

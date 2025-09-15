@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,11 +24,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { CheckCircle, Clock, Eye, FileText, User, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  FileText,
+  X,
+  Clock,
+  User,
+} from "lucide-react";
 import { CubeSpinner } from "react-spinners-kit";
 import { BackendCredential } from "@/pages/organization/CredentialVerification";
+import { useNFTLimits } from "@/context/NFTLimitsContext";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface PendingContentProps {
+interface NFTLimitsPendingContentProps {
   pendingRequests: BackendCredential[];
   rejectReasonText: string;
   selectedRequest: BackendCredential | null;
@@ -42,7 +53,7 @@ interface PendingContentProps {
   setImageLoading: (loading: boolean) => void;
 }
 
-const PendingContent = ({
+const NFTLimitsPendingContent = ({
   pendingRequests = [],
   setSelectedRequest,
   selectedRequest,
@@ -54,9 +65,12 @@ const PendingContent = ({
   setRejectReasonText,
   setImageLoading,
   imageLoading,
-}: PendingContentProps) => {
+}: NFTLimitsPendingContentProps) => {
   // Ensure pendingRequests is always an array
   const safeRequests = Array.isArray(pendingRequests) ? pendingRequests : [];
+  const { canCreateNFT, incrementNFTCount } = useNFTLimits();
+  const { toast } = useToast();
+  const [showNFTLimitWarning, setShowNFTLimitWarning] = useState(false);
 
   // Function to render status with enhanced styling and verification info
   const getStatusDisplay = (request: BackendCredential) => {
@@ -126,6 +140,29 @@ const PendingContent = ({
         return null;
     }
   };
+
+  // Wrap the handleApprove function to check limits before approving
+  const handleApproveWithLimits = (credentialId: string) => {
+    if (!canCreateNFT) {
+      setShowNFTLimitWarning(true);
+      toast({
+        title: "NFT Limit Reached",
+        description:
+          "You've reached your plan's NFT limit. Upgrade to verify more credentials.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If within limits, proceed with approval and increment NFT count
+    handleApprove(credentialId);
+    incrementNFTCount();
+    toast({
+      title: "Credential Approved",
+      description: "The credential has been verified successfully.",
+    });
+  };
+
   return (
     <Card className="bg-slate-900 border-slate-700">
       <CardHeader>
@@ -225,6 +262,17 @@ const PendingContent = ({
                           </DialogHeader>
                           {selectedRequest && (
                             <div className="space-y-6">
+                              {/* NFT Limit Warning */}
+                              {!canCreateNFT && (
+                                <Alert className="bg-red-900/20 border-red-900/30 text-red-400 flex items-center p-4">
+                                  <AlertTriangle className="w-4 h-4 mr-2" />
+                                  <AlertDescription>
+                                    You've reached your plan's NFT limit. You
+                                    won't be able to approve this credential.
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+
                               {/* Talent Info */}
                               <div className="p-4 bg-slate-800 rounded-lg">
                                 <h3 className="text-white font-medium mb-3 flex items-center gap-2">
@@ -442,14 +490,64 @@ const PendingContent = ({
                                 </Button>
                                 <Button
                                   onClick={() =>
-                                    handleApprove(selectedRequest._id)
+                                    handleApproveWithLimits(selectedRequest._id)
                                   }
                                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  disabled={!canCreateNFT}
                                 >
                                   <CheckCircle className="w-4 h-4 mr-2" />
                                   Approve
                                 </Button>
                               </div>
+
+                              {/* NFT Limit Warning Modal */}
+                              <Dialog
+                                open={showNFTLimitWarning}
+                                onOpenChange={setShowNFTLimitWarning}
+                              >
+                                <DialogContent className="bg-slate-900 border-slate-700 max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle className="text-white flex items-center">
+                                      <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                                      NFT Limit Reached
+                                    </DialogTitle>
+                                    <DialogDescription className="text-slate-400">
+                                      You can't approve more credentials due to
+                                      plan restrictions.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="p-4 bg-red-900/20 border border-red-900/30 rounded-md text-red-400 mt-4">
+                                    <p>
+                                      You've reached the maximum number of NFT
+                                      credentials allowed on your current plan.
+                                      To continue verifying credentials, please
+                                      upgrade your plan.
+                                    </p>
+                                  </div>
+                                  <div className="flex justify-between mt-4">
+                                    <Button
+                                      variant="outline"
+                                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                      onClick={() =>
+                                        setShowNFTLimitWarning(false)
+                                      }
+                                    >
+                                      Close
+                                    </Button>
+                                    <Button
+                                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                                      onClick={() => {
+                                        // Navigate to upgrade page
+                                        window.location.href =
+                                          "/organization/payment";
+                                      }}
+                                    >
+                                      Upgrade Plan
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+
                               {/* Rejection Reason Modal */}
                               <Dialog
                                 open={showRejectReason}
@@ -533,4 +631,4 @@ const PendingContent = ({
   );
 };
 
-export default PendingContent;
+export default NFTLimitsPendingContent;
