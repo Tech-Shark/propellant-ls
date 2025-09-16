@@ -131,6 +131,7 @@ interface Transaction {
   description?: string;
   totalAmount: number;
   paymentMethod?: string;
+  metadata?: any; // Added metadata field to store payment provider data
   status:
     | "PENDING"
     | "PROCESSING"
@@ -458,8 +459,13 @@ const OrganizationPayment: React.FC = () => {
                 formattedDate = dateStr ? dateStr.substring(0, 10) : "N/A";
               }
 
-              // Format amount with currency symbol
-              const amount = `$${transaction.totalAmount.toFixed(2)}`;
+              // Format amount with currency symbol (handle Naira if needed)
+              // Check payment metadata for currency info (fallback to $ if not found)
+              const metadata = transaction.metadata || {};
+              const currencySymbol = metadata.currency === "NGN" ? "₦" : "$";
+              const amount = `${currencySymbol}${transaction.totalAmount.toFixed(
+                2
+              )}`;
 
               // Map transaction status to UI status
               let status = "";
@@ -786,7 +792,12 @@ const OrganizationPayment: React.FC = () => {
             }
 
             // Format amount with currency symbol
-            const amount = `$${transaction.totalAmount.toFixed(2)}`;
+            // Format amount with currency symbol (handle Naira if needed)
+            const metadata = transaction.metadata || {};
+            const currencySymbol = metadata.currency === "NGN" ? "₦" : "$";
+            const amount = `${currencySymbol}${transaction.totalAmount.toFixed(
+              2
+            )}`;
 
             // Map transaction status to UI status
             let status = "";

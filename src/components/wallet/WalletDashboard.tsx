@@ -306,7 +306,8 @@ export function WalletDashboard() {
                       transaction.type === "referral_reward"
                         ? "+"
                         : "-"}
-                      ${transaction.amount.toFixed(2)}
+                      {transaction.currency === "NGN" ? "₦" : "$"}
+                      {transaction.amount.toFixed(2)}
                     </p>
                   </div>
                   <Badge className={getStatusColor(transaction.status)}>
