@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 // Define plan limits for NFTs
 const PLAN_NFT_LIMITS = {
@@ -56,10 +57,15 @@ export const NFTLimitsProvider: React.FC<{ children: ReactNode }> = ({
     return monthDiff >= 1;
   };
 
+  // Get user from auth context
+  const { user } = useAuth();
+
   // Load stored values from localStorage on component mount
   useEffect(() => {
     const storedNFTCount = localStorage.getItem("org_nft_count");
-    const storedPlan = localStorage.getItem("org_plan");
+    // Try to get plan from user object first, fallback to localStorage
+    const userPlan = user?.plan;
+    const storedPlan = userPlan || localStorage.getItem("org_plan");
     const storedLastResetDate = localStorage.getItem("org_last_reset_date");
 
     // Set the last reset date
@@ -110,6 +116,14 @@ export const NFTLimitsProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.setItem("org_nft_count", nftCount.toString());
     localStorage.setItem("org_plan", currentPlan);
   }, [nftCount, currentPlan]);
+
+  // Update plan when user changes
+  useEffect(() => {
+    if (user?.plan && user.plan !== currentPlan) {
+      console.log("Updating NFT limits based on user plan:", user.plan);
+      changePlan(user.plan);
+    }
+  }, [user?.plan]);
 
   // Calculate if more NFTs can be created
   const canCreateNFT = nftLimit === -1 || nftCount < nftLimit;

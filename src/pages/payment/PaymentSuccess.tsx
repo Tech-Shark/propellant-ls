@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "@/api/AxiosInstance";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { fetchUser } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<
     "success" | "pending" | "failed"
@@ -37,6 +39,11 @@ const PaymentSuccess: React.FC = () => {
   const verifyPayment = async (paymentRef: string) => {
     try {
       setIsVerifying(true);
+      console.log(`Attempting to verify payment with reference: ${paymentRef}`);
+      console.log(
+        `API URL: ${axiosInstance.defaults.baseURL}/payment/verify/${paymentRef}`
+      );
+
       // Make API call to verify payment
       const response = await axiosInstance.get(`/payment/verify/${paymentRef}`);
 
@@ -44,6 +51,8 @@ const PaymentSuccess: React.FC = () => {
 
       if (response.data.success) {
         setVerificationStatus("success");
+        // Refresh user data to get updated subscription info
+        await fetchUser();
         toast({
           title: "Payment Verified",
           description:
@@ -59,12 +68,27 @@ const PaymentSuccess: React.FC = () => {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment verification error:", error);
+      // Enhanced error logging
+      if (error.response) {
+        // Server responded with a status code outside the 2xx range
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+        console.error("Error response headers:", error.response.headers);
+      } else if (error.request) {
+        // Request was made but no response was received
+        console.error("Error request:", error.request);
+      } else {
+        // Something else happened while setting up the request
+        console.error("Error message:", error.message);
+      }
+
       setVerificationStatus("failed");
       toast({
         title: "Verification Error",
         description:
+          error.response?.data?.message ||
           "An error occurred while verifying your payment. Please contact support.",
         variant: "destructive",
       });
@@ -75,8 +99,8 @@ const PaymentSuccess: React.FC = () => {
 
   const handleReturnToDashboard = () => {
     // Navigate back to the appropriate dashboard based on user role
-    // For now, we'll just go to the talent dashboard
-    navigate("/talent");
+    // For now, we'll just go to the talent dashboard with a success query parameter
+    navigate("/talent/payment?payment=success");
   };
 
   return (

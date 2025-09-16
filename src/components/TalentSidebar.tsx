@@ -1,7 +1,5 @@
 import {
-  Badge,
   Home,
-  Users,
   FileText,
   Award,
   Settings,
@@ -13,7 +11,8 @@ import {
   CreditCard,
   ArrowLeft,
   Wallet,
-  UserPlus, LogOut,
+  UserPlus,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 import logo from "../../public/logo.png";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { useAuth } from "@/context/AuthContext.tsx";
 
 const navigationItems = [
   {
@@ -167,8 +166,8 @@ export function TalentSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button
-                      onClick={logout}
-                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                    onClick={logout}
+                    className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Log out</span>

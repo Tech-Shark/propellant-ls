@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Check, Star, Shield, Zap } from "lucide-react";
 import { PaymentMethod } from "@/utils/global";
@@ -75,6 +76,7 @@ const defaultPlans = [
 ];
 
 export default function Payment() {
+  const { fetchUser } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -89,39 +91,63 @@ export default function Payment() {
     endDate: null,
   });
 
-  // Fetch user info including subscription
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await axiosInstance.get("/users");
-        console.log("User info response:", response.data);
+  // Function to fetch user info including subscription
+  const fetchUserInfo = async () => {
+    try {
+      const response = await axiosInstance.get("/users");
+      console.log("User info response:", response.data);
 
-        if (response.data && response.data.data) {
-          const userData = response.data.data;
+      if (response.data && response.data.data) {
+        const userData = response.data.data;
+        console.log("User data:", userData);
 
-          // Update current subscription if available
-          if (userData.subscription) {
-            setCurrentSubscription({
-              plan: userData.subscription.plan || "FREE",
-              status: userData.subscription.status || "ACTIVE",
-              startDate:
-                userData.subscription.createdAt || new Date().toISOString(),
-              endDate: userData.subscription.nextBillingDate || null,
-            });
+        // Check if plan is directly on user object (current implementation)
+        if (userData.plan) {
+          console.log("Found user plan:", userData.plan);
 
-            // Update selected plan to match current subscription
-            if (userData.subscription.plan) {
-              setSelectedPlan(userData.subscription.plan.toLowerCase());
-            }
+          setCurrentSubscription({
+            plan: userData.plan || "FREE",
+            status: "ACTIVE",
+            startDate: userData.updatedAt || new Date().toISOString(),
+            endDate: null,
+          });
+
+          // Update selected plan to match current plan
+          setSelectedPlan(userData.plan.toLowerCase());
+        }
+        // Fallback to subscription object if present (future implementation)
+        else if (userData.subscription) {
+          setCurrentSubscription({
+            plan: userData.subscription.plan || "FREE",
+            status: userData.subscription.status || "ACTIVE",
+            startDate:
+              userData.subscription.createdAt || new Date().toISOString(),
+            endDate: userData.subscription.nextBillingDate || null,
+          });
+
+          // Update selected plan to match current subscription
+          if (userData.subscription.plan) {
+            setSelectedPlan(userData.subscription.plan.toLowerCase());
           }
         }
-      } catch (error) {
-        console.error("Error fetching user info:", error);
-        toast.error("Could not load your subscription details");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      toast.error("Could not load your subscription details");
+    }
+  };
 
+  // Fetch user info when component mounts
+  useEffect(() => {
     fetchUserInfo();
+
+    // Check if we're returning from a payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("payment") && urlParams.get("payment") === "success") {
+      toast.success("Payment successful! Your subscription has been updated.");
+      // Remove the query parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   // Fetch payment methods
@@ -237,6 +263,9 @@ export default function Payment() {
     setIsUpgrading(true);
 
     try {
+      // Refresh user data before initiating payment
+      await fetchUser();
+
       // Log payment initialization for debugging
       console.log(`Initiating payment for plan: ${selectedPlan.toUpperCase()}`);
 

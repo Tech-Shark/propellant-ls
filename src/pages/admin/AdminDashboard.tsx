@@ -16,7 +16,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
 import { PlatformOverview } from "@/components/admin/PlatformOverview";
 import { ReferralManagement } from "@/components/admin/ReferralManagement";
-import { NFTManagement } from "@/components/admin/NFTManagement";
+
 import { EditsManagement } from "@/components/admin/EditsManagement";
 import { EmailManagement } from "@/components/admin/EmailManagement";
 import {
@@ -120,9 +120,6 @@ export default function AdminDashboard() {
                 <TabsTrigger value="referrals" className="text-xs lg:text-sm">
                   Referrals
                 </TabsTrigger>
-                <TabsTrigger value="nftlimits" className="text-xs lg:text-sm">
-                  NFT Limits
-                </TabsTrigger>
                 <TabsTrigger value="analytics" className="text-xs lg:text-sm">
                   Analytics
                 </TabsTrigger>
@@ -155,10 +152,6 @@ export default function AdminDashboard() {
 
               <TabsContent value="referrals" className="space-y-4 lg:space-y-6">
                 <ReferralManagement />
-              </TabsContent>
-
-              <TabsContent value="nftlimits" className="space-y-4 lg:space-y-6">
-                <NFTManagement />
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
@@ -243,9 +236,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="referrals" className="text-xs">
               Referrals
             </TabsTrigger>
-            <TabsTrigger value="nftlimits" className="text-xs">
-              NFT Limits
-            </TabsTrigger>
           </TabsList>
           <TabsList className="grid w-full grid-cols-3 h-auto bg-white shadow-sm">
             <TabsTrigger value="analytics" className="text-xs">
@@ -277,10 +267,6 @@ export default function AdminDashboard() {
 
           <TabsContent value="referrals" className="space-y-4">
             <ReferralManagement />
-          </TabsContent>
-
-          <TabsContent value="nftlimits" className="space-y-4">
-            <NFTManagement />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
