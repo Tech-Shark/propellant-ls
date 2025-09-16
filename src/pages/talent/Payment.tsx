@@ -81,16 +81,62 @@ export default function Payment() {
   const [plans, setPlans] = useState(defaultPlans);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
+  // State for current user subscription
+  const [currentSubscription, setCurrentSubscription] = useState({
+    plan: "FREE",
+    status: "ACTIVE",
+    startDate: new Date().toISOString(),
+    endDate: null,
+  });
+
+  // Fetch user info including subscription
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await axiosInstance.get("/users");
+        console.log("User info response:", response.data);
+
+        if (response.data && response.data.data) {
+          const userData = response.data.data;
+
+          // Update current subscription if available
+          if (userData.subscription) {
+            setCurrentSubscription({
+              plan: userData.subscription.plan || "FREE",
+              status: userData.subscription.status || "ACTIVE",
+              startDate:
+                userData.subscription.createdAt || new Date().toISOString(),
+              endDate: userData.subscription.nextBillingDate || null,
+            });
+
+            // Update selected plan to match current subscription
+            if (userData.subscription.plan) {
+              setSelectedPlan(userData.subscription.plan.toLowerCase());
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        toast.error("Could not load your subscription details");
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
   // Fetch payment methods
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       try {
         const response = await axiosInstance.get("/payment");
-        console.log(response.data);
-        console.log(response.data.data);
-        setPaymentMethods(response.data.data);
+        console.log("Payment methods response:", response.data);
+
+        if (response.data && response.data.data) {
+          setPaymentMethods(response.data.data);
+        }
       } catch (error) {
         console.error("Error fetching payment methods:", error);
+        toast.error("Could not load payment methods");
       }
     };
 
@@ -165,42 +211,172 @@ export default function Payment() {
   }, []);
 
   const handleUpgrade = (planId: string) => {
-    setSelectedPlan(planId.toUpperCase() as "PROFESSIONAL" | "PREMIUM");
+    const upperPlanId = planId.toUpperCase() as
+      | "PROFESSIONAL"
+      | "PREMIUM"
+      | "FREE";
+    console.log(`Selected plan: ${upperPlanId}`);
+    setSelectedPlan(upperPlanId);
+
+    // Provide user feedback
+    toast(`${planId} plan selected`, {
+      description:
+        "Review plan details and click 'Continue to Payment' to proceed",
+    });
+
+    // Scroll to payment section for better UX
+    setTimeout(() => {
+      const paymentSection = document.querySelector("#payment-information");
+      if (paymentSection) {
+        paymentSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
   };
 
   const handlePayment = async () => {
     setIsUpgrading(true);
 
     try {
+      // Log payment initialization for debugging
+      console.log(`Initiating payment for plan: ${selectedPlan.toUpperCase()}`);
+
       // The backend only needs the plan information
-      const response = await axiosInstance.post("premium", {
+      const response = await axiosInstance.post("/premium", {
         plan: selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM" | "FREE",
       });
 
-      // Check if response contains a payment URL
-      if (
-        response.data &&
-        typeof response.data === "string" &&
-        response.data.startsWith("http")
-      ) {
-        // Redirect to payment gateway
-        window.location.href = response.data;
-      } else if (selectedPlan.toUpperCase() === "FREE") {
-        // For free plan, no redirection is needed
-        toast.success("Successfully switched to Free plan");
-      } else {
+      // Log full response for debugging
+      console.log("Premium API response:", response);
+
+      // Handle different response formats
+      if (response.data) {
+        console.log("Response data type:", typeof response.data);
+        console.log("Response data:", response.data);
+
+        // Case 1: Direct URL string response
+        if (
+          typeof response.data === "string" &&
+          response.data.startsWith("http")
+        ) {
+          console.log("Opening payment URL in new window:", response.data);
+          window.open(response.data, "_blank");
+          return;
+        }
+
+        // Case 2: URL in data property as string (THIS IS THE ACTUAL FORMAT FROM YOUR SERVER)
+        if (
+          response.data.data &&
+          typeof response.data.data === "string" &&
+          response.data.data.startsWith("http")
+        ) {
+          console.log(
+            "Opening payment URL from data property in new window:",
+            response.data.data
+          );
+          window.open(response.data.data, "_blank");
+          return;
+        }
+
+        // Case 3: URL in paymentUrl property
+        if (
+          response.data.paymentUrl &&
+          response.data.paymentUrl.startsWith("http")
+        ) {
+          console.log(
+            "Opening payment URL from paymentUrl property in new window:",
+            response.data.paymentUrl
+          );
+          window.open(response.data.paymentUrl, "_blank");
+          return;
+        }
+
+        // Case 4: URL in url property
+        if (response.data.url && response.data.url.startsWith("http")) {
+          console.log(
+            "Opening payment URL from url property in new window:",
+            response.data.url
+          );
+          window.open(response.data.url, "_blank");
+          return;
+        }
+
+        // Case 5: Direct Paystack format
+        if (
+          response.data.authorization_url &&
+          response.data.authorization_url.startsWith("http")
+        ) {
+          console.log(
+            "Opening authorization_url in new window:",
+            response.data.authorization_url
+          );
+          window.open(response.data.authorization_url, "_blank");
+          return;
+        }
+
+        // Case 6: Nested Paystack format
+        if (
+          response.data.data &&
+          response.data.data.authorization_url &&
+          response.data.data.authorization_url.startsWith("http")
+        ) {
+          console.log(
+            "Opening nested authorization_url in new window:",
+            response.data.data.authorization_url
+          );
+          window.open(response.data.data.authorization_url, "_blank");
+          return;
+        }
+
+        // Case 6: FREE plan or already on this plan
+        if (
+          selectedPlan.toUpperCase() === "FREE" ||
+          (response.data.message && response.data.message.includes("already"))
+        ) {
+          console.log("Free plan selected or already on this plan");
+          toast.success(
+            selectedPlan.toUpperCase() === "FREE"
+              ? "Successfully switched to Free plan"
+              : "You are already subscribed to this plan"
+          );
+          return;
+        }
+
+        // Case 7: Unexpected response format but not an error
+        if (response.data.success === true || response.status === 200) {
+          console.log("Payment process seems successful but no URL returned");
+          toast.success("Subscription updated successfully!");
+          return;
+        }
+
+        // Default case: No recognizable response format
+        console.warn("Unrecognized response format:", response.data);
         toast.error("Unexpected response from server. Please try again.");
       }
     } catch (error) {
       console.error("Payment initialization error:", error);
+
+      // Enhanced error logging
       if (isAxiosError(error)) {
-        toast.error(
-          `${
-            error.response?.data?.message ||
-            error.message ||
-            "Payment failed. Please try again."
-          }`
-        );
+        console.error("Error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+
+        // If we have a specific error message from the API, show it
+        if (error.response?.data?.message) {
+          const errorMessage = error.response.data.message;
+
+          // If it's about already being on this plan, treat as success
+          if (errorMessage.includes("already")) {
+            toast.success("You are already subscribed to this plan");
+          } else {
+            toast.error(errorMessage);
+          }
+        } else {
+          toast.error(error.message || "Payment failed. Please try again.");
+        }
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
@@ -228,9 +404,15 @@ export default function Payment() {
 
           <Badge
             variant="secondary"
-            className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30"
+            className={
+              currentSubscription.plan === "FREE"
+                ? "bg-emerald-600/20 text-emerald-400 border-emerald-600/30"
+                : "bg-blue-600/20 text-blue-400 border-blue-600/30"
+            }
           >
-            Free Plan Active
+            {currentSubscription.plan.charAt(0).toUpperCase() +
+              currentSubscription.plan.slice(1).toLowerCase()}{" "}
+            Plan Active
           </Badge>
         </div>
       </div>
@@ -247,12 +429,46 @@ export default function Payment() {
           <CardContent>
             <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
               <div>
-                <h3 className="text-lg font-semibold text-white">Free Plan</h3>
-                <p className="text-slate-400">Active since January 2024</p>
+                <h3 className="text-lg font-semibold text-white">
+                  {currentSubscription.plan.charAt(0).toUpperCase() +
+                    currentSubscription.plan.slice(1).toLowerCase()}{" "}
+                  Plan
+                </h3>
+                <p className="text-slate-400">
+                  Active since{" "}
+                  {new Date(currentSubscription.startDate).toLocaleDateString()}
+                </p>
+                {currentSubscription.endDate && (
+                  <p className="text-slate-400">
+                    Next billing date:{" "}
+                    {new Date(currentSubscription.endDate).toLocaleDateString()}
+                  </p>
+                )}
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-white">$0</p>
-                <p className="text-slate-400">Forever</p>
+                <p className="text-2xl font-bold text-white">
+                  $
+                  {plans.find(
+                    (p) =>
+                      p.id.toUpperCase() ===
+                      currentSubscription.plan.toUpperCase()
+                  )?.price || 0}
+                </p>
+                <p className="text-slate-400">
+                  {currentSubscription.plan === "FREE"
+                    ? "Forever"
+                    : "per month"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={
+                    currentSubscription.status === "ACTIVE"
+                      ? "bg-emerald-600/20 text-emerald-400 border-emerald-600/30"
+                      : "bg-amber-600/20 text-amber-400 border-amber-600/30"
+                  }
+                >
+                  {currentSubscription.status}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -349,18 +565,53 @@ export default function Payment() {
 
         {/* Payment Information */}
         {selectedPlan !== "free" && (
-          <Card className="bg-slate-900 border-slate-700">
+          <Card
+            id="payment-information"
+            className="bg-slate-900 border-slate-700"
+          >
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-blue-400" />
                 Payment Information
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Enter your payment details to complete the subscription
+                Review your selected plan and continue to payment
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
+              {/* Selected Plan Summary */}
+              <div className="p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Plan Summary
+                </h3>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-300">Selected Plan:</span>
+                  <span className="text-white font-medium">
+                    {selectedPlan.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-300">Amount:</span>
+                  <span className="text-white font-medium">
+                    $
+                    {plans.find(
+                      (p) => p.id.toUpperCase() === selectedPlan.toUpperCase()
+                    )?.price || "N/A"}
+                    /month
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-300">Payment Provider:</span>
+                  <span className="text-white font-medium capitalize">
+                    {paymentMethods.length > 0
+                      ? paymentMethods[0].name
+                      : "Default Gateway"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Previously commented out payment method selection */}
               {/*<div>*/}
               {/*    <Label className="text-slate-300">Payment Method</Label>*/}
               {/*    <Select value={paymentMethod} onValueChange={setPaymentMethod}>*/}

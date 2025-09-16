@@ -49,15 +49,15 @@ interface PaymentMethod {
   _id?: string;
   name: string; // Must be one of PaymentProvidersEnum values
   description?: string | string[]; // Can be a string or array of strings
-  fee?: number;
-  active: boolean;
+  fee?: number | string; // Can be either number or string to match backend expectations
+  active: boolean | string; // Can be either boolean or string to match backend expectations
   imageUrl?: string;
   isDeleted?: boolean;
 } // PaymentProvidersEnum should match the backend
 enum PaymentProvidersEnum {
-  PAYSTACK = "paystack",
-  FLUTTERWAVE = "flutterwave",
-  VPAY = "vpay",
+  paystack = "paystack",
+  flutterwave = "flutterwave",
+  vpay = "vpay",
 }
 
 // Types for subscription plans
@@ -185,13 +185,13 @@ export function EditsManagement() {
   const [newPaymentMethod, setNewPaymentMethod] = useState<{
     name: string;
     description: string[];
-    fee?: number;
-    active?: boolean;
+    fee?: string | number;
+    active?: boolean | string;
   }>({
     name: "",
     description: [""],
-    fee: 0,
-    active: false,
+    fee: "0", // Initialize as string to match backend expectation
+    active: "false", // Initialize as string to match backend expectation
   });
   const [newPaymentDescriptionItems, setNewPaymentDescriptionItems] = useState([
     "",
@@ -217,10 +217,25 @@ export function EditsManagement() {
     }
   }, [selectedEdit]);
 
+  // Helper function to refresh payment methods with a delay and error handling
+  const refreshPaymentMethods = async () => {
+    try {
+      // Wait a moment to allow backend to process
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await fetchPaymentMethods();
+    } catch (error) {
+      console.error("Error during payment methods refresh:", error);
+      // Silently handle refresh errors - the user already sees the success message
+      // from the original operation, so we don't want to confuse them with refresh errors
+    }
+  };
+
   // Fetch payment methods from the backend
   const fetchPaymentMethods = async () => {
     try {
       setIsLoading((prev) => ({ ...prev, paymentMethods: true }));
+
+      // Make a clean request without any query parameters
       const response = await axiosInstance.get("/payment/admin");
 
       // Log the entire response to understand its structure
@@ -277,13 +292,33 @@ export function EditsManagement() {
       }
     } catch (error) {
       console.error("Error fetching payment methods:", error);
-      toast({
-        title: "Error",
-        description: isAxiosError(error)
-          ? error.response?.data?.message || "Failed to load payment methods"
-          : "Failed to load payment methods",
-        variant: "destructive",
-      });
+
+      // More detailed error logging
+      if (isAxiosError(error)) {
+        console.error("Axios error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+
+        // Only show a toast for non-401 errors (401s are handled by the axios interceptor)
+        if (error.response?.status !== 401) {
+          toast({
+            title: "Error",
+            description:
+              error.response?.data?.message || "Failed to load payment methods",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load payment methods",
+          variant: "destructive",
+        });
+      }
+
       // Set empty array on error
       setPaymentMethods([]);
     } finally {
@@ -676,22 +711,40 @@ export function EditsManagement() {
   };
 
   const handleSavePaymentEdit = async () => {
+    console.log(
+      "Save Payment Edit - Current editing method:",
+      editingPaymentMethod
+    );
+
     if (editingPaymentMethod && editingPaymentMethod._id) {
       try {
         const filteredDescription = editPaymentDescriptionItems.filter(
           (item) => item.trim() !== ""
         );
         const updatedMethod = {
-          ...editingPaymentMethod,
+          name: editingPaymentMethod.name,
           description: filteredDescription.join(", "), // Join as string for backend
-          fee: (editingPaymentMethod.fee || 0).toString(), // Convert fee to string as required by API
-          active: editingPaymentMethod.active.toString(), // Convert active to string as required by API
+          fee: (editingPaymentMethod.fee || 0).toString(), // Send as string to match backend expectation
+          active: editingPaymentMethod.active === true ? "true" : "false", // Send as string to match backend expectation
         };
 
-        await axiosInstance.patch(
+        console.log("Sending updated method to backend:", {
+          endpoint: `/payment/${editingPaymentMethod._id}`,
+          data: updatedMethod,
+        });
+
+        // Add a loading state indicator
+        toast({
+          title: "Processing",
+          description: "Updating payment method...",
+        });
+
+        const response = await axiosInstance.patch(
           `/payment/${editingPaymentMethod._id}`,
           updatedMethod
         );
+
+        console.log("Payment method update response:", response.data);
 
         // Refresh payment methods list
         fetchPaymentMethods();
@@ -706,6 +759,15 @@ export function EditsManagement() {
         });
       } catch (error) {
         console.error("Error updating payment method:", error);
+        // Detailed error logging
+        if (isAxiosError(error)) {
+          console.error("Axios error details:", {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+          });
+        }
         toast({
           title: "Error",
           description: isAxiosError(error)
@@ -721,42 +783,159 @@ export function EditsManagement() {
     const filteredDescription = newPaymentDescriptionItems.filter(
       (item) => item.trim() !== ""
     );
+    console.log("Add Payment Method - Validation check:", {
+      name: newPaymentMethod.name,
+      descriptionLength: filteredDescription.length,
+    });
+
     if (newPaymentMethod.name && filteredDescription.length > 0) {
       try {
-        // Format payment data for backend
+        // Format payment data for backend - adjust to match DTO requirements
         const paymentData = {
-          name: newPaymentMethod.name,
+          name: newPaymentMethod.name, // Using the proper enum value
           description: filteredDescription.join(", "), // Join as string for backend
-          fee: (newPaymentMethod.fee || 0).toString(), // Convert fee to string as required by API
-          active: (newPaymentMethod.active || false).toString(), // Convert active to string as required by API
+          fee: (newPaymentMethod.fee || 0).toString(), // Send as string to match backend expectation
+          active: "true", // Send as string to match backend expectation
         };
 
-        await axiosInstance.post("/payment", paymentData);
+        console.log("Sending payment data to backend:", paymentData);
+
+        try {
+          // Check if payment method already exists
+          const existingMethods = await axiosInstance.get("/payment/admin");
+
+          // Make sure we have data
+          if (existingMethods.data?.data) {
+            const methodsArray = Array.isArray(existingMethods.data.data)
+              ? existingMethods.data.data
+              : existingMethods.data.data.data || [];
+
+            const existingMethod = methodsArray.find(
+              (method) =>
+                method.name.toLowerCase() ===
+                newPaymentMethod.name.toLowerCase()
+            );
+
+            if (existingMethod) {
+              // If it exists, just show a success message
+              toast({
+                title: "Payment Method Already Exists",
+                description: `${newPaymentMethod.name} payment method is already configured.`,
+              });
+
+              // Reset form and close modal
+              setNewPaymentMethod({
+                name: "",
+                description: [""],
+                fee: "0",
+                active: "false",
+              });
+              setNewPaymentDescriptionItems([""]);
+              setIsAddPaymentModalOpen(false);
+
+              // Refresh payment methods to make sure the UI is up to date
+              refreshPaymentMethods();
+              return;
+            }
+          }
+        } catch (checkError) {
+          console.error("Error checking existing payment methods:", checkError);
+          // Continue with adding payment method anyway
+        }
+
+        // Add a loading state indicator
+        toast({
+          title: "Processing",
+          description: "Adding payment method...",
+        });
+
+        const response = await axiosInstance.post("/payment", paymentData);
+        console.log("Payment method add response:", response.data);
+
+        // Show success message
+        toast({
+          title: "Success",
+          description: `${newPaymentMethod.name} payment method added successfully!`,
+          variant: "default",
+        });
 
         // Refresh payment methods list
-        fetchPaymentMethods();
+        await refreshPaymentMethods();
 
         // Reset form and close modal
         setNewPaymentMethod({
           name: "",
           description: [""],
-          fee: 0,
-          active: false,
+          fee: "0",
+          active: "false",
         });
         setNewPaymentDescriptionItems([""]);
         setIsAddPaymentModalOpen(false);
-
-        toast({
-          title: "Success",
-          description: "New payment method added successfully",
-        });
       } catch (error) {
         console.error("Error adding payment method:", error);
+        // Detailed error logging
+        if (isAxiosError(error)) {
+          console.error("Axios error details:", {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+          });
+        }
+        // Improved error message handling
+        let errorMessage = "Failed to add payment method";
+
+        if (isAxiosError(error) && error.response?.data) {
+          console.log("Full error response:", error.response.data);
+
+          // Handle different error response formats
+          if (typeof error.response.data.message === "string") {
+            errorMessage = error.response.data.message;
+          } else if (Array.isArray(error.response.data.message)) {
+            // Handle validation errors which are typically an array of messages
+            errorMessage = error.response.data.message[0] || errorMessage;
+          } else if (
+            error.response.data.data &&
+            error.response.data.data.message
+          ) {
+            // Handle nested error format
+            errorMessage = error.response.data.data.message;
+          }
+
+          // Handle specific error cases with user-friendly messages
+          if (errorMessage.includes("fee")) {
+            errorMessage = "Fee must be a valid number";
+          } else if (errorMessage.includes("active")) {
+            errorMessage = "Active status must be a valid value (true/false)";
+          } else if (errorMessage.includes("already exists")) {
+            // If the payment method already exists, we'll treat this as a successful operation
+            toast({
+              title: "Payment Method Already Configured",
+              description: `The ${newPaymentMethod.name} payment method is already set up in the system.`,
+              variant: "default",
+            });
+
+            // Reset form and close modal
+            setNewPaymentMethod({
+              name: "",
+              description: [""],
+              fee: "0",
+              active: "false",
+            });
+            setNewPaymentDescriptionItems([""]);
+            setIsAddPaymentModalOpen(false);
+
+            // Refresh payment methods to make sure UI is up to date
+            refreshPaymentMethods();
+
+            // Return early since this isn't a real error
+            return;
+          }
+        }
+
         toast({
           title: "Error",
-          description: isAxiosError(error)
-            ? error.response?.data?.message || "Failed to add payment method"
-            : "Failed to add payment method",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -798,8 +977,20 @@ export function EditsManagement() {
       const method = paymentMethods.find((m) => m._id === methodId);
       if (!method) return;
 
+      // Add loading state
+      toast({
+        title: "Processing",
+        description: "Updating payment method status...",
+      });
+
+      console.log("Toggling payment method status:", {
+        methodId,
+        currentActive: method.active,
+        newActive: !method.active,
+      });
+
       await axiosInstance.patch(`/payment/${methodId}`, {
-        active: (!method.active).toString(), // Convert to string as required by API
+        active: (!method.active).toString(), // Send as string to match backend expectation
       });
 
       // Refresh payment methods list
@@ -811,6 +1002,15 @@ export function EditsManagement() {
       });
     } catch (error) {
       console.error("Error updating payment method status:", error);
+      // Detailed error logging
+      if (isAxiosError(error)) {
+        console.error("Axios error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+      }
       toast({
         title: "Error",
         description: isAxiosError(error)
@@ -1345,15 +1545,9 @@ export function EditsManagement() {
                       <SelectValue placeholder="Select payment provider" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={PaymentProvidersEnum.PAYSTACK}>
-                        PayStack
-                      </SelectItem>
-                      <SelectItem value={PaymentProvidersEnum.FLUTTERWAVE}>
-                        Flutterwave
-                      </SelectItem>
-                      <SelectItem value={PaymentProvidersEnum.VPAY}>
-                        VPay
-                      </SelectItem>
+                      <SelectItem value="paystack">PayStack</SelectItem>
+                      <SelectItem value="flutterwave">Flutterwave</SelectItem>
+                      <SelectItem value="vpay">VPay</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1366,7 +1560,7 @@ export function EditsManagement() {
                     onChange={(e) =>
                       setNewPaymentMethod((prev) => ({
                         ...prev,
-                        fee: parseFloat(e.target.value) || 0,
+                        fee: e.target.value, // Store as string directly
                       }))
                     }
                     placeholder="Enter fee percentage (e.g. 2.5)"
@@ -1418,12 +1612,25 @@ export function EditsManagement() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={handleAddPaymentMethod} className="flex-1">
+                  <Button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddPaymentMethod();
+                    }}
+                    className="flex-1"
+                  >
                     Add Method
                   </Button>
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={() => setIsAddPaymentModalOpen(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsAddPaymentModalOpen(false);
+                    }}
                     className="flex-1"
                   >
                     Cancel
@@ -1463,15 +1670,9 @@ export function EditsManagement() {
                       <SelectValue placeholder="Select payment provider" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={PaymentProvidersEnum.PAYSTACK}>
-                        PayStack
-                      </SelectItem>
-                      <SelectItem value={PaymentProvidersEnum.FLUTTERWAVE}>
-                        Flutterwave
-                      </SelectItem>
-                      <SelectItem value={PaymentProvidersEnum.VPAY}>
-                        VPay
-                      </SelectItem>
+                      <SelectItem value="paystack">PayStack</SelectItem>
+                      <SelectItem value="flutterwave">Flutterwave</SelectItem>
+                      <SelectItem value="vpay">VPay</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1484,7 +1685,7 @@ export function EditsManagement() {
                     onChange={(e) =>
                       setEditingPaymentMethod((prev) => ({
                         ...prev,
-                        fee: parseFloat(e.target.value) || 0,
+                        fee: e.target.value, // Store as string directly
                       }))
                     }
                     placeholder="Enter fee percentage (e.g. 2.5)"
@@ -1536,12 +1737,25 @@ export function EditsManagement() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={handleSavePaymentEdit} className="flex-1">
+                  <Button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSavePaymentEdit();
+                    }}
+                    className="flex-1"
+                  >
                     Save Changes
                   </Button>
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={() => setIsEditPaymentModalOpen(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsEditPaymentModalOpen(false);
+                    }}
                     className="flex-1"
                   >
                     Cancel

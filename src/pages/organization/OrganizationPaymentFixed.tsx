@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSidebar } from "@/components/OrganizationSidebar";
 import { Button } from "@/components/ui/button";
+import { isAxiosError } from "axios";
 import {
   Card,
   CardContent,
@@ -626,14 +627,59 @@ const OrganizationPayment: React.FC = () => {
         plan: selectedPlan.toUpperCase(),
       });
 
-      // Check if response contains a payment URL
+      // Add detailed logging for debugging
+      console.log("Premium API response:", response);
+      console.log("Response data type:", typeof response.data);
+      console.log("Response data:", response.data);
+
+      // Check if response contains a payment URL in any of the expected formats
       if (
         response.data &&
         typeof response.data === "string" &&
         response.data.startsWith("http")
       ) {
-        // Redirect to payment gateway
-        window.location.href = response.data;
+        // Case 1: Direct URL string response
+        console.log("Opening payment URL in new window:", response.data);
+        window.open(response.data, "_blank");
+      }
+      // Case 2: URL in data property as string (THIS IS THE ACTUAL FORMAT FROM YOUR SERVER)
+      else if (
+        response.data &&
+        response.data.data &&
+        typeof response.data.data === "string" &&
+        response.data.data.startsWith("http")
+      ) {
+        console.log(
+          "Opening payment URL from data property in new window:",
+          response.data.data
+        );
+        window.open(response.data.data, "_blank");
+      }
+      // Case 3: Various other possible formats
+      else if (
+        response.data?.paymentUrl &&
+        response.data.paymentUrl.startsWith("http")
+      ) {
+        console.log(
+          "Opening payment URL from paymentUrl property in new window:",
+          response.data.paymentUrl
+        );
+        window.open(response.data.paymentUrl, "_blank");
+      } else if (response.data?.url && response.data.url.startsWith("http")) {
+        console.log(
+          "Opening URL from url property in new window:",
+          response.data.url
+        );
+        window.open(response.data.url, "_blank");
+      } else if (
+        response.data?.authorization_url &&
+        response.data.authorization_url.startsWith("http")
+      ) {
+        console.log(
+          "Opening authorization_url in new window:",
+          response.data.authorization_url
+        );
+        window.open(response.data.authorization_url, "_blank");
       } else {
         toast("Subscription updated successfully", {
           description: "Your account has been updated with the new plan.",
@@ -670,9 +716,40 @@ const OrganizationPayment: React.FC = () => {
       }
     } catch (error) {
       console.error("Payment initialization error:", error);
-      toast("Payment failed", {
-        description: "Please try again or contact support.",
-      });
+
+      // Enhanced error logging
+      if (isAxiosError(error)) {
+        console.error("Error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+
+        // If we have a specific error message from the API, show it
+        if (error.response?.data?.message) {
+          const errorMessage = error.response.data.message;
+
+          // If it's about already being on this plan, treat as success
+          if (errorMessage.includes("already")) {
+            toast("Already Subscribed", {
+              description: "You are already subscribed to this plan.",
+            });
+          } else {
+            toast("Payment Failed", {
+              description: errorMessage,
+            });
+          }
+        } else {
+          toast("Payment Failed", {
+            description: "Please try again or contact support.",
+          });
+        }
+      } else {
+        toast("Payment Failed", {
+          description: "Please try again or contact support.",
+        });
+      }
     } finally {
       setIsUpgrading(false);
     }

@@ -25,6 +25,7 @@ import Messages from "@/pages/organization/Messages.tsx";
 import CredentialVerification from "@/pages/organization/CredentialVerification.tsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.tsx";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import PaymentSuccess from "@/pages/payment/PaymentSuccess";
 
 export const router = createBrowserRouter([
   {
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       },
       //   { path: "terms-and-conditions", element: <TermsAndConditions /> },
       { path: "privacypolicy", element: <PrivacyPolicy /> },
+      { path: "payment/success", element: <PaymentSuccess /> },
     ],
   },
 ]);

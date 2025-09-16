@@ -334,7 +334,7 @@ export default function CVBuilder() {
 
       // Format data according to the required API structure
 
-      // Clean the job description - remove markdown and ensure it's properly formatted
+      // Clean the job description - ensure it matches the Postman format exactly
       const cleanJobDescription = personalInfo.jobDescription
         ? personalInfo.jobDescription.replace(/\*\*/g, "").trim()
         : ""; // Remove markdown formatting
@@ -347,29 +347,25 @@ export default function CVBuilder() {
         return;
       }
 
-      // Transform skills to match expected format
+      // Transform skills to match expected format - EXACTLY like the Postman format that works
       const formattedSkills = skills.map((skill, index) => ({
         id: (index + 1).toString(),
         name: skill.name,
         level: skill.level,
       }));
 
-      // Transform work experiences to match expected format
+      // Transform work experiences to match expected format - EXACTLY like the Postman format that works
       const formattedExperiences = workExperiences.map((exp, index) => ({
-        id: (index + 1).toString(),
+        id: `exp${index + 1}`, // Use the exact format "exp1", "exp2", etc. as in Postman
         company: exp.company,
         position: exp.position,
         title: exp.title || exp.position,
         startDate: exp.startDate,
-        // Handle current roles - either use null or "Present" string based on your API expectation
-        endDate: exp.isCurrentRole
-          ? typeof exp.endDate === "string" && exp.endDate.trim()
-            ? exp.endDate
-            : "Present"
-          : exp.endDate,
-        // Ensure current is a proper boolean
+        // Handle current roles - use "Present" string for current roles
+        endDate: exp.isCurrentRole ? "Present" : exp.endDate,
+        // Use current property as in Postman example
         current: Boolean(exp.isCurrentRole),
-        location: exp.location,
+        location: exp.location || "Remote", // Default to Remote if missing
         description: exp.description,
         achievements: exp.achievements || [],
       }));
@@ -381,11 +377,14 @@ export default function CVBuilder() {
         experiences: formattedExperiences,
       };
 
-      // Log what we're sending (for debugging)
+      // Log what we're sending (for debugging) - exact format that should match Postman
       console.log(
         "Sending data for optimization:",
-        JSON.stringify(apiFormattedData)
+        JSON.stringify(apiFormattedData, null, 2)
       );
+
+      // Also log in a format that's easy to copy-paste for Postman testing
+      console.log("POSTMAN FORMAT:", JSON.stringify(apiFormattedData));
 
       // Validate the data structure before sending
       const validateData = () => {
@@ -414,7 +413,7 @@ export default function CVBuilder() {
           return "Experiences must be an array";
         }
 
-        // Check each experience has required properties
+        // Check each experience has required properties - ensuring exact match with Postman format
         for (const exp of apiFormattedData.experiences) {
           if (!exp.company || !exp.position || !exp.description) {
             return "Each experience must have company, position, and description";
@@ -424,6 +423,12 @@ export default function CVBuilder() {
           }
           if (exp.current === false && !exp.endDate) {
             return "Each non-current experience must have an end date";
+          }
+          // Ensure ID format matches "expN" pattern
+          if (!exp.id.startsWith("exp")) {
+            console.warn(
+              `Experience ID "${exp.id}" doesn't match expected format "expN", but continuing...`
+            );
           }
         }
 
@@ -447,6 +452,12 @@ export default function CVBuilder() {
           // Log the exact data being sent
           console.log(
             `Attempt ${retryCount + 1}: Sending CV optimization request`
+          );
+
+          // Log the exact format we're sending to make debugging easier
+          console.log(
+            `Exact JSON being sent to server:`,
+            JSON.stringify(apiFormattedData, null, 2)
           );
 
           response = await axiosInstance.post(
