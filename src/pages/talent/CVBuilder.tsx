@@ -38,10 +38,29 @@ import html2pdf from "html2pdf.js";
 const isValidURL = (url: string): boolean => {
   if (!url || url.trim() === "") return true; // Empty URLs are considered valid (optional field)
 
+  // Clean up the URL by trimming whitespace
+  const trimmedUrl = url.trim();
+
+  // Check for common patterns that look like URLs even if not perfectly formatted
+  // This allows for domain-only URLs like "example.com" or "www.example.com"
+  const urlRegex =
+    /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+(\/[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]*)?$/;
+  if (urlRegex.test(trimmedUrl)) {
+    return true;
+  }
+
+  // First ensure it has a protocol for the URL constructor test
+  let urlToTest = trimmedUrl;
+  if (!/^https?:\/\//i.test(urlToTest)) {
+    urlToTest = `https://${urlToTest}`;
+  }
+
   try {
-    new URL(url);
+    new URL(urlToTest);
     return true;
   } catch (e) {
+    // Log the error for debugging
+    console.warn(`Invalid URL detected: ${url}`, e);
     return false;
   }
 };
@@ -50,12 +69,23 @@ const isValidURL = (url: string): boolean => {
 const formatURL = (url: string): string => {
   if (!url || url.trim() === "") return "";
 
+  // Clean the URL of leading/trailing whitespace
+  let cleanUrl = url.trim();
+
   // If URL doesn't have a protocol, add https://
-  if (!/^https?:\/\//i.test(url)) {
-    return `https://${url}`;
+  if (!/^https?:\/\//i.test(cleanUrl)) {
+    cleanUrl = `https://${cleanUrl}`;
   }
 
-  return url;
+  try {
+    // Validate the URL is properly formatted
+    new URL(cleanUrl);
+    return cleanUrl;
+  } catch (e) {
+    // If the URL is invalid even after adding https://, return an empty string
+    console.warn("Failed to format URL:", url);
+    return "";
+  }
 };
 
 export default function CVBuilder() {
@@ -84,6 +114,26 @@ export default function CVBuilder() {
     level: "BEGINNER",
   });
   const [newTechnology, setNewTechnology] = useState<string>("");
+
+  // Helper function to handle subscription upgrade redirects
+  const redirectToPayment = () => {
+    // Save current CV data to localStorage before redirecting
+    const currentData: CV = {
+      ...personalInfo,
+      workExperience: workExperiences,
+      education: educations,
+      certifications,
+      projects,
+      skills,
+    };
+    localStorage.setItem(
+      "cv_pending_save",
+      JSON.stringify(removeIdFromCv(currentData))
+    );
+
+    // Redirect to payment page
+    window.location.href = "/payment";
+  };
 
   const addWorkExperience = () => {
     const newExp: WorkExperience = {
@@ -301,6 +351,19 @@ export default function CVBuilder() {
     setIsGenerating(true);
 
     try {
+      // First check credit status
+      const creditStatus = await checkCreditStatus();
+      if (creditStatus && creditStatus.credits <= 0) {
+        toast.error("You don't have enough credits for AI optimization.", {
+          duration: 6000,
+          action: {
+            label: "Upgrade",
+            onClick: () => redirectToPayment(),
+          },
+        });
+        setIsGenerating(false);
+        return;
+      }
       // Validate required fields
       if (
         !personalInfo.firstName ||
@@ -513,23 +576,122 @@ export default function CVBuilder() {
           address: personalInfo.address,
           professionalTitle: personalInfo.professionalTitle,
           professionalSummary:
-            optimizedData.summary || personalInfo.professionalSummary,
+            optimizedData.professionalSummary ||
+            optimizedData.summary ||
+            personalInfo.professionalSummary,
           jobDescription:
             optimizedData.jobDescription || personalInfo.jobDescription,
           workExperience:
-            optimizedData.experiences?.map((exp) => ({
-              company: exp.company || "",
-              position: exp.position || "",
-              title: exp.title || exp.position || "",
-              startDate: exp.startDate || "",
-              endDate: exp.endDate || "",
-              description: exp.description || "",
-              location: exp.location || "",
-              isCurrentRole: !!exp.current,
-              achievements: Array.isArray(exp.achievements)
-                ? exp.achievements
-                : [],
-            })) || workExperiences,
+            optimizedData.experiences?.map((exp) => {
+              // Find matching experiences in local state using fuzzy matching
+              const matchingExactExp = workExperiences.find(
+                (local) =>
+                  local.company === (exp.company || "") &&
+                  local.position === (exp.position || "") &&
+                  local.startDate === (exp.startDate || "")
+              );
+
+              // Try looser matching if exact match fails
+              const matchingCompanyPositionExp = !matchingExactExp
+                ? workExperiences.find(
+                    (local) =>
+                      local.company === (exp.company || "") &&
+                      local.position === (exp.position || "")
+                  )
+                : null;
+
+              // Try even looser matching with just company if previous matches fail
+              const matchingCompanyExp =
+                !matchingExactExp && !matchingCompanyPositionExp
+                  ? workExperiences.find(
+                      (local) => local.company === (exp.company || "")
+                    )
+                  : null;
+
+              // Use the best match found
+              const matchingExp =
+                matchingExactExp ||
+                matchingCompanyPositionExp ||
+                matchingCompanyExp;
+
+              // Generate default achievements from description if none provided
+              let achievements = [];
+
+              // Store original achievements for logging/debugging
+              const originalAchievements = Array.isArray(exp.achievements)
+                ? [...exp.achievements]
+                : [];
+              const matchingAchievements =
+                matchingExp && Array.isArray(matchingExp.achievements)
+                  ? [...matchingExp.achievements]
+                  : [];
+
+              // If AI returned achievements, use those
+              if (
+                Array.isArray(exp.achievements) &&
+                exp.achievements.length > 0
+              ) {
+                achievements = exp.achievements;
+                console.log(
+                  `Using AI achievements for ${exp.company || "company"}: ${
+                    achievements.length
+                  } items`
+                );
+              }
+              // If we have matching local achievements, use those
+              else if (
+                matchingExp &&
+                Array.isArray(matchingExp.achievements) &&
+                matchingExp.achievements.length > 0
+              ) {
+                achievements = matchingExp.achievements;
+                console.log(
+                  `Using preserved local achievements for ${
+                    exp.company || "company"
+                  }: ${achievements.length} items`
+                );
+              }
+              // If description contains bullet points, extract those as achievements
+              else if (exp.description && exp.description.includes("•")) {
+                achievements = exp.description
+                  .split(/•\s*/)
+                  .filter((item) => item.trim().length > 0)
+                  .map((item) => item.trim())
+                  .slice(0, 3); // Take up to 3 bullet points
+                console.log(
+                  `Extracted achievements from description for ${
+                    exp.company || "company"
+                  }: ${achievements.length} items`
+                );
+              }
+              // Otherwise, generate a placeholder achievement
+              else if (exp.description) {
+                achievements = [
+                  `Contributed to ${exp.company} as ${exp.position} with focus on operational excellence`,
+                ];
+                console.log(
+                  `Generated placeholder achievement for ${
+                    exp.company || "company"
+                  }`
+                );
+              }
+
+              return {
+                company: exp.company || "",
+                position: exp.position || "",
+                title: exp.title || exp.position || "",
+                startDate: exp.startDate || "",
+                endDate:
+                  exp.current || exp.endDate === "Present"
+                    ? ""
+                    : exp.endDate || "",
+                description: exp.description || "",
+                location: exp.location || "",
+                isCurrentRole: !!exp.current || exp.endDate === "Present",
+                // Always provide an array of achievements
+                achievements: achievements,
+              };
+            }) || workExperiences,
           skills:
             optimizedData.skills?.map((skill) => ({
               name: skill.name || "",
@@ -555,9 +717,145 @@ export default function CVBuilder() {
             : {}),
         });
 
+        // Create a backup of the current workExperiences with their achievements
+        const achievementsBackup = workExperiences.map((exp) => ({
+          company: exp.company,
+          position: exp.position,
+          startDate: exp.startDate,
+          achievements: exp.achievements || [],
+        }));
+        console.log(
+          "Created achievements backup with",
+          achievementsBackup.length,
+          "entries"
+        );
+
         // Only update these arrays if they exist and are arrays in the response
         if (Array.isArray(cv.workExperience) && cv.workExperience.length > 0) {
-          setWorkExperiences(cv.workExperience);
+          // Preserve achievements from original experiences when updating with AI optimization
+          const mergedWorkExps = cv.workExperience.map((aiExp) => {
+            // Find matching experiences in local state using fuzzy matching
+            const matchingExactExp = workExperiences.find(
+              (local) =>
+                local.company === aiExp.company &&
+                local.position === aiExp.position &&
+                local.startDate === aiExp.startDate
+            );
+
+            // Try looser matching if exact match fails
+            const matchingCompanyPositionExp = !matchingExactExp
+              ? workExperiences.find(
+                  (local) =>
+                    local.company === aiExp.company &&
+                    local.position === aiExp.position
+                )
+              : null;
+
+            // Try even looser matching with just company if previous matches fail
+            const matchingCompanyExp =
+              !matchingExactExp && !matchingCompanyPositionExp
+                ? workExperiences.find(
+                    (local) => local.company === aiExp.company
+                  )
+                : null;
+
+            // Use the best match found
+            const matchingExp =
+              matchingExactExp ||
+              matchingCompanyPositionExp ||
+              matchingCompanyExp;
+
+            // Ensure we always have achievements, prioritizing what the AI returned if available
+            let finalAchievements = [];
+
+            // Create a log entry for debugging
+            const achievementSource = {
+              company: aiExp.company,
+              position: aiExp.position,
+              aiAchievementsCount: Array.isArray(aiExp.achievements)
+                ? aiExp.achievements.length
+                : 0,
+              localAchievementsCount:
+                matchingExp && Array.isArray(matchingExp.achievements)
+                  ? matchingExp.achievements.length
+                  : 0,
+            };
+            console.log("Achievement source data:", achievementSource);
+
+            // If the AI experience already has achievements, use them
+            if (
+              Array.isArray(aiExp.achievements) &&
+              aiExp.achievements.length > 0
+            ) {
+              finalAchievements = aiExp.achievements;
+              console.log(
+                `Using AI achievements for ${aiExp.company}: ${finalAchievements.length} items`
+              );
+            }
+            // Otherwise, use existing achievements if available
+            else if (
+              matchingExp &&
+              Array.isArray(matchingExp.achievements) &&
+              matchingExp.achievements.length > 0
+            ) {
+              finalAchievements = matchingExp.achievements;
+              console.log(
+                `Using preserved local achievements for ${aiExp.company}: ${finalAchievements.length} items`
+              );
+            }
+            // If there are still no achievements but we have description with bullet points
+            else if (aiExp.description && aiExp.description.includes("•")) {
+              finalAchievements = aiExp.description
+                .split(/•\s*/)
+                .filter((item) => item.trim().length > 0)
+                .map((item) => item.trim())
+                .slice(0, 3); // Take up to 3 bullet points
+              console.log(
+                `Extracted achievements from description for ${aiExp.company}: ${finalAchievements.length} items`
+              );
+            }
+            // Last resort: Generate a placeholder achievement
+            else {
+              finalAchievements = [
+                `Contributed to ${aiExp.company} as ${aiExp.position} with focus on operational excellence`,
+              ];
+              console.log(
+                `Generated placeholder achievement for ${aiExp.company}`
+              );
+            }
+
+            // One final check - look in our backup if we still have no achievements
+            if (finalAchievements.length === 0) {
+              const backupExp = achievementsBackup.find(
+                (backup) =>
+                  backup.company === aiExp.company &&
+                  backup.position === aiExp.position
+              );
+
+              if (
+                backupExp &&
+                Array.isArray(backupExp.achievements) &&
+                backupExp.achievements.length > 0
+              ) {
+                finalAchievements = backupExp.achievements;
+                console.log(
+                  `Using backup achievements for ${aiExp.company}: ${finalAchievements.length} items`
+                );
+              }
+            }
+
+            return {
+              ...aiExp,
+              achievements: finalAchievements,
+            };
+          });
+
+          // Log the results of our achievement preservation
+          console.log("Original experiences:", workExperiences.length);
+          console.log("AI optimized experiences:", cv.workExperience.length);
+          console.log("Final merged experiences:", mergedWorkExps.length);
+
+          setWorkExperiences(mergedWorkExps);
         }
 
         if (Array.isArray(cv.education) && cv.education.length > 0) {
@@ -665,6 +963,20 @@ export default function CVBuilder() {
         } else if (error.response.status === 403) {
           errorMessage =
             "You need to upgrade your plan or earn more points for this feature.";
+
+          // Show toast with upgrade button
+          toast.error(
+            "You've reached your AI optimization limit. Please upgrade your subscription to continue.",
+            {
+              duration: 6000,
+              action: {
+                label: "Upgrade",
+                onClick: () => {
+                  redirectToPayment();
+                },
+              },
+            }
+          );
         } else if (error.response.status === 429) {
           errorMessage =
             "You've reached the API rate limit. Please try again later.";
@@ -692,79 +1004,220 @@ export default function CVBuilder() {
   const handleSave = async () => {
     setIsSaving(true);
 
-    // Validate all URLs before submission
-    const hasInvalidProjectUrls = projects.some(
-      (proj) =>
-        (proj.link && !isValidURL(proj.link)) ||
-        (proj.project && !isValidURL(proj.project))
-    );
+    // Check credit status before saving - only if available
+    // But don't block the save operation if credit checking fails
+    try {
+      const creditStatus = await checkCreditStatus();
+      // Only show a warning for low credits, but still allow saving
+      if (creditStatus && creditStatus.credits <= 1) {
+        toast.warning(
+          "You're on your last credit. Your ability to make changes may be limited.",
+          {
+            duration: 6000,
+            action: {
+              label: "Upgrade",
+              onClick: () => redirectToPayment(),
+            },
+          }
+        );
+      }
+    } catch (error) {
+      // Just log the error - don't show to user or block saving
+      console.error("Failed to check credit status before save:", error);
+      // Continue with saving process regardless
+    }
 
-    const hasInvalidCredentialUrls = certifications.some(
-      (cert) => cert.credentialUrl && !isValidURL(cert.credentialUrl)
-    );
+    // Validate all URLs before submission
+    // First, check if URLs are present but invalid
+    const invalidUrlsList: string[] = [];
+
+    // Check project URLs
+    projects.forEach((proj, index) => {
+      if (proj.link && proj.link.trim() && !isValidURL(proj.link)) {
+        invalidUrlsList.push(`Project ${index + 1} link: ${proj.link}`);
+      }
+      if (proj.project && proj.project.trim() && !isValidURL(proj.project)) {
+        invalidUrlsList.push(
+          `Project ${index + 1} repository: ${proj.project}`
+        );
+      }
+    });
+
+    // Check certification URLs
+    certifications.forEach((cert, index) => {
+      if (
+        cert.credentialUrl &&
+        cert.credentialUrl.trim() &&
+        !isValidURL(cert.credentialUrl)
+      ) {
+        invalidUrlsList.push(
+          `Certification ${index + 1} URL: ${cert.credentialUrl}`
+        );
+      }
+    });
 
     // Check personal profile URLs
-    const hasInvalidPersonalUrls =
-      (personalInfo.github && !isValidURL(personalInfo.github)) ||
-      (personalInfo.portfolio && !isValidURL(personalInfo.portfolio)) ||
-      (personalInfo.website && !isValidURL(personalInfo.website));
-
     if (
-      hasInvalidProjectUrls ||
-      hasInvalidCredentialUrls ||
-      hasInvalidPersonalUrls
+      personalInfo.github &&
+      personalInfo.github.trim() &&
+      !isValidURL(personalInfo.github)
     ) {
+      invalidUrlsList.push(`GitHub profile URL: ${personalInfo.github}`);
+    }
+    if (
+      personalInfo.portfolio &&
+      personalInfo.portfolio.trim() &&
+      !isValidURL(personalInfo.portfolio)
+    ) {
+      invalidUrlsList.push(`Portfolio URL: ${personalInfo.portfolio}`);
+    }
+    if (
+      personalInfo.website &&
+      personalInfo.website.trim() &&
+      !isValidURL(personalInfo.website)
+    ) {
+      invalidUrlsList.push(`Website URL: ${personalInfo.website}`);
+    }
+
+    if (invalidUrlsList.length > 0) {
       toast.error(
-        "Some links in your CV don't look right. Please check your website and profile links before saving."
+        `Some links in your CV don't look right. Please check the following links before saving:\n${invalidUrlsList
+          .slice(0, 3)
+          .join("\n")}${
+          invalidUrlsList.length > 3
+            ? `\n...and ${invalidUrlsList.length - 3} more`
+            : ""
+        }\n\nTip: Make sure URLs are in format "example.com" or "https://example.com"`
       );
+      console.error("Invalid URLs found:", invalidUrlsList);
       setIsSaving(false);
       return;
     }
 
-    // Format URLs properly before submission
-    const formattedProjects = projects.map((proj) => ({
-      ...proj,
-      link: formatURL(proj.link),
-      project: formatURL(proj.project),
-    }));
+    // Clean and format URLs before submission, removing empty URLs completely
+    const cleanedProjects = projects.map((proj) => {
+      const cleaned: any = { ...proj };
 
-    const formattedCertifications = certifications.map((cert) => ({
-      ...cert,
-      credentialUrl: formatURL(cert.credentialUrl),
-    }));
+      // Handle project link URL - remove empty links entirely
+      if (proj.link && proj.link.trim()) {
+        const formattedLink = formatURL(proj.link.trim());
+        if (formattedLink) {
+          cleaned.link = formattedLink;
+        } else {
+          // If formatURL returns empty string (invalid URL), use original but with https://
+          const fallbackLink = proj.link.trim();
+          cleaned.link = fallbackLink.startsWith("http")
+            ? fallbackLink
+            : `https://${fallbackLink}`;
+        }
+      } else {
+        // Delete the property entirely if empty to avoid validation errors
+        delete cleaned.link;
+      }
 
-    // Format personal profile URLs
-    const formattedPersonalInfo = {
+      // Handle project repository URL - remove empty repos entirely
+      if (proj.project && proj.project.trim()) {
+        const formattedProject = formatURL(proj.project.trim());
+        if (formattedProject) {
+          cleaned.project = formattedProject;
+        } else {
+          // If formatURL returns empty string (invalid URL), use original but with https://
+          const fallbackProject = proj.project.trim();
+          cleaned.project = fallbackProject.startsWith("http")
+            ? fallbackProject
+            : `https://${fallbackProject}`;
+        }
+      } else {
+        // Delete the property entirely if empty to avoid validation errors
+        delete cleaned.project;
+      }
+
+      return cleaned;
+    });
+
+    // Clean certification URLs with improved formatting
+    const cleanedCertifications = certifications.map((cert) => {
+      const cleaned = { ...cert };
+
+      if (cert.credentialUrl && cert.credentialUrl.trim()) {
+        const formattedUrl = formatURL(cert.credentialUrl.trim());
+        if (formattedUrl) {
+          cleaned.credentialUrl = formattedUrl;
+        } else {
+          // If formatURL returns empty string (invalid URL), use original but with https://
+          const fallbackUrl = cert.credentialUrl.trim();
+          cleaned.credentialUrl = fallbackUrl.startsWith("http")
+            ? fallbackUrl
+            : `https://${fallbackUrl}`;
+        }
+      } else {
+        cleaned.credentialUrl = null;
+      }
+
+      return cleaned;
+    });
+
+    // Clean personal profile URLs with improved formatting
+    const cleanedPersonalInfo = {
       ...personalInfo,
-      github: formatURL(personalInfo.github),
-      portfolio: formatURL(personalInfo.portfolio),
-      website: formatURL(personalInfo.website),
+      // GitHub URL
+      github: personalInfo.github?.trim()
+        ? formatURL(personalInfo.github) ||
+          (personalInfo.github.trim().startsWith("http")
+            ? personalInfo.github.trim()
+            : `https://${personalInfo.github.trim()}`)
+        : null,
+      // Portfolio URL
+      portfolio: personalInfo.portfolio?.trim()
+        ? formatURL(personalInfo.portfolio) ||
+          (personalInfo.portfolio.trim().startsWith("http")
+            ? personalInfo.portfolio.trim()
+            : `https://${personalInfo.portfolio.trim()}`)
+        : null,
+      // Website URL
+      website: personalInfo.website?.trim()
+        ? formatURL(personalInfo.website) ||
+          (personalInfo.website.trim().startsWith("http")
+            ? personalInfo.website.trim()
+            : `https://${personalInfo.website.trim()}`)
+        : null,
     };
 
     const data: CV = {
-      ...formattedPersonalInfo,
+      ...cleanedPersonalInfo,
       workExperience: workExperiences,
       education: educations,
-      certifications: formattedCertifications,
-      projects: formattedProjects,
+      certifications: cleanedCertifications,
+      projects: cleanedProjects,
       skills,
     };
 
-    // Save the complete data with achievements to localStorage
+    // Save the complete data to localStorage including achievements
     const d = removeIdFromCv(data);
     localStorage.setItem("cv", JSON.stringify(d));
 
-    // Create a modified version for the backend API that doesn't include achievements
-    // since the backend doesn't accept that field yet
-    const apiData = {
+    // Make sure we don't send any projects with empty URLs to the backend
+    // as the backend requires valid URLs
+    const processedData = {
       ...d,
-      workExperience: d.workExperience?.map((exp) => {
-        // Create a copy without the achievements property
-        const { achievements, ...expWithoutAchievements } = exp;
-        return expWithoutAchievements;
+      projects: d.projects?.map((proj) => {
+        // Create a new object to avoid modifying the original
+        const cleanedProj = { ...proj };
+        // Only include links that are not empty strings
+        if (cleanedProj.link === "") {
+          delete cleanedProj.link; // Remove empty strings
+        }
+        if (cleanedProj.project === "") {
+          delete cleanedProj.project; // Remove empty strings
+        }
+        return cleanedProj;
       }),
     };
 
+    // Send the complete data to the backend including achievements
+    const apiData = processedData;
+
+    // Create the promise for saving CV data
     const savedCvPromise = axiosInstance.post("/cv/save-draft", apiData);
 
     toast.promise(savedCvPromise, {
@@ -772,30 +1225,24 @@ export default function CVBuilder() {
       success: (response) => {
         // Get the CV data from the response
         const responseCV = removeIdFromCv(response?.data.data.data) as CV;
+        console.log("Response from save:", responseCV);
 
-        // Merge the response data with our local achievements data
-        // This is necessary because the backend doesn't store achievements
-        const mergedWorkExperience = responseCV.workExperience?.map(
-          (exp, index) => {
-            // Find matching experience in our local state
-            const matchingLocalExp = workExperiences.find(
-              (local) =>
-                local.company === exp.company &&
-                local.position === exp.position &&
-                local.startDate === exp.startDate
-            );
-
-            // Merge the response data with achievements from our local data
+        // The backend now stores achievements, so we can use them directly from the response
+        // Just ensure each experience has an achievements array
+        const workExpsWithAchievements = responseCV.workExperience?.map(
+          (exp) => {
             return {
               ...exp,
-              achievements: matchingLocalExp?.achievements || [],
+              achievements: Array.isArray(exp.achievements)
+                ? exp.achievements
+                : [],
             };
           }
         );
 
-        // Update state with merged data
+        // Update state with data from the response
         setPersonalInfo({ ...responseCV });
-        setWorkExperiences(mergedWorkExperience || []);
+        setWorkExperiences(workExpsWithAchievements || []);
         setEducations(responseCV.education);
         setCertifications(responseCV.certifications);
         setProjects(responseCV.projects);
@@ -805,7 +1252,47 @@ export default function CVBuilder() {
       },
       error: (error) => {
         if (axios.isAxiosError(error)) {
-          console.log(error);
+          console.log("Error in savedCvPromise:", error);
+          console.log("Request data:", apiData);
+
+          // Check for specific error codes
+          if (error.response?.status === 400) {
+            // Extract the specific error message for validation errors
+            const errorMessage = error.response?.data?.message || "";
+
+            // Check for URL validation errors specifically
+            if (
+              errorMessage.includes("URL address") ||
+              errorMessage.includes("link must be")
+            ) {
+              toast.error(
+                "There's an issue with one of your URLs. Please check all website links and ensure they're in the correct format (https://example.com).",
+                { duration: 8000 }
+              );
+              return "Please check all URLs in your CV and try again.";
+            }
+
+            return `Validation error: ${errorMessage}`;
+          } else if (error.response?.status === 403) {
+            // Credit limit reached or subscription issue
+            toast.error(
+              "You've reached your limit. Please upgrade your subscription to continue.",
+              {
+                duration: 6000,
+                action: {
+                  label: "Upgrade",
+                  onClick: () => {
+                    // Navigate to payment/subscription page
+                    redirectToPayment();
+                  },
+                },
+              }
+            );
+            return "Credit limit reached. Please upgrade your subscription.";
+          } else if (error.response?.status === 429) {
+            return "You've reached the usage limit. Please try again later.";
+          }
+
           return "We couldn't save your CV. Please check your connection and try again.";
         } else {
           return "Something went wrong while saving. Please try again in a few minutes.";
@@ -816,8 +1303,14 @@ export default function CVBuilder() {
       },
     });
 
-    await savedCvPromise;
-    setIsSaving(false);
+    try {
+      await savedCvPromise;
+    } catch (error) {
+      // Error handling is already done in the toast.promise
+      console.error("Error in savedCvPromise:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Create a version of skills without level information for download
@@ -872,16 +1365,64 @@ export default function CVBuilder() {
     }
   };
 
+  // Function to check user's credit status
+  const checkCreditStatus = async () => {
+    try {
+      // Get user profile data instead of using a dedicated credits endpoint
+      const response = await axiosInstance.get("/user/profile");
+      console.log("User profile data:", response.data);
+
+      // Extract credit information from user profile
+      const userData = response.data.data;
+      const credits = userData.totalCreditPoint || 0;
+      const maxCredits = userData.maxCreditPoint || 10; // Default to 10 if not provided
+
+      console.log(`Credit status: ${credits}/${maxCredits}`);
+
+      // Calculate percentage of credits remaining
+      const percentage = (credits / maxCredits) * 100;
+
+      // Show warning if credits are running low
+      if (percentage <= 20 && percentage > 5) {
+        toast.warning(
+          `You're running low on credits (${credits}/${maxCredits}). Consider upgrading your plan soon.`,
+          {
+            duration: 8000,
+            action: {
+              label: "Upgrade",
+              onClick: () => redirectToPayment(),
+            },
+          }
+        );
+      } else if (percentage <= 5) {
+        toast.error(
+          `You're almost out of credits (${credits}/${maxCredits}). Upgrade now to continue using all features.`,
+          {
+            duration: 10000,
+            action: {
+              label: "Upgrade Now",
+              onClick: () => redirectToPayment(),
+            },
+          }
+        );
+      }
+
+      return { credits, maxCredits };
+    } catch (error) {
+      console.error("Error checking credit status:", error);
+      return null;
+    }
+  };
+
   const handleFetchDraft = async () => {
     try {
       const response = await axiosInstance.get("/cv/draft");
-      console.log(response);
+      console.log("CV draft fetched:", response);
 
       // Check if we have valid data before updating state
       if (response?.data?.data) {
         const cv = removeIdFromCv(response.data.data) as CV;
-
-        console.log(cv);
+        console.log("CV data:", cv);
 
         // Only update if we have valid data
         if (cv) {
@@ -897,13 +1438,20 @@ export default function CVBuilder() {
           });
 
           if (Array.isArray(cv.workExperience)) {
-            // Make sure each work experience has an achievements array
-            const workExpsWithAchievements = cv.workExperience.map((exp) => ({
-              ...exp,
-              achievements: Array.isArray(exp.achievements)
-                ? exp.achievements
-                : [],
-            }));
+            // Ensure each experience has an achievements array if not provided from backend
+            const workExpsWithAchievements = cv.workExperience.map((exp) => {
+              return {
+                ...exp,
+                achievements: Array.isArray(exp.achievements)
+                  ? exp.achievements
+                  : [],
+              };
+            });
+
+            console.log(
+              "Work experiences with achievements:",
+              workExpsWithAchievements
+            );
             setWorkExperiences(workExpsWithAchievements);
           }
 
@@ -932,9 +1480,57 @@ export default function CVBuilder() {
         console.error("An unexpected error occurred:", error);
       }
     }
+
+    // Check credit status after loading the draft, but don't block the UI if it fails
+    try {
+      await checkCreditStatus();
+    } catch (error) {
+      console.error("Failed to check credit status:", error);
+      // Don't show an error to the user - this is a non-critical feature
+      // We'll just proceed without showing credit warnings
+    }
   };
 
   useEffect(() => {
+    // Check if there's a pending save from before a payment redirect
+    const pendingSave = localStorage.getItem("cv_pending_save");
+    if (pendingSave) {
+      try {
+        const savedData = JSON.parse(pendingSave) as CV;
+
+        // Show toast with restore option
+        toast.info(
+          "We found unsaved changes from before your payment. Would you like to restore them?",
+          {
+            duration: 10000,
+            action: {
+              label: "Restore",
+              onClick: () => {
+                // Restore data from localStorage
+                if (savedData.firstName) setPersonalInfo(savedData);
+                if (savedData.workExperience)
+                  setWorkExperiences(savedData.workExperience);
+                if (savedData.education) setEducations(savedData.education);
+                if (savedData.certifications)
+                  setCertifications(savedData.certifications);
+                if (savedData.projects) setProjects(savedData.projects);
+                if (savedData.skills) setSkills(savedData.skills);
+
+                // Remove the pending save
+                localStorage.removeItem("cv_pending_save");
+
+                toast.success("Your unsaved changes have been restored!");
+              },
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Error parsing pending CV data:", error);
+        localStorage.removeItem("cv_pending_save");
+      }
+    }
+
+    // Fetch draft from server
     handleFetchDraft();
   }, []);
 
@@ -1702,7 +2298,8 @@ export default function CVBuilder() {
                   />
                   {cert.credentialUrl && !isValidURL(cert.credentialUrl) && (
                     <p className="text-red-500 text-xs mt-1">
-                      Please enter a valid URL
+                      Please enter a valid URL (e.g., "example.com" or
+                      "https://example.com")
                     </p>
                   )}
                 </div>
@@ -1796,7 +2393,8 @@ export default function CVBuilder() {
                     />
                     {proj.project && !isValidURL(proj.project) && (
                       <p className="text-red-500 text-xs mt-1">
-                        Please enter a valid URL (e.g., https://yourproject.com)
+                        Please enter a valid URL (e.g.,
+                        "github.com/username/repo" or full URL)
                       </p>
                     )}
                   </div>
