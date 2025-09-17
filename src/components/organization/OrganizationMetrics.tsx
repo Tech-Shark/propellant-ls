@@ -1,10 +1,15 @@
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import axiosInstance from "@/api/AxiosInstance.ts";
-import {isAxiosError} from "axios";
-import {TrendingUp} from "lucide-react";
+import { isAxiosError } from "axios";
+import { TrendingUp } from "lucide-react";
 
 interface JobPostStats {
   total: number;
@@ -21,32 +26,36 @@ export function OrganizationMetrics() {
 
   const handleFetchStats = async () => {
     try {
-      const response = await axiosInstance.get(("/job-post/stats"))
+      const response = await axiosInstance.get("/job-post/stats");
 
       console.log(response.data.data);
       setStats(response.data.data as JobPostStats);
     } catch (error) {
       if (isAxiosError(error)) {
-        console.log(error)
+        console.log(error);
         return error.response?.data.message;
       } else {
         return "Something went wrong. Please try again later.";
       }
     }
-  }
+  };
 
   return (
-    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-      <Card>
+    <div className="grid gap-4 grid-cols-1">
+      <Card className="bg-slate-900 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+          <CardTitle className="text-sm font-medium text-white">
+            Total Posts
+          </CardTitle>
           <Badge variant="secondary" className="text-green-600">
-            <TrendingUp className="w-5 h-5 text-white" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </Badge>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.total}</div>
-          <p className="text-xs text-muted-foreground">Total Job Posts</p>
+          <div className="text-xl sm:text-2xl font-bold text-white">
+            {stats?.total || 0}
+          </div>
+          <p className="text-xs text-slate-400">Total Job Posts</p>
         </CardContent>
       </Card>
     </div>

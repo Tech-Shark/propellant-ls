@@ -1,5 +1,6 @@
 import { SidebarTrigger } from "@/components/ui/sidebar.tsx";
-import { Award, Bell, FileText, Upload, Users, Zap } from "lucide-react";
+import { Award, Bell, FileText, Upload, Users } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
@@ -38,39 +39,37 @@ const Dashboard = () => {
     <main className="flex-1 overflow-auto">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="flex items-center justify-between p-6">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between p-4 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
             <SidebarTrigger className="text-slate-400 hover:text-white" />
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white">
+              <div className="flex items-center gap-2 md:gap-3 mb-1">
+                <Logo size="sm" />
+                <h1 className="text-xl md:text-2xl font-bold text-white truncate">
                   Talent Dashboard
                 </h1>
               </div>
-              <p className="text-slate-400">
+              <p className="text-slate-400 text-sm md:text-base">
                 Propel your career with verified skills
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 p-0 md:p-2 h-8 w-8 md:h-9 md:w-auto"
             >
               <Bell className="w-4 h-4" />
             </Button>
             <Button
               onClick={() => navigate("/talent/credentials")}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Credential
+              <Upload className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Upload Credential</span>
             </Button>
           </div>
         </div>
@@ -119,21 +118,21 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <Button
                   onClick={() => navigate("/talent/cv-builder")}
                   variant="outline"
-                  className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-blue-500"
+                  className="h-20 md:h-24 flex-col gap-2 md:gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-blue-500"
                 >
-                  <FileText className="w-6 h-6 text-blue-400" />
+                  <FileText className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
                   <span className="text-sm">Generate CV</span>
                 </Button>
                 <Button
                   onClick={() => navigate("/talent/credentials")}
                   variant="outline"
-                  className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"
+                  className="h-20 md:h-24 flex-col gap-2 md:gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"
                 >
-                  <Upload className="w-6 h-6 text-emerald-400" />
+                  <Upload className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" />
                   <span className="text-sm">Upload Credentials</span>
                 </Button>
                 {/*<Button */}

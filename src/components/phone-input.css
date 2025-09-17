@@ -1,0 +1,77 @@
+/* Custom styles for phone input component */
+
+/* Fix for mobile display */
+.phone-input-wrapper .react-tel-input {
+  width: 100%;
+}
+
+.phone-input-wrapper .react-tel-input .form-control {
+  width: 100% !important;
+  height: 40px !important;
+  padding-left: 48px !important;
+  font-size: 16px !important; /* Mobile-friendly font size */
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #fff !important;
+}
+
+/* Style for the flag dropdown button */
+.phone-input-wrapper .react-tel-input .flag-dropdown {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+}
+
+/* Style for the selected flag */
+.phone-input-wrapper .react-tel-input .selected-flag {
+  background-color: #1e293b !important;
+  border-radius: 3px 0 0 3px !important;
+  width: 42px !important; /* Make it wider on mobile */
+}
+
+/* Style for the dropdown */
+.phone-input-wrapper .react-tel-input .country-list {
+  background-color: #1e293b !important;
+  color: #fff !important;
+  border: 1px solid #475569 !important;
+  max-height: 300px !important;
+  width: 300px !important; /* Wider dropdown for mobile */
+  z-index: 100 !important; /* Ensure it shows above other content */
+}
+
+/* Style for the dropdown items */
+.phone-input-wrapper .react-tel-input .country-list .country {
+  padding: 10px 8px !important; /* Larger touch targets */
+}
+
+/* Style for the dropdown item hover */
+.phone-input-wrapper .react-tel-input .country-list .country:hover {
+  background-color: #2d3748 !important;
+}
+
+/* Style for the highlighted item */
+.phone-input-wrapper .react-tel-input .country-list .highlight {
+  background-color: #3b82f6 !important;
+}
+
+/* Fix for iPhone input zoom */
+@media screen and (max-width: 768px) {
+  .phone-input-wrapper input,
+  .phone-input-wrapper select {
+    font-size: 16px !important;
+  }
+  
+  .phone-input-wrapper .react-tel-input .selected-flag {
+    padding: 0 0 0 8px !important;
+  }
+
+  /* Fix tap target sizes */
+  .phone-input-wrapper .react-tel-input .selected-flag .arrow {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  
+  /* Fix scrolling issues */
+  .phone-input-wrapper .react-tel-input .country-list {
+    -webkit-overflow-scrolling: touch !important;
+  }
+}

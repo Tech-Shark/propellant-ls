@@ -1,6 +1,4 @@
-
 import {
-  Badge,
   Home,
   Users,
   Settings,
@@ -10,8 +8,10 @@ import {
   FileText,
   Building2,
   Activity,
-  ArrowLeft, LogOut
+  ArrowLeft,
+  LogOut,
 } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +24,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { useAuth } from "@/context/AuthContext.tsx";
 
 const navigationItems = [
   {
@@ -84,23 +84,24 @@ export function AdminSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
-            <Badge className="w-5 h-5 text-white" />
-          </div>
+          <Logo size="sm" />
           <div>
             <h2 className="font-bold text-white">Propellant</h2>
             <p className="text-xs text-blue-100">Admin Portal</p>
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="/" className="flex items-center gap-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+                  <a
+                    href="/"
+                    className="flex items-center gap-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Home</span>
                   </a>
@@ -111,15 +112,22 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-blue-700 font-semibold">Admin Panel</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-blue-700 font-semibold">
+            Admin Panel
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3 hover:bg-blue-50 rounded-lg transition-colors group">
+                    <a
+                      href={item.url}
+                      className="flex items-center gap-3 hover:bg-blue-50 rounded-lg transition-colors group"
+                    >
                       <item.icon className="w-4 h-4 text-gray-600 group-hover:text-blue-600" />
-                      <span className="group-hover:text-blue-700">{item.title}</span>
+                      <span className="group-hover:text-blue-700">
+                        {item.title}
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -129,15 +137,22 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-600 font-semibold">System</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-600 font-semibold">
+            System
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-3 hover:bg-gray-50 rounded-lg transition-colors group">
+                    <a
+                      href={item.url}
+                      className="flex items-center gap-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                    >
                       <item.icon className="w-4 h-4 text-gray-600 group-hover:text-gray-800" />
-                      <span className="group-hover:text-gray-800">{item.title}</span>
+                      <span className="group-hover:text-gray-800">
+                        {item.title}
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -145,8 +160,8 @@ export function AdminSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button
-                      onClick={logout}
-                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                    onClick={logout}
+                    className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Log out</span>

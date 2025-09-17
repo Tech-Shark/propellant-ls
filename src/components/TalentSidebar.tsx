@@ -27,8 +27,8 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
-import logo from "../../public/logo.png";
 import { useAuth } from "@/context/AuthContext.tsx";
+import Logo from "@/components/Logo.tsx";
 
 const navigationItems = [
   {
@@ -98,13 +98,7 @@ export function TalentSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white">
-            <img
-              src={logo}
-              alt="Propellant Logo"
-              className="w-8 h-8 object-contain"
-            />
-          </div>
+          <Logo size="sm" />
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
             <p className="text-xs text-sidebar-foreground/70">Talent Portal</p>

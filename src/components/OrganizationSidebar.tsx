@@ -1,5 +1,4 @@
 import {
-  Badge,
   Home,
   Users,
   FileText,
@@ -13,6 +12,7 @@ import {
   LogOut,
   Award,
 } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -86,9 +86,7 @@ export function OrganizationSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-orange-600 to-emerald-600 rounded-lg flex items-center justify-center">
-            <Badge className="w-5 h-5 text-white" />
-          </div>
+          <Logo size="sm" />
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
             <p className="text-xs text-sidebar-foreground/70">

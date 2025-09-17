@@ -10,11 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Zap, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { useOTPContext } from "@/context/OTPContext.tsx";
 import PhoneInputComponent from "@/components/PhoneInputComponent.tsx";
+import Logo from "@/components/Logo.tsx";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -90,9 +91,7 @@ const Login = () => {
         <Card className="bg-slate-900 border-slate-700 shadow-2xl">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                <Zap className="w-7 h-7 text-white" />
-              </div>
+              <Logo size="md" />
               <h1 className="text-3xl font-bold text-white">Propellant</h1>
             </div>
             <CardTitle className="text-2xl text-white">

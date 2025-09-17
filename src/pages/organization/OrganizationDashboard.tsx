@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
@@ -68,38 +69,36 @@ export const OrganizationDashboard = () => {
     <main className="flex-1 overflow-auto">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="flex items-center justify-between p-6">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between p-4 md:p-6">
+          <div className="flex items-center gap-2 md:gap-4">
             <SidebarTrigger className="text-slate-400 hover:text-white" />
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white">
+              <div className="flex items-center gap-2 md:gap-3 mb-1">
+                <Logo size="sm" />
+                <h1 className="text-xl md:text-2xl font-bold text-white truncate">
                   Organization Dashboard
                 </h1>
               </div>
-              <p className="text-slate-400">
+              <p className="text-slate-400 text-sm md:text-base">
                 Discover and connect with verified talent
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 p-0 md:p-2 h-8 w-8 md:h-9 md:w-auto"
             >
               <Bell className="w-4 h-4" />
             </Button>
             <Button
               onClick={() => navigate("/organization/jobs")}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 md:px-3"
             >
-              Job Posts
+              <span>Job Posts</span>
             </Button>
           </div>
         </div>
@@ -148,7 +147,7 @@ export const OrganizationDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 {/*<Button*/}
                 {/*    variant="outline"*/}
                 {/*    className="h-24 flex-col gap-3 border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-emerald-500"*/}

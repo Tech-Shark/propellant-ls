@@ -13,7 +13,6 @@ import {
   Users,
   Building2,
   Award,
-  Zap,
   Shield,
   Globe,
   ChevronDown,
@@ -22,6 +21,7 @@ import {
   Play,
   Mail,
 } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import { Link } from "react-router-dom";
 import {
   Dialog,
@@ -47,7 +47,7 @@ const Index = () => {
         "Upload and verify your professional credentials with blockchain-powered NFT badges",
     },
     {
-      icon: Zap,
+      icon: Award,
       title: "AI-Powered CV",
       description:
         "Generate optimized CVs using advanced AI that understands your industry",
@@ -74,7 +74,7 @@ const Index = () => {
         "Access a curated pool of professionals with blockchain-verified credentials",
     },
     {
-      icon: Zap,
+      icon: Star,
       title: "Smart Matching",
       description:
         "AI-powered matching based on verified skills and experience",
@@ -133,9 +133,7 @@ const Index = () => {
       <header className="border-b border-slate-800 bg-slate-950/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
+            <Logo size="sm" />
             <span className="text-xl font-bold text-white">Propellant</span>
           </div>
 
@@ -221,7 +219,7 @@ const Index = () => {
                   variant="outline"
                   className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8"
                 >
-                  <Building2 className="w-5 h-5 mr-2" />
+                  <Logo size="sm" className="mr-2" />
                   For Organizations
                 </Button>
               </DialogTrigger>
@@ -266,16 +264,20 @@ const Index = () => {
             </Dialog>
           </div>
 
-          {/* Hero Image/Video Placeholder */}
+          {/* YouTube Video Section */}
           <div className="relative mx-auto max-w-4xl">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
-              <div className="aspect-video bg-slate-700 rounded-lg flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  className="text-slate-400 hover:text-white"
-                >
-                  <Play className="w-12 h-12" />
-                </Button>
+              <div className="aspect-video rounded-lg overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src="https://www.youtube-nocookie.com/embed/t4rAksIwaWI?si=nAvHLtqeXwgdt3o-&amp;controls=0"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                ></iframe>
               </div>
               <p className="text-slate-400 mt-4">
                 Watch how Propellant revolutionizes professional verification
@@ -333,7 +335,7 @@ const Index = () => {
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <Building2 className="w-4 h-4 mr-2 inline" />
+                <Logo size="xs" className="mr-2 inline" />
                 For Organizations
               </button>
             </div>
@@ -503,8 +505,8 @@ const Index = () => {
                   variant="outline"
                   className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8"
                 >
+                  <Logo size="xs" className="mr-2 inline" />
                   Start as Organization
-                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-slate-900 border-slate-700">
@@ -556,9 +558,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
+                <Logo size="sm" />
                 <span className="text-xl font-bold text-white">Propellant</span>
               </div>
               <p className="text-slate-400">

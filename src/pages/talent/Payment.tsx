@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Check, Star, Shield, Zap } from "lucide-react";
+import { CreditCard, Check, Star, Shield, ArrowRight } from "lucide-react";
 import { PaymentMethod } from "@/utils/global";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import { toast } from "sonner";
@@ -729,7 +729,7 @@ export default function Payment() {
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 mr-2" />
+                    <ArrowRight className="w-4 h-4 mr-2" />
                     Continue to Payment
                   </>
                 )}

@@ -34,6 +34,7 @@ import {
   LogOut,
   Mail,
 } from "lucide-react";
+import Logo from "@/components/Logo.tsx";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext.tsx";
@@ -207,9 +208,12 @@ export default function AdminDashboard() {
                 <AdminSidebar />
               </SheetContent>
             </Sheet>
-            <div>
-              <h1 className="text-xl font-bold text-white">Admin</h1>
-              <p className="text-blue-100 text-sm">Dashboard</p>
+            <div className="flex items-center gap-2">
+              <Logo size="sm" />
+              <div>
+                <h1 className="text-xl font-bold text-white">Admin</h1>
+                <p className="text-blue-100 text-sm">Dashboard</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
