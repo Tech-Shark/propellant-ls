@@ -138,90 +138,64 @@ const TalentPool = () => {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Job Posts List with Toggle */}
-            <div className="space-y-4">
-              {jobPosts?.map((post) => (
-                <Card key={post._id} className="bg-slate-900 border-slate-700">
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-white">
-                        {post.title}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {post.jobType.replace("_", " ")}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        Salary: ₦
-                        {post.salaryRange
-                          .replace(/\$/g, "")
-                          .replace(/,/g, "")
-                          .replace(/\s*to\s*/, " - ₦")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          post.isActive
-                            ? "bg-blue-600 text-white"
-                            : "bg-slate-700 text-slate-400"
-                        }`}
-                      >
-                        {post.isActive ? "Active" : "Inactive"}
-                      </span>
-                      <label className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          checked={!!post.isActive}
-                          onChange={async (e) => {
-                            const newStatus = e.target.checked;
-                            try {
-                              await axiosInstance.patch(
-                                `/job-post/${post._id}/status`,
-                                { isActive: newStatus }
-                              );
-                              setJobPosts((prev) =>
-                                prev.map((jp) =>
-                                  jp._id === post._id
-                                    ? { ...jp, isActive: newStatus }
-                                    : jp
-                                )
-                              );
-                              toast({
-                                title: `Job post ${
-                                  newStatus ? "activated" : "inactivated"
-                                }`,
-                                description: `${post.title} is now ${
-                                  newStatus ? "active" : "inactive"
-                                }.`,
-                              });
-                            } catch (err) {
-                              toast({
-                                title: "Error",
-                                description:
-                                  "Failed to update job post status.",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          className="accent-orange-600 h-4 w-4"
-                        />
-                        <span className="text-xs text-slate-400">Toggle</span>
-                      </label>
+            {/* Job selection dropdown */}
+            <Card className="bg-slate-900 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Select Job Post</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Choose a job post to view matching talents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <Select
+                    value={selectedJobPosts || ""}
+                    onValueChange={(value) => setSelectedJobPosts(value)}
+                  >
+                    <SelectTrigger className="w-full bg-slate-800 border-slate-600 text-white">
+                      <SelectValue placeholder="Select a job post" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600">
+                      {jobPosts?.map((post) => (
+                        <SelectItem key={post._id} value={post._id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{post.title}</span>
+                            <span
+                              className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                                post.isActive
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-slate-700 text-slate-400"
+                              }`}
+                            >
+                              {post.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedJobPosts && (
+                    <div className="flex gap-2">
                       <Button
-                        size="sm"
-                        variant={
-                          selectedJobPosts === post._id ? "default" : "outline"
-                        }
-                        className="ml-2"
-                        onClick={() => setSelectedJobPosts(post._id)}
+                        variant="outline"
+                        className="whitespace-nowrap"
+                        onClick={() => setSelectedJobPosts(null)}
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button
+                        variant="default"
+                        className="whitespace-nowrap"
+                        onClick={fetchMatchingJobPosts}
                       >
                         View Talents
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Talent Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

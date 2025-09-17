@@ -1,23 +1,34 @@
-
-import {useEffect, useState} from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { CheckCircle, XCircle, Clock, Search, Eye } from "lucide-react";
-import {CredentialsData} from "@/utils/global";
+import { CredentialsData } from "@/utils/global";
 import axiosInstance from "@/api/AxiosInstance.ts";
-import {convertDate} from "@/utils/helperfunctions.ts";
-import {toast} from "sonner";
+import { convertDate } from "@/utils/helperfunctions.ts";
+import { toast } from "sonner";
 
 const mockVerifications = [
   {
@@ -28,7 +39,7 @@ const mockVerifications = [
     type: "employer",
     status: "pending",
     submittedDate: "2024-06-01",
-    evidence: "Portfolio link and references"
+    evidence: "Portfolio link and references",
   },
   {
     id: "2",
@@ -38,7 +49,7 @@ const mockVerifications = [
     type: "colleague",
     status: "approved",
     submittedDate: "2024-05-28",
-    evidence: "Work collaboration evidence"
+    evidence: "Work collaboration evidence",
   },
   {
     id: "3",
@@ -48,45 +59,64 @@ const mockVerifications = [
     type: "employer",
     status: "rejected",
     submittedDate: "2024-05-25",
-    evidence: "Insufficient documentation"
+    evidence: "Insufficient documentation",
   },
 ];
 
 export function VerificationManagement() {
-  const [credentials, setCredentials] = useState<CredentialsData[]>();
+  const [credentials, setCredentials] = useState<CredentialsData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const filteredVerifications = mockVerifications.filter(verification => {
-    const matchesSearch = verification.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         verification.skill.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || verification.status === statusFilter;
-    const matchesType = typeFilter === "all" || verification.type === typeFilter;
-    
+  const filteredVerifications = mockVerifications.filter((verification) => {
+    const matchesSearch =
+      verification.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      verification.skill.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || verification.status === statusFilter;
+    const matchesType =
+      typeFilter === "all" || verification.type === typeFilter;
+
     return matchesSearch && matchesStatus && matchesType;
   });
 
   const getBadgeColor = (type: string) => {
     switch (type) {
-      case 'employer': return 'bg-yellow-500';
-      case 'colleague': return 'bg-orange-500';
-      case 'client': return 'bg-gray-500';
-      default: return 'bg-blue-500';
+      case "employer":
+        return "bg-yellow-500";
+      case "colleague":
+        return "bg-orange-500";
+      case "client":
+        return "bg-gray-500";
+      default:
+        return "bg-blue-500";
     }
   };
 
   useEffect(() => {
     const getCredentials = async () => {
       axiosInstance
-          .get("/credentials/all")
-          .then((response) => {
-            setCredentials(response?.data.data.data);
-            console.log("Credentials:", response?.data.data.data);
-          })
-          .catch((error) => {
-            console.log("Error fetching credentials:", error);
-          });
+        .get("/credentials/all")
+        .then((response) => {
+          // Extract the credentials array from the response, ensuring it's always an array
+          const data = response?.data?.data?.data || {};
+          console.log("Credentials:", data);
+
+          // Handle both possible response structures
+          const credentialsArray = Array.isArray(data)
+            ? data
+            : Array.isArray(data.credentials)
+            ? data.credentials
+            : [];
+
+          setCredentials(credentialsArray);
+        })
+        .catch((error) => {
+          console.log("Error fetching credentials:", error);
+          // Set empty array on error to prevent map errors
+          setCredentials([]);
+        });
     };
 
     getCredentials();
@@ -94,9 +124,12 @@ export function VerificationManagement() {
 
   const handleApprove = async (credentialId: string) => {
     try {
-      const approvePromise = axiosInstance.post(`/credentials/${credentialId}/verify`, {
-        decision: "VERIFIED",
-      });
+      const approvePromise = axiosInstance.post(
+        `/credentials/${credentialId}/verify`,
+        {
+          decision: "VERIFIED",
+        }
+      );
 
       toast.promise(approvePromise, {
         loading: "Approving...",
@@ -106,19 +139,24 @@ export function VerificationManagement() {
         },
         error: (error) => {
           console.log(error);
-          return error?.response.data.message || "Error approving verification!";
-        }
-      })
+          return (
+            error?.response.data.message || "Error approving verification!"
+          );
+        },
+      });
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
   };
 
   const handleReject = async (credentialId: string) => {
     try {
-      const rejectPromise = axiosInstance.post(`/credentials/${credentialId}/verify`, {
-        decision: "REJECTED",
-      });
+      const rejectPromise = axiosInstance.post(
+        `/credentials/${credentialId}/verify`,
+        {
+          decision: "REJECTED",
+        }
+      );
 
       toast.promise(rejectPromise, {
         loading: "Rejecting...",
@@ -128,9 +166,11 @@ export function VerificationManagement() {
         },
         error: (error) => {
           console.log(error);
-          return error?.response.data.message || "Error rejecting verification!";
-        }
-      })
+          return (
+            error?.response.data.message || "Error rejecting verification!"
+          );
+        },
+      });
     } catch (err) {
       console.log(err);
     }
@@ -141,7 +181,9 @@ export function VerificationManagement() {
       <Card>
         <CardHeader>
           <CardTitle>Verification Management</CardTitle>
-          <CardDescription>Review and manage skill verification requests</CardDescription>
+          <CardDescription>
+            Review and manage skill verification requests
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -192,61 +234,97 @@ export function VerificationManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {credentials?.map((verification) => (
-                  <TableRow key={verification._id}>
-                    <TableCell className="font-medium">{verification?.user?.fullname}</TableCell>
-                    <TableCell>{verification.title}</TableCell>
-                    <TableCell>{verification.verifyingOrganization}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getBadgeColor(verification.type)}`}></div>
-                        <span className="capitalize">{verification.type}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          verification.status === 'VERIFIED' ? 'default' :
-                          verification.status === 'REJECTED' ? 'destructive' :
-                          'secondary'
-                        }
-                      >
-                        {verification.status === 'PENDING' && <Clock className="w-3 h-3 mr-1" />}
-                        {verification.status === 'VERIFIED' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {verification.status === 'REJECTED' && <XCircle className="w-3 h-3 mr-1" />}
-                        {verification.status.toLowerCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{convertDate(verification.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {verification.status === 'PENDING' && (
-                          <>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-green-600 hover:text-green-700"
-                              onClick={() => handleApprove(verification._id)}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleReject(verification._id)}
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                {Array.isArray(credentials) && credentials.length > 0 ? (
+                  credentials.map((verification) => (
+                    <TableRow key={verification._id}>
+                      <TableCell className="font-medium">
+                        {verification?.user?.role === "ORGANIZATION" &&
+                        verification?.user?.companyName
+                          ? verification?.user?.companyName
+                          : verification?.user?.fullname || "N/A"}
+                      </TableCell>
+                      <TableCell>{verification?.title || "N/A"}</TableCell>
+                      <TableCell>
+                        {verification?.verifyingOrganization || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-3 h-3 rounded-full ${getBadgeColor(
+                              verification?.type || "default"
+                            )}`}
+                          ></div>
+                          <span className="capitalize">
+                            {verification?.type || "N/A"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            verification?.status === "VERIFIED"
+                              ? "default"
+                              : verification?.status === "REJECTED"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {verification?.status === "PENDING" && (
+                            <Clock className="w-3 h-3 mr-1" />
+                          )}
+                          {verification?.status === "VERIFIED" && (
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                          )}
+                          {verification?.status === "REJECTED" && (
+                            <XCircle className="w-3 h-3 mr-1" />
+                          )}
+                          {(verification?.status || "pending").toLowerCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {verification?.createdAt
+                          ? convertDate(verification.createdAt)
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {verification?.status === "PENDING" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700"
+                                onClick={() => handleApprove(verification._id)}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleReject(verification._id)}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-6 text-gray-500"
+                    >
+                      No verification requests found.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>

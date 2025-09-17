@@ -1,53 +1,73 @@
-
-import {useEffect, useState} from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {Search, MoreHorizontal, UserCheck, UserX, Eye, Mail, ChevronRight, ChevronLeft} from "lucide-react";
+import {
+  Search,
+  MoreHorizontal,
+  UserCheck,
+  UserX,
+  Eye,
+  Mail,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import axiosInstance from "@/api/AxiosInstance.ts";
-import {UserType} from "@/utils/global";
-import {User} from "@/types/user.ts";
-import {convertDate} from "@/utils/helperfunctions.ts";
-import {toast} from "sonner";
+import { UserType } from "@/utils/global";
+import { User } from "@/types/user.ts";
+import { convertDate } from "@/utils/helperfunctions.ts";
+import { toast } from "sonner";
 
 export function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
 
   const [pageData, setPageData] = useState<{
-    lastPage: number,
-    page: number,
-    size: number,
-    total: number
+    lastPage: number;
+    page: number;
+    size: number;
+    total: number;
   } | null>(null);
 
   const [param, setParam] = useState({
     page: 1,
     size: 10,
     isDeleted: "false",
-  })
+  });
 
   const handleParamChange = (name: string, value: string) => {
     setParam({
       ...param,
-      [name]: value
-    })
-  }
+      [name]: value,
+    });
+  };
 
   const [totalUsers, setTotalUsers] = useState<User[] | null>(null);
 
@@ -58,84 +78,96 @@ export function UserManagement() {
   const handleFetchAllUsers = async () => {
     try {
       const response = await axiosInstance.get("/users/admin/all", {
-        params: {...param, role: roleFilter === "all" ? "" : roleFilter}
-      })
+        params: { ...param, role: roleFilter === "all" ? "" : roleFilter },
+      });
 
       console.log(response.data);
       setTotalUsers(response.data.data.data);
-      setPageData(response.data.data.meta)
-      console.log(response.data.data.meta)
+      setPageData(response.data.data.meta);
+      console.log(response.data.data.meta);
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const handleSuspendUser = async (userId: string) => {
     try {
-      const accountSuspensionReason = prompt("Enter the reason for suspending the user.");
+      const accountSuspensionReason = prompt(
+        "Enter the reason for suspending the user."
+      );
 
       if (!accountSuspensionReason) {
         toast.error("Please enter a reason for suspending the user.");
         alert("Please enter a reason for suspending the user.");
       }
 
-      const suspendPromise = axiosInstance.patch(`/users/admin/suspend?_id=${userId}`, {
-        accountSuspensionReason
-      });
+      const suspendPromise = axiosInstance.patch(
+        `/users/admin/suspend?_id=${userId}`,
+        {
+          accountSuspensionReason,
+        }
+      );
 
       toast.promise(suspendPromise, {
         loading: "Suspending user...",
         success: (response) => {
           handleFetchAllUsers();
           console.log(response);
-          return "User suspended successfully."
+          return "User suspended successfully.";
         },
         error: (error) => {
-          console.log(error)
-          return "Failed to suspend user."
-        }
-      })
+          console.log(error);
+          return "Failed to suspend user.";
+        },
+      });
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const handleUnSuspendUser = async (userId: string) => {
     try {
-      const accountSuspensionReason = prompt("Enter the reason for Unsuspending the user.");
+      const accountSuspensionReason = prompt(
+        "Enter the reason for Unsuspending the user."
+      );
 
       if (!accountSuspensionReason) {
         toast.error("Please enter a reason for Unsuspending the user.");
         alert("Please enter a reason for Unsuspending the user.");
       }
 
-      const unSuspendPromise = axiosInstance.patch(`/users/admin/unsuspend?_id=${userId}`,{
-        accountSuspensionReason
-      });
+      const unSuspendPromise = axiosInstance.patch(
+        `/users/admin/unsuspend?_id=${userId}`,
+        {
+          accountSuspensionReason,
+        }
+      );
 
       toast.promise(unSuspendPromise, {
         loading: "Unsuspending user...",
         success: (response) => {
           handleFetchAllUsers();
           console.log(response);
-          return "User Unsuspended successfully."
+          return "User Unsuspended successfully.";
         },
         error: (error) => {
-          console.log(error)
-          return "Failed to Unsuspend user."
-        }
-      })
+          console.log(error);
+          return "Failed to Unsuspend user.";
+        },
+      });
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>User Management</CardTitle>
-          <CardDescription>Manage all platform users and their permissions</CardDescription>
+          <CardDescription>
+            Manage all platform users and their permissions
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -186,27 +218,39 @@ export function UserManagement() {
                   <TableRow key={user._id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.fullname}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="font-medium">
+                          {user.role === "ORGANIZATION" && user.companyName
+                            ? user.companyName
+                            : user.fullname || user.email}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {user.email}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'ADMIN' ? 'destructive' : user.role === 'ORGANIZATION' ? 'secondary' : 'default'}>
+                      <Badge
+                        variant={
+                          user.role === "ADMIN"
+                            ? "destructive"
+                            : user.role === "ORGANIZATION"
+                            ? "secondary"
+                            : "default"
+                        }
+                      >
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {
-                        user.role === 'TALENT' ? user.totalReferrals : "N/A"
-                      }
+                      {user.role === "TALENT" ? user.totalReferrals : "N/A"}
                     </TableCell>
                     <TableCell>{convertDate(user.createdAt)}</TableCell>
                     <TableCell>{convertDate(user.lastLoginAt)}</TableCell>
                     <TableCell>
-                      <Badge variant={user.deactivated ? 'destructive' : 'default'}>
-                        {
-                          user.deactivated ? 'True' : 'False'
-                        }
+                      <Badge
+                        variant={user.deactivated ? "destructive" : "default"}
+                      >
+                        {user.deactivated ? "True" : "False"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -227,16 +271,16 @@ export function UserManagement() {
                           </DropdownMenuItem>
                           {!user.deactivated ? (
                             <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleSuspendUser(user._id)}
+                              className="text-red-600"
+                              onClick={() => handleSuspendUser(user._id)}
                             >
                               <UserX className="mr-2 h-4 w-4" />
                               Suspend User
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem
-                                onClick={() => handleUnSuspendUser(user._id)}
-                                className="text-green-600"
+                              onClick={() => handleUnSuspendUser(user._id)}
+                              className="text-green-600"
                             >
                               <UserCheck className="mr-2 h-4 w-4" />
                               Activate User
@@ -251,39 +295,37 @@ export function UserManagement() {
             </Table>
 
             <div className="flex items-center justify-end gap-5 px-4">
-              {
-                pageData?.page > 1 && (
-                  <div className="flex justify-center my-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="border flex items-center gap-2"
-                        onClick={() => handleParamChange("page", String(pageData?.page - 1))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <p>Previous Page</p>
-                    </Button>
-                  </div>
-                )
-              }
+              {pageData?.page > 1 && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleParamChange("page", String(pageData?.page - 1))
+                    }
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <p>Previous Page</p>
+                  </Button>
+                </div>
+              )}
 
-              {
-                pageData?.page < pageData?.lastPage && (
-                  <div className="flex justify-center my-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="border flex items-center gap-2"
-                        onClick={() => handleParamChange("page", String(pageData?.page + 1))}
-                    >
-                      <p>
-                        Next Page
-                      </p>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )
-              }
+              {pageData?.page < pageData?.lastPage && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleParamChange("page", String(pageData?.page + 1))
+                    }
+                  >
+                    <p>Next Page</p>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

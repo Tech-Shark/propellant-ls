@@ -141,9 +141,10 @@ const CredentialVerification = () => {
       const extractCredentials = (response) => {
         console.log("Extracting credentials from response:", response);
 
-        // Based on your provided response structure, extract the credentials array
-        // The structure appears to be: data.data.data.credentials
+        // Always ensure we return an array, even if response is unexpected
         try {
+          // Based on your provided response structure, extract the credentials array
+          // The structure appears to be: data.data.data.credentials
           if (Array.isArray(response?.data?.data?.data?.credentials)) {
             console.log(
               "Found credentials at path: data.data.data.credentials",
@@ -183,16 +184,31 @@ const CredentialVerification = () => {
             return response.data;
           }
 
-          // Handle the case of empty credentials array explicitly
-          if (
-            response?.data?.data?.data?.credentials !== undefined &&
-            Array.isArray(response.data.data.data.credentials)
-          ) {
-            console.log("Found empty credentials array");
-            return [];
+          // If the API returns data but not in the expected structure, try to parse it
+          const dataObj =
+            response?.data?.data?.data ||
+            response?.data?.data ||
+            response?.data;
+
+          if (dataObj && typeof dataObj === "object") {
+            console.log(
+              "Found data object but not in expected structure:",
+              dataObj
+            );
+
+            // Look for any property that might be an array
+            for (const key in dataObj) {
+              if (Array.isArray(dataObj[key])) {
+                console.log(`Found array at key '${key}':`, dataObj[key]);
+                return dataObj[key];
+              }
+            }
           }
 
-          console.log("No recognized credentials array structure found");
+          // If no array found, log the issue and return empty array
+          console.log(
+            "No recognized credentials array structure found, returning empty array"
+          );
           console.log(
             "Full response data:",
             JSON.stringify(response.data, null, 2)
