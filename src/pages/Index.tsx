@@ -20,6 +20,9 @@ import {
   CheckCircle,
   Play,
   Mail,
+  X,
+  RotateCw,
+  Maximize,
 } from "lucide-react";
 import Logo from "@/components/Logo.tsx";
 import { Link } from "react-router-dom";
@@ -31,12 +34,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<"talent" | "organization">(
     "talent"
   );
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const supportEmail = "support@Propellanthr.com";
 
   const talentFeatures = [
@@ -267,23 +272,84 @@ const Index = () => {
           {/* YouTube Video Section */}
           <div className="relative mx-auto max-w-4xl">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
-              <div className="aspect-video rounded-lg overflow-hidden">
+              <div
+                className="aspect-video rounded-lg overflow-hidden relative cursor-pointer group"
+                onClick={() => setVideoModalOpen(true)}
+                role="button"
+                aria-label="Play video"
+              >
+                {/* Video Thumbnail with Play Button Overlay */}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/40 transition-all">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-blue-600/90 flex items-center justify-center group-hover:bg-blue-600 transition-all shadow-lg shadow-blue-600/30 group-hover:scale-105">
+                    <Play className="w-8 h-8 sm:w-10 sm:h-10 text-white ml-1" />
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/70 py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-sm flex items-center gap-2">
+                      <Play className="w-4 h-4" />
+                      Watch Propellant platform overview
+                    </p>
+                  </div>
+                </div>
+                {/* Thumbnail Image - Using a placeholder, replace with actual video thumbnail if available */}
+                <div className="w-full h-full bg-gradient-to-r from-slate-700 to-slate-900">
+                  <img
+                    src="/Propellant-file.png"
+                    alt="Video thumbnail"
+                    className="w-full h-full object-cover opacity-90"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
+                <p className="text-slate-400 flex items-center gap-2">
+                  <Play className="w-4 h-4" />
+                  Watch how Propellant revolutionizes professional verification
+                </p>
+                <span className="text-xs text-blue-400 md:hidden">
+                  Tap to watch in fullscreen
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Video Modal */}
+          <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
+            <DialogContent className="bg-black border-slate-700 p-0 max-w-[95vw] w-full sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[1000px] h-auto">
+              <DialogHeader className="pt-4 px-4 flex items-center justify-between">
+                <DialogTitle className="text-white flex items-center gap-2">
+                  <Logo size="sm" />
+                  <span className="hidden sm:inline">
+                    Propellant Platform Overview
+                  </span>
+                </DialogTitle>
+                <DialogClose className="rounded-full h-8 w-8 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </DialogHeader>
+              <div className="aspect-video w-full mt-2">
                 <iframe
                   width="100%"
                   height="100%"
-                  src="https://www.youtube-nocookie.com/embed/t4rAksIwaWI?si=nAvHLtqeXwgdt3o-&amp;controls=0"
+                  src="https://www.youtube-nocookie.com/embed/t4rAksIwaWI?si=nAvHLtqeXwgdt3o-&amp;autoplay=1"
                   title="YouTube video player"
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
+                  className="rotate-0"
                 ></iframe>
               </div>
-              <p className="text-slate-400 mt-4">
-                Watch how Propellant revolutionizes professional verification
-              </p>
-            </div>
-          </div>
+              <div className="p-4 flex justify-center items-center gap-2 text-slate-300 text-sm md:hidden">
+                <RotateCw className="w-4 h-4" />
+                <p>Rotate your device for fullscreen view</p>
+                <Maximize className="w-4 h-4" />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </section>
 
