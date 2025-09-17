@@ -232,6 +232,8 @@ export interface ReferralPerson {
     email: string;
     phone: string;
     reward: number;
+    role?: "ORGANIZATION" | "TALENT" | "ADMIN" | "SUPER_ADMIN" | string;
+    companyName?: string;
 }
 
 export interface ReferralRecord {
@@ -257,6 +259,8 @@ export interface LeaderboardUser {
     totalReferrals: number;
     completedReferrals: number;
     referralPoint: number;
+    role?: "ORGANIZATION" | "TALENT" | "ADMIN" | "SUPER_ADMIN" | string;
+    companyName?: string;
 }
 
 export interface ReferralLeaderboardEntry {
