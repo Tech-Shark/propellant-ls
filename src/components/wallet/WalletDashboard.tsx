@@ -32,13 +32,13 @@ export function WalletDashboard() {
   const [walletData] = useState<WalletData>({
     address: "0x742d35Cc6641A8C4d4f5C79f9A1B74b9c8a5F2e3",
     balance: 1234.56,
-    currency: "USD",
+    currency: "NGN",
     transactions: [
       {
         id: "1",
         type: "referral_reward",
         amount: 25.0,
-        currency: "USD",
+        currency: "NGN",
         status: "completed",
         timestamp: "2024-01-20T10:30:00Z",
         description: "Referral reward for John Doe signup",
@@ -48,7 +48,7 @@ export function WalletDashboard() {
         id: "2",
         type: "deposit",
         amount: 500.0,
-        currency: "USD",
+        currency: "NGN",
         status: "completed",
         timestamp: "2024-01-18T14:15:00Z",
         description: "Deposit from bank account",
@@ -58,7 +58,7 @@ export function WalletDashboard() {
         id: "3",
         type: "withdrawal",
         amount: 100.0,
-        currency: "USD",
+        currency: "NGN",
         status: "pending",
         timestamp: "2024-01-22T09:45:00Z",
         description: "Withdrawal to bank account",
@@ -92,7 +92,7 @@ export function WalletDashboard() {
     }
     toast({
       title: "Withdrawal Initiated",
-      description: `Withdrawal of $${transferAmount} has been initiated.`,
+      description: `Withdrawal of ₦${transferAmount} has been initiated.`,
     });
     setTransferAmount("");
   };
@@ -140,7 +140,7 @@ export function WalletDashboard() {
               <div className="flex items-center gap-2">
                 <p className="text-3xl font-bold text-white">
                   {showBalance
-                    ? `$${walletData.balance.toFixed(2)}`
+                    ? `₦${walletData.balance.toFixed(2)}`
                     : "****.**"}
                 </p>
                 <Button

@@ -476,7 +476,7 @@ export default function Payment() {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">
-                  $
+                  ₦
                   {plans.find(
                     (p) =>
                       p.id.toUpperCase() ===
@@ -545,7 +545,7 @@ export default function Payment() {
                       </h3>
                       <div className="mt-2">
                         <span className="text-3xl font-bold text-white">
-                          ${plan.price}
+                          ₦{plan.price}
                         </span>
                         <span className="text-slate-400 ml-1">
                           /{plan.period}
@@ -623,7 +623,7 @@ export default function Payment() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-slate-300">Amount:</span>
                   <span className="text-white font-medium">
-                    $
+                    ₦
                     {plans.find(
                       (p) => p.id.toUpperCase() === selectedPlan.toUpperCase()
                     )?.price || "N/A"}

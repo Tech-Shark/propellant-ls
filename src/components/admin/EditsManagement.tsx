@@ -81,7 +81,7 @@ const initialSubscriptionPlans = [
   {
     id: 1,
     name: "Free",
-    amount: "$0",
+    amount: "₦0",
     description: [
       "Basic profile creation",
       "Upload up to 5 credentials",
@@ -93,7 +93,7 @@ const initialSubscriptionPlans = [
   {
     id: 2,
     name: "Professional",
-    amount: "$29",
+    amount: "₦29",
     description: [
       "Enhanced profile with portfolio",
       "Unlimited credential uploads",
@@ -108,7 +108,7 @@ const initialSubscriptionPlans = [
   {
     id: 3,
     name: "Premium",
-    amount: "$59",
+    amount: "₦59",
     description: [
       "Everything in Professional",
       "Personal brand building tools",
@@ -279,7 +279,7 @@ export function EditsManagement() {
 
         if (methodsArray.length !== validMethods.length) {
           console.warn(
-            `Found ${
+            `Found ₦{
               methodsArray.length - validMethods.length
             } payment methods with missing names`
           );
@@ -345,7 +345,7 @@ export function EditsManagement() {
         const plans = appData.subscriptionPlans.map((plan: any) => ({
           ...plan,
           id: plan.name, // Use name as ID since backend doesn't have IDs for plans
-          amount: `$${plan.price}`, // Format price for UI
+          amount: `₦₦{plan.price}`, // Format price for UI
         }));
         setSubscriptionPlans(plans);
       } else {
@@ -729,7 +729,7 @@ export function EditsManagement() {
         };
 
         console.log("Sending updated method to backend:", {
-          endpoint: `/payment/${editingPaymentMethod._id}`,
+          endpoint: `/payment/₦{editingPaymentMethod._id}`,
           data: updatedMethod,
         });
 
@@ -740,7 +740,7 @@ export function EditsManagement() {
         });
 
         const response = await axiosInstance.patch(
-          `/payment/${editingPaymentMethod._id}`,
+          `/payment/₦{editingPaymentMethod._id}`,
           updatedMethod
         );
 
@@ -820,7 +820,7 @@ export function EditsManagement() {
               // If it exists, just show a success message
               toast({
                 title: "Payment Method Already Exists",
-                description: `${newPaymentMethod.name} payment method is already configured.`,
+                description: `₦{newPaymentMethod.name} payment method is already configured.`,
               });
 
               // Reset form and close modal
@@ -855,7 +855,7 @@ export function EditsManagement() {
         // Show success message
         toast({
           title: "Success",
-          description: `${newPaymentMethod.name} payment method added successfully!`,
+          description: `₦{newPaymentMethod.name} payment method added successfully!`,
           variant: "default",
         });
 
@@ -911,7 +911,7 @@ export function EditsManagement() {
             // If the payment method already exists, we'll treat this as a successful operation
             toast({
               title: "Payment Method Already Configured",
-              description: `The ${newPaymentMethod.name} payment method is already set up in the system.`,
+              description: `The ₦{newPaymentMethod.name} payment method is already set up in the system.`,
               variant: "default",
             });
 
@@ -951,7 +951,7 @@ export function EditsManagement() {
 
   const handleDeletePaymentMethod = async (methodId: string) => {
     try {
-      await axiosInstance.delete(`/payment/${methodId}`);
+      await axiosInstance.delete(`/payment/₦{methodId}`);
 
       // Refresh payment methods list
       fetchPaymentMethods();
@@ -989,7 +989,7 @@ export function EditsManagement() {
         newActive: !method.active,
       });
 
-      await axiosInstance.patch(`/payment/${methodId}`, {
+      await axiosInstance.patch(`/payment/₦{methodId}`, {
         active: (!method.active).toString(), // Send as string to match backend expectation
       });
 
@@ -1074,7 +1074,7 @@ export function EditsManagement() {
                       </div>
                     </TableCell>
                     <TableCell className="font-semibold text-green-600">
-                      ${plan.price}
+                      ₦{plan.price}
                       {plan.name !== "FREE" && (
                         <span className="text-xs text-muted-foreground">
                           /month
@@ -1107,7 +1107,7 @@ export function EditsManagement() {
                           onClick={() =>
                             handleEditPlan({
                               ...plan,
-                              amount: `$${plan.price}`,
+                              amount: `₦₦{plan.price}`,
                             })
                           }
                         >
@@ -1170,7 +1170,7 @@ export function EditsManagement() {
                         amount: e.target.value,
                       }))
                     }
-                    placeholder="e.g. $29 or $0"
+                    placeholder="e.g. ₦29 or ₦0"
                   />
                 </div>
                 <div>
@@ -1290,7 +1290,7 @@ export function EditsManagement() {
                         amount: e.target.value,
                       }))
                     }
-                    placeholder="e.g. $29 or $0"
+                    placeholder="e.g. ₦29 or ₦0"
                   />
                 </div>
                 <div>
@@ -1886,7 +1886,7 @@ export function EditsManagement() {
                     const actualId = button.id;
                     return (
                       <Button
-                        key={`${button.id}-${index}`}
+                        key={`₦{button.id}-₦{index}`}
                         variant={
                           selectedEdit === actualId ? "default" : "outline"
                         }
