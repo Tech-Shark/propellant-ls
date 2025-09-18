@@ -158,7 +158,7 @@ export function AdminMetrics({
     data: adminStats,
     isLoading: statsLoading,
     isError: statsError,
-    error: adminStatsError
+    error: adminStatsError,
   } = useAdminStats();
 
   // Fetch admin users list with React Query
@@ -166,7 +166,7 @@ export function AdminMetrics({
     data: adminList,
     isLoading: adminsLoading,
     isError: adminsError,
-    error: adminListError
+    error: adminListError,
   } = useAdminList();
 
   // Fetch verification stats with React Query
@@ -174,17 +174,19 @@ export function AdminMetrics({
     data: verificationStats,
     isLoading: verificationsLoading,
     isError: verificationsError,
-    error: verificationsErrorDetails
+    error: verificationsErrorDetails,
   } = useVerificationStats();
-  
+
   // Only log errors if they exist
-  if (adminStatsError) console.error('Admin Stats Error:', adminStatsError);
-  if (adminListError) console.error('Admin List Error:', adminListError);
-  if (verificationsErrorDetails) console.error('Verifications Error:', verificationsErrorDetails);
+  if (adminStatsError) console.error("Admin Stats Error:", adminStatsError);
+  if (adminListError) console.error("Admin List Error:", adminListError);
+  if (verificationsErrorDetails)
+    console.error("Verifications Error:", verificationsErrorDetails);
 
   // Extract data from query results with type assertions
   const totalUsers = (adminStats as AdminStats | undefined)?.totalUsers || 0;
-  const totalOrganizations = (adminStats as AdminStats | undefined)?.organizationUsers || 0;
+  const totalOrganizations =
+    (adminStats as AdminStats | undefined)?.organizationUsers || 0;
   const pendingVerifications = verificationStats?.pendingVerifications || 0;
 
   // Check if any data is still loading
@@ -215,8 +217,8 @@ export function AdminMetrics({
             <li>Check that the backend server is running</li>
             <li>Verify your authentication token is valid</li>
           </ul>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-red-800 transition-colors"
           >
             Try Again

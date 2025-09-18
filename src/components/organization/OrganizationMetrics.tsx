@@ -39,8 +39,8 @@ export function OrganizationMetrics() {
             <li>Verify your organization permissions</li>
             <li>The API endpoint may be temporarily unavailable</li>
           </ul>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-red-800 transition-colors"
           >
             Try Again

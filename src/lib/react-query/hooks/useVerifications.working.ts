@@ -1,9 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/api/AxiosInstance';
 import { extractPaginationData, extractResponseData, handleApiError } from '../api-hooks';
-
-// Import mock data for development
-import { mockVerificationStats, simulateApiDelay } from './mockData';
+import { mockVerificationStats, simulateApiDelay, VerificationStats } from './mockData';
 import { DevSettings } from '@/lib/dev-settings';
 
 // Query keys
@@ -13,6 +11,9 @@ export const verificationKeys = {
   detail: (id: string) => [...verificationKeys.all, 'detail', id] as const,
   stats: () => [...verificationKeys.all, 'stats'] as const,
 };
+
+// Re-export VerificationStats for convenience
+export type { VerificationStats };
 
 // Types
 export interface VerificationRecord {
@@ -40,13 +41,6 @@ export interface VerificationRecord {
   [key: string]: any;
 }
 
-export interface VerificationStats {
-  totalVerifications: number;
-  pendingVerifications: number;
-  approvedVerifications: number;
-  rejectedVerifications: number;
-}
-
 export interface PaginationParams {
   page?: number;
   size?: number;
@@ -57,9 +51,9 @@ export interface PaginationParams {
 
 // Get all verifications
 export function useVerifications(params: PaginationParams = {}) {
-  return useQuery({
+  return useQuery<{ data: VerificationRecord[], pagination: any }, Error>({
     queryKey: verificationKeys.list(params),
-    queryFn: async () => {
+    queryFn: async (): Promise<{ data: VerificationRecord[], pagination: any }> => {
       const response = await axiosInstance.get('/users/admin/credentials', { params });
       return {
         data: extractResponseData<VerificationRecord[]>(response),
@@ -70,6 +64,8 @@ export function useVerifications(params: PaginationParams = {}) {
   });
 }
 
+// This line is intentionally left blank to remove duplicate imports
+
 // Get verification stats
 export function useVerificationStats() {
   return useQuery<VerificationStats, Error>({
@@ -78,17 +74,7 @@ export function useVerificationStats() {
       // If mock data is enabled, return it directly
       if (DevSettings.useMockData) {
         if (DevSettings.enableApiLogs) console.log('Using mock verification stats data');
-        // Create a delay and return the mock data with correct typing
-        return new Promise<VerificationStats>((resolve) => {
-          setTimeout(() => {
-            resolve({
-              totalVerifications: mockVerificationStats.totalVerifications,
-              pendingVerifications: mockVerificationStats.pendingVerifications,
-              approvedVerifications: mockVerificationStats.approvedVerifications,
-              rejectedVerifications: mockVerificationStats.rejectedVerifications
-            });
-          }, DevSettings.mockApiDelayMs);
-        });
+        return await simulateApiDelay(mockVerificationStats);
       }
       
       if (DevSettings.enableApiLogs) console.log('Fetching verification stats...');
@@ -133,13 +119,7 @@ export function useVerificationStats() {
           console.error('All credential endpoints failed:', secondError);
           // Fall back to mock data as a last resort
           console.warn('API errors, falling back to mock data');
-          const mockStats: VerificationStats = {
-            totalVerifications: mockVerificationStats.totalVerifications,
-            pendingVerifications: mockVerificationStats.pendingVerifications,
-            approvedVerifications: mockVerificationStats.approvedVerifications,
-            rejectedVerifications: mockVerificationStats.rejectedVerifications
-          };
-          return mockStats;
+          return mockVerificationStats;
         }
       }
     },
@@ -150,9 +130,9 @@ export function useVerificationStats() {
 
 // Get specific verification
 export function useVerification(id: string) {
-  return useQuery<VerificationRecord>({
+  return useQuery<VerificationRecord, Error>({
     queryKey: verificationKeys.detail(id),
-    queryFn: async () => {
+    queryFn: async (): Promise<VerificationRecord> => {
       const response = await axiosInstance.get(`/users/admin/credentials/${id}`);
       return extractResponseData<VerificationRecord>(response);
     },
