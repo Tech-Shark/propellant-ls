@@ -1,101 +1,148 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { User } from "@/types/user";
-import { Mail, Send, Users, User as UserIcon, CheckCircle, AlertCircle } from "lucide-react";
-import axiosInstance from "@/api/AxiosInstance";
+import {
+  Mail,
+  Send,
+  Users,
+  User as UserIcon,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useUsers } from "@/lib/react-query/hooks";
+// Import email-specific hooks directly from their source file
+import {
+  useSendEmailToAllUsers,
+  useSendEmailToUser,
+} from "@/lib/react-query/hooks/useEmailManagement";
 
 interface EmailData {
   subject: string;
   content: string;
-  recipients: 'all' | 'individual';
+  recipients: "all" | "individual";
   selectedUserId?: string;
 }
 
 export function EmailManagement() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [emailData, setEmailData] = useState<EmailData>({
-    subject: '',
-    content: '',
-    recipients: 'all'
+    subject: "",
+    content: "",
+    recipients: "all",
   });
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axiosInstance.get('/admin/users');
-      setUsers(response.data.users || []);
-    } catch (error) {
-      toast.error('Failed to fetch users');
-      console.error('Error fetching users:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch users with React Query
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    refetch: refetchUsers,
+  } = useUsers();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Extract users from the query results
+  const users = usersData?.data || [];
+
+  // Send email mutations
+  const sendEmailToAll = useSendEmailToAllUsers();
+  const sendEmailToUser = useSendEmailToUser();
+
+  // Combined loading state
+  const isSending = sendEmailToAll.isPending || sendEmailToUser.isPending;
 
   const handleSendEmail = async () => {
     if (!emailData.subject.trim() || !emailData.content.trim()) {
-      toast.error('Please fill in both subject and content');
+      toast.error("Please fill in both subject and content");
       return;
     }
 
-    if (emailData.recipients === 'individual' && !emailData.selectedUserId) {
-      toast.error('Please select a user to send the email to');
+    if (emailData.recipients === "individual" && !emailData.selectedUserId) {
+      toast.error("Please select a user to send the email to");
       return;
     }
 
-    setIsSending(true);
     try {
-      const endpoint = emailData.recipients === 'all' 
-        ? '/admin/send-email/all' 
-        : `/admin/send-email/user/${emailData.selectedUserId}`;
+      if (emailData.recipients === "all") {
+        await sendEmailToAll.mutateAsync({
+          subject: emailData.subject,
+          content: emailData.content,
+        });
+      } else if (emailData.selectedUserId) {
+        await sendEmailToUser.mutateAsync({
+          userId: emailData.selectedUserId,
+          subject: emailData.subject,
+          content: emailData.content,
+        });
+      }
 
-      await axiosInstance.post(endpoint, {
-        subject: emailData.subject,
-        content: emailData.content
-      });
-
-      toast.success(`Email sent successfully to ${emailData.recipients === 'all' ? 'all users' : 'selected user'}`);
+      toast.success(
+        `Email sent successfully to ${
+          emailData.recipients === "all" ? "all users" : "selected user"
+        }`
+      );
       setIsModalOpen(false);
       setEmailData({
-        subject: '',
-        content: '',
-        recipients: 'all'
+        subject: "",
+        content: "",
+        recipients: "all",
       });
     } catch (error) {
-      toast.error('Failed to send email');
-      console.error('Error sending email:', error);
-    } finally {
-      setIsSending(false);
+      // Error is handled by the mutation's onError
+      console.error("Error sending email:", error);
     }
   };
 
   const resetForm = () => {
     setEmailData({
-      subject: '',
-      content: '',
-      recipients: 'all'
+      subject: "",
+      content: "",
+      recipients: "all",
     });
   };
 
+  // Calculate user statistics
   const totalUsers = users.length;
-  const activeUsers = users.filter(user => !user.deactivated).length;
-  const talentUsers = users.filter(user => user.role === 'TALENT').length;
-  const organizationUsers = users.filter(user => user.role === 'ORGANIZATION').length;
+  const activeUsers = users.filter((user) => user.isVerified).length;
+  const talentUsers = users.filter((user) => user.role === "TALENT").length;
+  const organizationUsers = users.filter(
+    (user) => user.role === "ORGANIZATION"
+  ).length;
+
+  // Display loading state for the entire component
+  if (usersLoading) {
+    return (
+      <div className="flex justify-center items-center h-32">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading email management data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,7 +155,9 @@ export function EmailManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground">All registered users</p>
+            <p className="text-xs text-muted-foreground">
+              All registered users
+            </p>
           </CardContent>
         </Card>
 
@@ -118,8 +167,12 @@ export function EmailManagement() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeUsers}</div>
-            <p className="text-xs text-muted-foreground">Non-deactivated users</p>
+            <div className="text-2xl font-bold text-green-600">
+              {activeUsers}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Non-deactivated users
+            </p>
           </CardContent>
         </Card>
 
@@ -129,7 +182,9 @@ export function EmailManagement() {
             <UserIcon className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{talentUsers}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {talentUsers}
+            </div>
             <p className="text-xs text-muted-foreground">Talent accounts</p>
           </CardContent>
         </Card>
@@ -140,8 +195,12 @@ export function EmailManagement() {
             <UserIcon className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{organizationUsers}</div>
-            <p className="text-xs text-muted-foreground">Organization accounts</p>
+            <div className="text-2xl font-bold text-purple-600">
+              {organizationUsers}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Organization accounts
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -159,10 +218,13 @@ export function EmailManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Dialog open={isModalOpen} onOpenChange={(open) => {
-              setIsModalOpen(open);
-              if (!open) resetForm();
-            }}>
+            <Dialog
+              open={isModalOpen}
+              onOpenChange={(open) => {
+                setIsModalOpen(open);
+                if (!open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="flex-1 sm:flex-none">
                   <Mail className="h-4 w-4 mr-2" />
@@ -176,15 +238,19 @@ export function EmailManagement() {
                     Send an email to users on the platform
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4">
                   {/* Recipient Selection */}
                   <div className="space-y-2">
                     <Label htmlFor="recipients">Recipients</Label>
                     <Select
                       value={emailData.recipients}
-                      onValueChange={(value: 'all' | 'individual') => 
-                        setEmailData({ ...emailData, recipients: value, selectedUserId: undefined })
+                      onValueChange={(value: "all" | "individual") =>
+                        setEmailData({
+                          ...emailData,
+                          recipients: value,
+                          selectedUserId: undefined,
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -208,12 +274,12 @@ export function EmailManagement() {
                   </div>
 
                   {/* Individual User Selection */}
-                  {emailData.recipients === 'individual' && (
+                  {emailData.recipients === "individual" && (
                     <div className="space-y-2">
                       <Label htmlFor="user">Select User</Label>
                       <Select
                         value={emailData.selectedUserId}
-                        onValueChange={(value) => 
+                        onValueChange={(value) =>
                           setEmailData({ ...emailData, selectedUserId: value })
                         }
                       >
@@ -222,13 +288,25 @@ export function EmailManagement() {
                         </SelectTrigger>
                         <SelectContent className="max-h-60">
                           {users.map((user) => (
-                            <SelectItem key={user._id} value={user._id}>
+                            <SelectItem key={user.id} value={user.id}>
                               <div className="flex items-center gap-2">
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{user.fullname || user.email}</span>
-                                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                                  <span className="font-medium">
+                                    {user.firstName && user.lastName
+                                      ? `${user.firstName} ${user.lastName}`
+                                      : user.email}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {user.email}
+                                  </span>
                                 </div>
-                                <Badge variant={user.role === 'TALENT' ? 'default' : 'secondary'}>
+                                <Badge
+                                  variant={
+                                    user.role === "TALENT"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
                                   {user.role}
                                 </Badge>
                               </div>
@@ -246,7 +324,7 @@ export function EmailManagement() {
                       id="subject"
                       placeholder="Enter email subject"
                       value={emailData.subject}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         setEmailData({ ...emailData, subject: e.target.value })
                       }
                     />
@@ -260,7 +338,7 @@ export function EmailManagement() {
                       placeholder="Enter email content..."
                       className="min-h-[200px]"
                       value={emailData.content}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         setEmailData({ ...emailData, content: e.target.value })
                       }
                     />
@@ -271,9 +349,18 @@ export function EmailManagement() {
                     <div className="border rounded-lg p-4 bg-muted/50">
                       <h4 className="font-medium mb-2">Preview:</h4>
                       <div className="text-sm space-y-2">
-                        <div><strong>To:</strong> {emailData.recipients === 'all' ? `All Users (${totalUsers})` : 'Selected User'}</div>
-                        <div><strong>Subject:</strong> {emailData.subject}</div>
-                        <div><strong>Content:</strong></div>
+                        <div>
+                          <strong>To:</strong>{" "}
+                          {emailData.recipients === "all"
+                            ? `All Users (${totalUsers})`
+                            : "Selected User"}
+                        </div>
+                        <div>
+                          <strong>Subject:</strong> {emailData.subject}
+                        </div>
+                        <div>
+                          <strong>Content:</strong>
+                        </div>
                         <div className="whitespace-pre-wrap bg-background p-3 rounded border">
                           {emailData.content}
                         </div>
@@ -284,11 +371,15 @@ export function EmailManagement() {
                   <div className="flex gap-2 pt-4">
                     <Button
                       onClick={handleSendEmail}
-                      disabled={isSending || !emailData.subject.trim() || !emailData.content.trim()}
+                      disabled={
+                        isSending ||
+                        !emailData.subject.trim() ||
+                        !emailData.content.trim()
+                      }
                       className="flex-1"
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      {isSending ? 'Sending...' : 'Send Email'}
+                      {isSending ? "Sending..." : "Send Email"}
                     </Button>
                     <Button
                       variant="outline"
@@ -303,10 +394,10 @@ export function EmailManagement() {
 
             <Button
               variant="outline"
-              onClick={fetchUsers}
-              disabled={isLoading}
+              onClick={() => refetchUsers()}
+              disabled={usersLoading}
             >
-              {isLoading ? 'Refreshing...' : 'Refresh Users'}
+              {usersLoading ? "Refreshing..." : "Refresh Users"}
             </Button>
           </div>
 
@@ -322,9 +413,10 @@ export function EmailManagement() {
                   className="w-full justify-start"
                   onClick={() => {
                     setEmailData({
-                      subject: 'Welcome to Propellant HR',
-                      content: 'Dear User,\n\nWelcome to Propellant HR! We\'re excited to have you on board.\n\nBest regards,\nThe Propellant HR Team',
-                      recipients: 'all'
+                      subject: "Welcome to Propellant HR",
+                      content:
+                        "Dear User,\n\nWelcome to Propellant HR! We're excited to have you on board.\n\nBest regards,\nThe Propellant HR Team",
+                      recipients: "all",
                     });
                     setIsModalOpen(true);
                   }}
@@ -337,9 +429,10 @@ export function EmailManagement() {
                   className="w-full justify-start"
                   onClick={() => {
                     setEmailData({
-                      subject: 'Platform Update Notification',
-                      content: 'Dear User,\n\nWe have exciting new updates to share with you.\n\nBest regards,\nThe Propellant HR Team',
-                      recipients: 'all'
+                      subject: "Platform Update Notification",
+                      content:
+                        "Dear User,\n\nWe have exciting new updates to share with you.\n\nBest regards,\nThe Propellant HR Team",
+                      recipients: "all",
                     });
                     setIsModalOpen(true);
                   }}

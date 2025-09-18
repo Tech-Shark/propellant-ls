@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -39,15 +39,19 @@ import {
   TrendingUp,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
-import type { LeaderboardEntry, ReferralData } from "@/types/referral";
-import axiosInstance from "@/api/AxiosInstance.ts";
 import {
   ReferralLeaderboardEntry,
   ReferralRecord,
   ReferralStats,
 } from "@/utils/global";
 import { convertDate } from "@/utils/helperfunctions.ts";
+import {
+  useReferrals,
+  useReferralStats,
+  useReferralLeaderboard,
+} from "@/lib/react-query/hooks";
 
 export function ReferralManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,169 +60,134 @@ export function ReferralManagement() {
     "leaderboard"
   );
 
-  const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
-  const [referralStats, setReferralStats] = useState<ReferralStats | null>(
-    null
-  );
-  const [leaderboard, setLeaderboard] = useState<ReferralLeaderboardEntry[]>(
-    []
-  );
-
-  const [pageData, setPageData] = useState<{
-    lastPage: number;
-    page: number;
-    size: number;
-    total: number;
-  } | null>(null);
-
-  const [param, setParam] = useState({
+  // Referrals parameters and fetch
+  const [referralParams, setReferralParams] = useState({
     page: 1,
     size: 10,
     isDeleted: "false",
   });
 
-  const handleParamChange = (name: string, value: string) => {
-    setParam({
-      ...param,
+  const {
+    data: referralsData,
+    isLoading: referralsLoading,
+    isError: referralsError,
+  } = useReferrals(referralParams);
+
+  // Referral stats fetch
+  const {
+    data: referralStats,
+    isLoading: statsLoading,
+    isError: statsError,
+  } = useReferralStats();
+
+  // Leaderboard parameters and fetch
+  const [leaderParams, setLeaderParams] = useState({
+    page: 1,
+    size: 10,
+    isDeleted: "false",
+  });
+
+  const {
+    data: leaderboardData,
+    isLoading: leaderboardLoading,
+    isError: leaderboardError,
+  } = useReferralLeaderboard(leaderParams);
+
+  // Handle pagination for referrals
+  const handleReferralParamChange = (name: string, value: string) => {
+    setReferralParams((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
-  const [leaderPageData, setLeaderPageData] = useState<{
-    lastPage: number;
-    page: number;
-    size: number;
-    total: number;
-  } | null>(null);
-
-  const [leaderParam, setLeaderParam] = useState({
-    page: 1,
-    size: 10,
-    isDeleted: "false",
-  });
-
+  // Handle pagination for leaderboard
   const handleLeaderParamChange = (name: string, value: string) => {
-    setLeaderParam({
-      ...param,
+    setLeaderParams((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
-
-  const handleFetchAllReferrers = async () => {
-    try {
-      const response = await axiosInstance.get("/users/admin/referrals", {
-        params: { ...param },
-      });
-
-      console.log(response.data.data.data);
-      setReferrals(response.data.data.data);
-      setPageData(response.data.data.meta);
-      console.log(response.data.data.meta);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleFetchReferralStats = async () => {
-    try {
-      const response = await axiosInstance.get("/users/admin/referrals/stats", {
-        params: { ...param },
-      });
-
-      console.log(response.data.data);
-      setReferralStats(response.data.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleFetchLeaderboard = async () => {
-    try {
-      const response = await axiosInstance.get(
-        "/users/admin/referrals/leaderboard?sortBy=totalReferrals",
-        {
-          params: { ...leaderParam },
-        }
-      );
-
-      setLeaderboard(response.data.data.data);
-      setLeaderPageData(response.data.data.meta);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    handleFetchAllReferrers();
-  }, [param]);
-
-  useEffect(() => {
-    handleFetchReferralStats();
-  }, []);
-
-  useEffect(() => {
-    handleFetchLeaderboard();
-  }, [leaderParam]);
 
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Referrals</p>
-                <p className="text-2xl font-bold">
-                  {referralStats?.totalReferrals}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {statsLoading ? (
+          <>
+            {[1, 2, 3, 4].map((index) => (
+              <Card key={index}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center h-16">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : statsError ? (
+          <div className="col-span-4 p-4 bg-red-50 text-red-700 rounded-md">
+            Failed to load referral statistics. Please try again.
+          </div>
+        ) : (
+          <>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <Users className="w-8 h-8 text-blue-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Total Referrals</p>
+                    <p className="text-2xl font-bold">
+                      {referralStats?.totalReferrals}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-2xl font-bold">
-                  {referralStats?.completedReferrals}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-8 h-8 text-green-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Completed</p>
+                    <p className="text-2xl font-bold">
+                      {referralStats?.completedReferrals}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Gift className="w-8 h-8 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Rewards</p>
-                <p className="text-2xl font-bold">
-                  {referralStats?.totalRewards} points
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <Gift className="w-8 h-8 text-purple-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Total Rewards</p>
+                    <p className="text-2xl font-bold">
+                      {referralStats?.totalRewards} points
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold">
-                  {referralStats?.activeUsers}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-8 h-8 text-yellow-600" />
+                  <div>
+                    <p className="text-sm text-gray-600">Active Users</p>
+                    <p className="text-2xl font-bold">
+                      {referralStats?.activeUsers}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Tab Navigation */}
@@ -249,20 +218,28 @@ export function ReferralManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Rank</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Total Referrals</TableHead>
-                    <TableHead>Completed</TableHead>
-                    <TableHead>Total Rewards</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leaderboard &&
-                    leaderboard.map((entry) => (
+              {leaderboardLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : leaderboardError ? (
+                <div className="p-4 bg-red-50 text-red-700 rounded-md">
+                  Failed to load leaderboard. Please try again.
+                </div>
+              ) : leaderboardData?.data && leaderboardData.data.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Total Referrals</TableHead>
+                      <TableHead>Completed</TableHead>
+                      <TableHead>Total Rewards</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaderboardData.data.map((entry) => (
                       <TableRow key={entry.rank}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -306,49 +283,61 @@ export function ReferralManagement() {
                         </TableCell>
                       </TableRow>
                     ))}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No leaderboard data available
+                </div>
+              )}
             </CardContent>
           </Card>
-          <div className="flex items-center justify-end gap-5 px-4">
-            {leaderPageData?.page > 1 && (
-              <div className="flex justify-center my-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="border flex items-center gap-2"
-                  onClick={() =>
-                    handleLeaderParamChange(
-                      "page",
-                      String(leaderPageData?.page - 1)
-                    )
-                  }
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <p>Previous Page</p>
-                </Button>
-              </div>
-            )}
 
-            {leaderPageData?.page < leaderPageData?.lastPage && (
-              <div className="flex justify-center my-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="border flex items-center gap-2"
-                  onClick={() =>
-                    handleLeaderParamChange(
-                      "page",
-                      String(leaderPageData?.page + 1)
-                    )
-                  }
-                >
-                  <p>Next Page</p>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* Leaderboard Pagination */}
+          {leaderboardData?.pagination && (
+            <div className="flex items-center justify-end gap-5 px-4">
+              {leaderboardData.pagination.page > 1 && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleLeaderParamChange(
+                        "page",
+                        String(leaderboardData.pagination.page - 1)
+                      )
+                    }
+                    disabled={leaderboardLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <p>Previous Page</p>
+                  </Button>
+                </div>
+              )}
+
+              {leaderboardData.pagination.page <
+                leaderboardData.pagination.lastPage && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleLeaderParamChange(
+                        "page",
+                        String(leaderboardData.pagination.page + 1)
+                      )
+                    }
+                    disabled={leaderboardLoading}
+                  >
+                    <p>Next Page</p>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -382,110 +371,137 @@ export function ReferralManagement() {
               </Select>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Referred User</TableHead>
-                  <TableHead>Referrer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Reward</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {referrals.map((referral, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {referral?.referredUser?.role === "ORGANIZATION" &&
-                          referral?.referredUser?.companyName
-                            ? referral?.referredUser?.companyName
-                            : referral?.referredUser?.fullname ||
-                              referral?.referredUser?.email}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {referral?.referredUser?.email}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {referral?.referrer?.role === "ORGANIZATION" &&
-                      referral?.referrer?.companyName
-                        ? referral?.referrer?.companyName
-                        : referral?.referrer?.fullname ||
-                          referral?.referrer?.email}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          referral.status === "completed"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {referral?.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{convertDate(referral?.createdAt)}</TableCell>
-                    <TableCell>
-                      {referral?.referrer?.reward
-                        ? `$${referral?.referrer?.reward}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Approve Reward</DropdownMenuItem>
-                          <DropdownMenuItem>Send Message</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {referralsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : referralsError ? (
+              <div className="p-4 bg-red-50 text-red-700 rounded-md">
+                Failed to load referrals. Please try again.
+              </div>
+            ) : referralsData?.data && referralsData.data.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Referred User</TableHead>
+                    <TableHead>Referrer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Reward</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {referralsData.data.map((referral, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {referral?.referredUser?.role === "ORGANIZATION" &&
+                            referral?.referredUser?.companyName
+                              ? referral?.referredUser?.companyName
+                              : referral?.referredUser?.fullname ||
+                                referral?.referredUser?.email}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {referral?.referredUser?.email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {referral?.referrer?.role === "ORGANIZATION" &&
+                        referral?.referrer?.companyName
+                          ? referral?.referrer?.companyName
+                          : referral?.referrer?.fullname ||
+                            referral?.referrer?.email}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            referral.status === "completed"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {referral?.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{convertDate(referral?.createdAt)}</TableCell>
+                      <TableCell>
+                        {referral?.referrer?.reward
+                          ? `$${referral?.referrer?.reward}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem>Approve Reward</DropdownMenuItem>
+                            <DropdownMenuItem>Send Message</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No referral data available
+              </div>
+            )}
           </CardContent>
-          <div className="flex items-center justify-end gap-5 px-4">
-            {pageData?.page > 1 && (
-              <div className="flex justify-center my-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="border flex items-center gap-2"
-                  onClick={() =>
-                    handleParamChange("page", String(pageData?.page - 1))
-                  }
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <p>Previous Page</p>
-                </Button>
-              </div>
-            )}
 
-            {pageData?.page < pageData?.lastPage && (
-              <div className="flex justify-center my-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="border flex items-center gap-2"
-                  onClick={() =>
-                    handleParamChange("page", String(pageData?.page + 1))
-                  }
-                >
-                  <p>Next Page</p>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* Referrals Pagination */}
+          {referralsData?.pagination && (
+            <div className="flex items-center justify-end gap-5 px-4">
+              {referralsData.pagination.page > 1 && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleReferralParamChange(
+                        "page",
+                        String(referralsData.pagination.page - 1)
+                      )
+                    }
+                    disabled={referralsLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <p>Previous Page</p>
+                  </Button>
+                </div>
+              )}
+
+              {referralsData.pagination.page <
+                referralsData.pagination.lastPage && (
+                <div className="flex justify-center my-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border flex items-center gap-2"
+                    onClick={() =>
+                      handleReferralParamChange(
+                        "page",
+                        String(referralsData.pagination.page + 1)
+                      )
+                    }
+                    disabled={referralsLoading}
+                  >
+                    <p>Next Page</p>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,62 +24,50 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle, XCircle, Clock, Search, Eye } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Search,
+  Eye,
+  Loader2,
+} from "lucide-react";
 import { CredentialsData } from "@/utils/global";
-import axiosInstance from "@/api/AxiosInstance.ts";
 import { convertDate } from "@/utils/helperfunctions.ts";
 import { toast } from "sonner";
-
-const mockVerifications = [
-  {
-    id: "1",
-    talent: "John Doe",
-    skill: "React Development",
-    verifier: "jane@techcorp.com",
-    type: "employer",
-    status: "pending",
-    submittedDate: "2024-06-01",
-    evidence: "Portfolio link and references",
-  },
-  {
-    id: "2",
-    talent: "Alice Johnson",
-    skill: "Project Management",
-    verifier: "bob@colleague.com",
-    type: "colleague",
-    status: "approved",
-    submittedDate: "2024-05-28",
-    evidence: "Work collaboration evidence",
-  },
-  {
-    id: "3",
-    talent: "Mike Wilson",
-    skill: "Data Science",
-    verifier: "hr@datatech.com",
-    type: "employer",
-    status: "rejected",
-    submittedDate: "2024-05-25",
-    evidence: "Insufficient documentation",
-  },
-];
+import {
+  useVerifications,
+  useUpdateVerificationStatus,
+  useVerificationStats,
+} from "@/lib/react-query/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function VerificationManagement() {
-  const [credentials, setCredentials] = useState<CredentialsData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const filteredVerifications = mockVerifications.filter((verification) => {
-    const matchesSearch =
-      verification.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      verification.skill.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || verification.status === statusFilter;
-    const matchesType =
-      typeFilter === "all" || verification.type === typeFilter;
+  const queryClient = useQueryClient();
 
-    return matchesSearch && matchesStatus && matchesType;
+  // Fetch verifications with React Query
+  const {
+    data: verificationsData,
+    isLoading,
+    isError,
+  } = useVerifications({
+    page: 1,
+    size: 50,
+    verificationStatus:
+      statusFilter !== "all" ? statusFilter.toUpperCase() : undefined,
   });
+
+  const credentials = verificationsData?.data || [];
+
+  // Get verification stats
+  const { data: statsData } = useVerificationStats();
+
+  // Mutations for updating verification status
+  const updateVerificationStatus = useUpdateVerificationStatus();
 
   const getBadgeColor = (type: string) => {
     switch (type) {
@@ -94,90 +82,132 @@ export function VerificationManagement() {
     }
   };
 
-  useEffect(() => {
-    const getCredentials = async () => {
-      axiosInstance
-        .get("/credentials/all")
-        .then((response) => {
-          // Extract the credentials array from the response, ensuring it's always an array
-          const data = response?.data?.data?.data || {};
-          console.log("Credentials:", data);
+  // Filter credentials based on search term and filters
+  const filteredCredentials = credentials.filter((credential) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      (credential?.user?.fullname || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (credential?.title || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-          // Handle both possible response structures
-          const credentialsArray = Array.isArray(data)
-            ? data
-            : Array.isArray(data.credentials)
-            ? data.credentials
-            : [];
+    const matchesType =
+      typeFilter === "all" ||
+      (credential?.type || "").toLowerCase() === typeFilter.toLowerCase();
 
-          setCredentials(credentialsArray);
-        })
-        .catch((error) => {
-          console.log("Error fetching credentials:", error);
-          // Set empty array on error to prevent map errors
-          setCredentials([]);
-        });
-    };
+    // Status filter is handled in the API query
 
-    getCredentials();
-  }, []);
+    return matchesSearch && matchesType;
+  });
 
   const handleApprove = async (credentialId: string) => {
-    try {
-      const approvePromise = axiosInstance.post(
-        `/credentials/${credentialId}/verify`,
-        {
-          decision: "VERIFIED",
-        }
-      );
-
-      toast.promise(approvePromise, {
-        loading: "Approving...",
-        success: (response) => {
-          console.log(response);
-          return "Verification approved!";
+    updateVerificationStatus.mutate(
+      {
+        id: credentialId,
+        status: "APPROVED",
+      },
+      {
+        onSuccess: () => {
+          toast.success("Verification approved!");
+          // Invalidate queries to refetch data
+          queryClient.invalidateQueries({ queryKey: ["verifications"] });
         },
-        error: (error) => {
-          console.log(error);
-          return (
-            error?.response.data.message || "Error approving verification!"
+        onError: (error: any) => {
+          toast.error(
+            error?.response?.data?.message || "Error approving verification!"
           );
         },
-      });
-    } catch (err) {
-      console.log(err);
-    }
+      }
+    );
   };
 
   const handleReject = async (credentialId: string) => {
-    try {
-      const rejectPromise = axiosInstance.post(
-        `/credentials/${credentialId}/verify`,
-        {
-          decision: "REJECTED",
-        }
-      );
-
-      toast.promise(rejectPromise, {
-        loading: "Rejecting...",
-        success: (response) => {
-          console.log(response);
-          return "Verification rejected!";
+    updateVerificationStatus.mutate(
+      {
+        id: credentialId,
+        status: "REJECTED",
+        rejectionReason: "Insufficient or invalid information",
+      },
+      {
+        onSuccess: () => {
+          toast.success("Verification rejected!");
+          // Invalidate queries to refetch data
+          queryClient.invalidateQueries({ queryKey: ["verifications"] });
         },
-        error: (error) => {
-          console.log(error);
-          return (
-            error?.response.data.message || "Error rejecting verification!"
+        onError: (error: any) => {
+          toast.error(
+            error?.response?.data?.message || "Error rejecting verification!"
           );
         },
-      });
-    } catch (err) {
-      console.log(err);
-    }
+      }
+    );
   };
 
   return (
     <div className="space-y-6">
+      {/* Stats Overview */}
+      {statsData && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Clock className="w-8 h-8 text-yellow-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold">
+                    {statsData.pendingVerifications}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Approved</p>
+                  <p className="text-2xl font-bold">
+                    {statsData.approvedVerifications}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <XCircle className="w-8 h-8 text-red-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Rejected</p>
+                  <p className="text-2xl font-bold">
+                    {statsData.rejectedVerifications}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Search className="w-8 h-8 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Total</p>
+                  <p className="text-2xl font-bold">
+                    {statsData.totalVerifications}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Verification Management</CardTitle>
@@ -202,9 +232,9 @@ export function VerificationManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="VERIFIED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -221,115 +251,141 @@ export function VerificationManagement() {
           </div>
 
           <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Talent</TableHead>
-                  <TableHead>Skill/Experience</TableHead>
-                  <TableHead>Verifier</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.isArray(credentials) && credentials.length > 0 ? (
-                  credentials.map((verification) => (
-                    <TableRow key={verification._id}>
-                      <TableCell className="font-medium">
-                        {verification?.user?.role === "ORGANIZATION" &&
-                        verification?.user?.companyName
-                          ? verification?.user?.companyName
-                          : verification?.user?.fullname || "N/A"}
-                      </TableCell>
-                      <TableCell>{verification?.title || "N/A"}</TableCell>
-                      <TableCell>
-                        {verification?.verifyingOrganization || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-3 h-3 rounded-full ${getBadgeColor(
-                              verification?.type || "default"
-                            )}`}
-                          ></div>
-                          <span className="capitalize">
-                            {verification?.type || "N/A"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            verification?.status === "VERIFIED"
-                              ? "default"
-                              : verification?.status === "REJECTED"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {verification?.status === "PENDING" && (
-                            <Clock className="w-3 h-3 mr-1" />
-                          )}
-                          {verification?.status === "VERIFIED" && (
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                          )}
-                          {verification?.status === "REJECTED" && (
-                            <XCircle className="w-3 h-3 mr-1" />
-                          )}
-                          {(verification?.status || "pending").toLowerCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {verification?.createdAt
-                          ? convertDate(verification.createdAt)
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {verification?.status === "PENDING" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-green-600 hover:text-green-700"
-                                onClick={() => handleApprove(verification._id)}
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleReject(verification._id)}
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : isError ? (
+              <div className="p-4 bg-red-50 text-red-700 rounded-md">
+                Failed to load verifications. Please try again.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Talent</TableHead>
+                    <TableHead>Skill/Experience</TableHead>
+                    <TableHead>Verifier</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCredentials.length > 0 ? (
+                    filteredCredentials.map((verification) => (
+                      <TableRow key={verification._id}>
+                        <TableCell className="font-medium">
+                          {verification?.userId?.role === "ORGANIZATION" &&
+                          verification?.userId?.companyName
+                            ? verification?.userId?.companyName
+                            : verification?.userId?.firstName +
+                                " " +
+                                verification?.userId?.lastName || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {verification?.name ||
+                            verification?.credentialType ||
+                            "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {verification?.verifiedBy || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full ${getBadgeColor(
+                                verification?.credentialType?.toLowerCase() ||
+                                  "default"
+                              )}`}
+                            ></div>
+                            <span className="capitalize">
+                              {verification?.credentialType || "N/A"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              verification?.verificationStatus === "VERIFIED"
+                                ? "default"
+                                : verification?.verificationStatus ===
+                                  "REJECTED"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {verification?.verificationStatus === "PENDING" && (
+                              <Clock className="w-3 h-3 mr-1" />
+                            )}
+                            {verification?.verificationStatus ===
+                              "VERIFIED" && (
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                            )}
+                            {verification?.verificationStatus ===
+                              "REJECTED" && (
+                              <XCircle className="w-3 h-3 mr-1" />
+                            )}
+                            {(
+                              verification?.verificationStatus || "PENDING"
+                            ).toLowerCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {verification?.createdAt
+                            ? convertDate(verification.createdAt)
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {verification?.verificationStatus === "PENDING" && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-green-600 hover:text-green-700"
+                                  onClick={() =>
+                                    handleApprove(verification._id)
+                                  }
+                                  disabled={updateVerificationStatus.isPending}
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleReject(verification._id)}
+                                  disabled={updateVerificationStatus.isPending}
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-6 text-gray-500"
+                      >
+                        No verification requests found.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-6 text-gray-500"
-                    >
-                      No verification requests found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
 
-          {filteredVerifications.length === 0 && (
+          {!isLoading && !isError && filteredCredentials.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               No verification requests found matching your criteria.
             </div>

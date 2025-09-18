@@ -19,6 +19,7 @@ import {
   Activity,
   Shield,
   Zap,
+  Loader2,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -35,8 +36,14 @@ import {
   Line,
 } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import axiosInstance from "@/api/AxiosInstance.ts";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useVerificationStats } from "@/lib/react-query/hooks";
+// Import admin hooks and types directly from their source file
+import {
+  useAdminStats,
+  useAdminList,
+  AdminStats,
+} from "@/lib/react-query/hooks/useAdminManagement";
 
 const mockData = [
   { month: "Jan", users: 1200, orgs: 45, badges: 340 },
@@ -146,51 +153,78 @@ export function AdminMetrics({
 }: AdminMetricsProps) {
   const isMobile = useIsMobile();
 
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [totalOrganizations, setTotalOrganizations] = useState(0);
-  const [pendingVerifications, setPendingVerifications] = useState(0);
+  // Fetch admin dashboard stats with React Query
+  const {
+    data: adminStats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: adminStatsError
+  } = useAdminStats();
 
-  useEffect(() => {
-    handleFetchAllUsers();
-    handleFetchAllOrganizations();
-    handleFetchPendingVerifications();
-  }, []);
+  // Fetch admin users list with React Query
+  const {
+    data: adminList,
+    isLoading: adminsLoading,
+    isError: adminsError,
+    error: adminListError
+  } = useAdminList();
 
-  const handleFetchAllUsers = async () => {
-    try {
-      const response = await axiosInstance.get(
-        "/users/admin/all?isDeleted=false"
-      );
+  // Fetch verification stats with React Query
+  const {
+    data: verificationStats,
+    isLoading: verificationsLoading,
+    isError: verificationsError,
+    error: verificationsErrorDetails
+  } = useVerificationStats();
+  
+  // Only log errors if they exist
+  if (adminStatsError) console.error('Admin Stats Error:', adminStatsError);
+  if (adminListError) console.error('Admin List Error:', adminListError);
+  if (verificationsErrorDetails) console.error('Verifications Error:', verificationsErrorDetails);
 
-      setTotalUsers(response.data.data.meta.total);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // Extract data from query results with type assertions
+  const totalUsers = (adminStats as AdminStats | undefined)?.totalUsers || 0;
+  const totalOrganizations = (adminStats as AdminStats | undefined)?.organizationUsers || 0;
+  const pendingVerifications = verificationStats?.pendingVerifications || 0;
 
-  const handleFetchAllOrganizations = async () => {
-    try {
-      const response = await axiosInstance.get("/users/admin/all-admins");
+  // Check if any data is still loading
+  const isLoading = statsLoading || adminsLoading || verificationsLoading;
 
-      setTotalOrganizations(response.data.data.data.meta.total);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // Display loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-32">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading dashboard data...</span>
+      </div>
+    );
+  }
 
-  const handleFetchPendingVerifications = async () => {
-    try {
-      const response = await axiosInstance.get(
-        "/credentials/pending-verifications"
-      );
-      // Add null checks to safely access nested properties
-      const total = response.data?.data?.meta?.total || 0;
-      setPendingVerifications(total);
-    } catch (error) {
-      console.log(error);
-      setPendingVerifications(0); // Default to 0 on error
-    }
-  };
+  // Display error state if any query failed
+  if (statsError || adminsError || verificationsError) {
+    return (
+      <div className="bg-red-50 text-red-700 p-4 rounded-md flex flex-col">
+        <div className="flex items-center mb-2">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          <span className="font-medium">Failed to load dashboard data</span>
+        </div>
+        <div className="text-xs mt-2 bg-red-100 p-2 rounded">
+          <p className="mb-1">Possible issues:</p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Make sure you're logged in as an admin user</li>
+            <li>Check that the backend server is running</li>
+            <li>Verify your authentication token is valid</li>
+          </ul>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-red-800 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const metrics = [
     {
