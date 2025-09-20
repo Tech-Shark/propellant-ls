@@ -12,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Full URL to the blockchain explorer for this address
  */
 export function getExplorerAddressUrl(address: string, tab: string = 'token_transfers'): string {
-  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://sepolia-blockscout.lisk.com';
+  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://blockscout.lisk.com';
   return `${explorerUrl}/address/${address}${tab ? `?tab=${tab}` : ''}`;
 }
 
@@ -22,7 +22,7 @@ export function getExplorerAddressUrl(address: string, tab: string = 'token_tran
  * @returns Full URL to the blockchain explorer for this transaction
  */
 export function getExplorerTransactionUrl(txHash: string): string {
-  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://sepolia-blockscout.lisk.com';
+  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://blockscout.lisk.com';
   return `${explorerUrl}/tx/${txHash}`;
 }
 
@@ -33,6 +33,6 @@ export function getExplorerTransactionUrl(txHash: string): string {
  * @returns Full URL to the blockchain explorer for this token
  */
 export function getExplorerNftUrl(tokenId: string | number, contractAddress: string): string {
-  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://sepolia-blockscout.lisk.com';
+  const explorerUrl = import.meta.env.VITE_BLOCKCHAIN_EXPLORER_URL || 'https://blockscout.lisk.com';
   return `${explorerUrl}/token/${contractAddress}/instance/${tokenId}`;
 }
