@@ -402,9 +402,12 @@ export default function Credentials() {
       !newCredential.type ||
       !newCredential.category ||
       !newCredential.issuingOrganization ||
-      !newCredential.issueDate
+      !newCredential.issueDate ||
+      !newCredential.file
     ) {
-      toast.warning("Missing Information, Please fill in all required fields.");
+      toast.warning(
+        "Missing Information. Please fill in all required fields and upload a document."
+      );
       return;
     }
 
@@ -826,7 +829,10 @@ export default function Credentials() {
             </CardTitle>
             <CardDescription className="text-slate-400">
               Upload your certificates, courses, and credentials for
-              verification
+              verification.{" "}
+              <span className="text-red-400 font-medium">
+                Supporting document upload is required.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1082,8 +1088,11 @@ export default function Credentials() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="file" className="text-slate-300">
-                  Upload File
+                <Label
+                  htmlFor="file"
+                  className="text-slate-300 flex items-center gap-1"
+                >
+                  Upload File <span className="text-red-400">*</span>
                 </Label>
                 <div className="mt-2">
                   <input
@@ -1092,23 +1101,32 @@ export default function Credentials() {
                     onChange={handleFileUpload}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     className="hidden"
+                    required
                   />
                   <Button
                     variant="outline"
                     onClick={() => document.getElementById("file")?.click()}
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                    className={`border-slate-600 text-slate-300 hover:bg-slate-800 ${
+                      !newCredential.file
+                        ? "border-red-500 hover:border-red-600"
+                        : ""
+                    }`}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     {newCredential.file
                       ? newCredential.file.name
-                      : "Choose File"}
+                      : "Choose File (Required)"}
                   </Button>
                   <p className="text-xs text-slate-500 mt-1">
                     Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
                   </p>
+                  {!newCredential.file && (
+                    <p className="text-xs text-red-400 mt-1">
+                      Document upload is required for credential verification
+                    </p>
+                  )}
                 </div>
-              </div>
-
+              </div>{" "}
               <div className="flex flex-col space-y-3">
                 <Label htmlFor="visibility" className="text-slate-300">
                   Credential Visibility

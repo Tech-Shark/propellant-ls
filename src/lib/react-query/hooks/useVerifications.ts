@@ -1,8 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/api/AxiosInstance";
-import { extractPaginationData, extractResponseData, handleApiError } from "../api-hooks";
-import { mockVerificationStats, simulateApiDelay, VerificationStats } from "./mockData";
-import { DevSettings } from "@/lib/dev-settings";
+import { extractResponseData, handleApiError } from "../api-hooks";
+
+// Define the VerificationStats interface
+export interface VerificationStats {
+  totalVerifications: number;
+  pendingVerifications: number;
+  approvedVerifications: number;
+  rejectedVerifications: number;
+}
 
 // Query keys
 export const verificationKeys = {
@@ -11,9 +17,6 @@ export const verificationKeys = {
   detail: (id: string) => [...verificationKeys.all, "detail", id] as const,
   stats: () => [...verificationKeys.all, "stats"] as const,
 };
-
-// Re-export VerificationStats for convenience
-export type { VerificationStats };
 
 // Types
 export interface VerificationRecord {
@@ -54,11 +57,69 @@ export function useVerifications(params: PaginationParams = {}) {
   return useQuery<{ data: VerificationRecord[], pagination: any }, Error>({
     queryKey: verificationKeys.list(params),
     queryFn: async (): Promise<{ data: VerificationRecord[], pagination: any }> => {
-      const response = await axiosInstance.get("/users/admin/credentials", { params });
-      return {
-        data: extractResponseData<VerificationRecord[]>(response),
-        pagination: extractPaginationData(response),
-      };
+      try {
+        // Use the correct endpoint based on your API response
+        const response = await axiosInstance.get("/credentials/all", { params });
+        
+        // Extract data based on the structure you provided
+        let credentials = [];
+        let pagination = { page: 1, limit: 10, total: 0 };
+        
+        // Handle the specific nested structure from your API
+        if (response?.data?.data?.data?.credentials) {
+          credentials = response.data.data.data.credentials;
+          if (response?.data?.data?.data?.pagination) {
+            pagination = response.data.data.data.pagination;
+          }
+        } 
+        // Handle alternative structure
+        else if (response?.data?.data?.credentials) {
+          credentials = response.data.data.credentials;
+          if (response?.data?.data?.pagination) {
+            pagination = response.data.data.pagination;
+          }
+        }
+        // Handle another possible structure
+        else if (response?.data?.data?.data?.data) {
+          credentials = response.data.data.data.data;
+        }
+        else if (response?.data?.data?.data) {
+          const dataObj = response.data.data.data;
+          
+          // Check if dataObj is an object with a 'credentials' property
+          if (typeof dataObj === 'object' && dataObj !== null && 'credentials' in dataObj && Array.isArray(dataObj.credentials)) {
+            // Extract pagination if available
+            if ('pagination' in dataObj && dataObj.pagination) {
+              pagination = dataObj.pagination;
+            }
+            credentials = dataObj.credentials;
+          } else {
+            credentials = dataObj;
+          }
+        }
+        // Fall back to direct data access
+        else if (Array.isArray(response?.data?.data)) {
+          credentials = response.data.data;
+        }
+        
+        // If filtering by verificationStatus is needed
+        if (params.verificationStatus && credentials.length > 0) {
+          credentials = credentials.filter(
+            cred => cred.verificationStatus === params.verificationStatus
+          );
+        }
+        
+        return {
+          data: credentials,
+          pagination: pagination
+        };
+      } catch (error) {
+        console.error("Error fetching credentials:", error);
+        return {
+          data: [],
+          pagination: { page: 1, limit: 10, total: 0 }
+        };
+      }
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
@@ -69,76 +130,47 @@ export function useVerificationStats() {
   return useQuery<VerificationStats, Error>({
     queryKey: verificationKeys.stats(),
     queryFn: async (): Promise<VerificationStats> => {
-      // If mock data is enabled, return it directly
-      if (DevSettings.useMockData) {
-        if (DevSettings.enableApiLogs) console.log("Using mock verification stats data");
-        // Create a delay and return the mock data with correct typing
-        return new Promise<VerificationStats>((resolve) => {
-          setTimeout(() => {
-            resolve({
-              totalVerifications: mockVerificationStats.totalVerifications,
-              pendingVerifications: mockVerificationStats.pendingVerifications,
-              approvedVerifications: mockVerificationStats.approvedVerifications,
-              rejectedVerifications: mockVerificationStats.rejectedVerifications
-            });
-          }, DevSettings.mockApiDelayMs);
-        });
-      }
-      
-      if (DevSettings.enableApiLogs) console.log("Fetching verification stats...");
-      
       try {
-        // This is the correct endpoint based on the backend controller
         const response = await axiosInstance.get("/credentials/verification-stats");
-        if (DevSettings.enableApiLogs) console.log("Verification stats response:", response);
+        console.log("Verification Stats API Response:", response);
         
-        // The API returns a structure like { data: { totalPending, totalVerified, totalRejected, overdue, total } }
-        // We need to map this to our VerificationStats interface
-        const apiData = extractResponseData<any>(response);
+        // Extract the nested data structure - log all possible paths
+        console.log("Data structure options:", {
+          directData: response?.data,
+          dataData: response?.data?.data,
+          dataDataData: response?.data?.data?.data,
+          possibleFields: {
+            total: response?.data?.data?.total || response?.data?.total,
+            totalPending: response?.data?.data?.totalPending || response?.data?.totalPending || response?.data?.data?.pending || response?.data?.pending,
+            totalVerified: response?.data?.data?.totalVerified || response?.data?.totalVerified || response?.data?.data?.verified || response?.data?.verified || response?.data?.data?.approved || response?.data?.approved,
+            totalRejected: response?.data?.data?.totalRejected || response?.data?.totalRejected || response?.data?.data?.rejected || response?.data?.rejected,
+          }
+        });
         
-        // Map the API response to our interface
-        const stats: VerificationStats = {
-          totalVerifications: apiData.total || 0,
-          pendingVerifications: apiData.totalPending || 0,
-          approvedVerifications: apiData.totalVerified || 0,
-          rejectedVerifications: apiData.totalRejected || 0
+        // Try different paths to find the stats based on common API patterns
+        const stats = response?.data?.data?.data || response?.data?.data || response?.data || {};
+        
+        // Map the API fields to our interface, with multiple fallbacks
+        return {
+          totalVerifications: stats.total || stats.totalVerifications || 0,
+          pendingVerifications: stats.totalPending || stats.pending || stats.pendingVerifications || 0,
+          approvedVerifications: stats.totalVerified || stats.verified || stats.approved || stats.approvedVerifications || 0,
+          rejectedVerifications: stats.totalRejected || stats.rejected || stats.rejectedVerifications || 0
         };
+      } catch (error) {
+        console.error("Error fetching verification stats:", error);
         
-        return stats;
-      } catch (firstError) {
-        console.warn("Primary endpoint failed, trying fallback:", firstError);
-        
-        try {
-          // Fallback: Try to get credentials and count manually
-          const response = await axiosInstance.get("/credentials/all");
-          if (DevSettings.enableApiLogs) console.log("All credentials response:", response);
-          const credentials = extractResponseData<any[]>(response);
-          
-          // Create stats from the credentials list
-          const stats: VerificationStats = {
-            totalVerifications: credentials.length || 0,
-            pendingVerifications: credentials.filter(c => c.verificationStatus === "PENDING").length || 0,
-            approvedVerifications: credentials.filter(c => c.verificationStatus === "VERIFIED" || c.verificationStatus === "APPROVED").length || 0,
-            rejectedVerifications: credentials.filter(c => c.verificationStatus === "REJECTED").length || 0
-          };
-          
-          return stats;
-        } catch (secondError) {
-          console.error("All credential endpoints failed:", secondError);
-          // Fall back to mock data as a last resort
-          console.warn("API errors, falling back to mock data");
-          const mockStats: VerificationStats = {
-            totalVerifications: mockVerificationStats.totalVerifications,
-            pendingVerifications: mockVerificationStats.pendingVerifications,
-            approvedVerifications: mockVerificationStats.approvedVerifications,
-            rejectedVerifications: mockVerificationStats.rejectedVerifications
-          };
-          return mockStats;
-        }
+        // Return empty stats as fallback
+        return {
+          totalVerifications: 0,
+          pendingVerifications: 0,
+          approvedVerifications: 0,
+          rejectedVerifications: 0
+        };
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1 // Only retry once to avoid excessive failed requests
+    retry: 2 // Retry twice on failure
   });
 }
 
@@ -147,8 +179,13 @@ export function useVerification(id: string) {
   return useQuery<VerificationRecord, Error>({
     queryKey: verificationKeys.detail(id),
     queryFn: async (): Promise<VerificationRecord> => {
-      const response = await axiosInstance.get(`/users/admin/credentials/${id}`);
-      return extractResponseData<VerificationRecord>(response);
+      try {
+        const response = await axiosInstance.get(`/users/admin/credentials/${id}`);
+        return extractResponseData<VerificationRecord>(response);
+      } catch (error) {
+        console.error(`Error fetching credential with ID ${id}:`, error);
+        throw error;
+      }
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: !!id // Only run if id is provided
@@ -161,17 +198,22 @@ export function useUpdateVerificationStatus() {
     mutationFn: async ({
       id,
       status,
-      rejectionReason,
+      notes,
     }: {
       id: string;
-      status: "PENDING" | "APPROVED" | "REJECTED";
-      rejectionReason?: string;
+      status: "VERIFIED" | "REJECTED" | "PENDING";
+      notes?: string;
     }) => {
-      const response = await axiosInstance.patch(`/users/admin/credentials/${id}/status`, {
-        status,
-        rejectionReason,
-      });
-      return extractResponseData(response);
+      try {
+        const response = await axiosInstance.post(`/credentials/${id}/verify`, {
+          decision: status,
+          notes: notes || (status === "REJECTED" ? "Rejected by admin" : "Verified by admin"),
+        });
+        return extractResponseData(response);
+      } catch (error) {
+        console.error("Error updating verification status:", error);
+        throw error;
+      }
     },
     onError: handleApiError,
   });
@@ -181,8 +223,13 @@ export function useUpdateVerificationStatus() {
 export function useDeleteVerification() {
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await axiosInstance.delete(`/users/admin/credentials/${id}`);
-      return extractResponseData(response);
+      try {
+        const response = await axiosInstance.delete(`/users/admin/credentials/${id}`);
+        return extractResponseData(response);
+      } catch (error) {
+        console.error(`Error deleting credential with ID ${id}:`, error);
+        throw error;
+      }
     },
     onError: handleApiError,
   });

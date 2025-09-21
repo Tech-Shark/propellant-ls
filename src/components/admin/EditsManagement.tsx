@@ -279,12 +279,11 @@ export function EditsManagement() {
 
         if (methodsArray.length !== validMethods.length) {
           console.warn(
-            `Found ₦{
+            `Found ${
               methodsArray.length - validMethods.length
             } payment methods with missing names`
           );
         }
-
         setPaymentMethods(validMethods);
       } else {
         // Set empty array if no data received
@@ -345,7 +344,7 @@ export function EditsManagement() {
         const plans = appData.subscriptionPlans.map((plan: any) => ({
           ...plan,
           id: plan.name, // Use name as ID since backend doesn't have IDs for plans
-          amount: `₦₦{plan.price}`, // Format price for UI
+          amount: `₦${plan.price}`, // Format price for UI using Naira symbol
         }));
         setSubscriptionPlans(plans);
       } else {
@@ -729,7 +728,7 @@ export function EditsManagement() {
         };
 
         console.log("Sending updated method to backend:", {
-          endpoint: `/payment/₦{editingPaymentMethod._id}`,
+          endpoint: `/payment/${editingPaymentMethod._id}`,
           data: updatedMethod,
         });
 
@@ -740,7 +739,7 @@ export function EditsManagement() {
         });
 
         const response = await axiosInstance.patch(
-          `/payment/₦{editingPaymentMethod._id}`,
+          `/payment/${editingPaymentMethod._id}`,
           updatedMethod
         );
 
@@ -820,7 +819,7 @@ export function EditsManagement() {
               // If it exists, just show a success message
               toast({
                 title: "Payment Method Already Exists",
-                description: `₦{newPaymentMethod.name} payment method is already configured.`,
+                description: `${newPaymentMethod.name} payment method is already configured.`,
               });
 
               // Reset form and close modal
@@ -855,7 +854,7 @@ export function EditsManagement() {
         // Show success message
         toast({
           title: "Success",
-          description: `₦{newPaymentMethod.name} payment method added successfully!`,
+          description: `${newPaymentMethod.name} payment method added successfully!`,
           variant: "default",
         });
 
@@ -911,7 +910,7 @@ export function EditsManagement() {
             // If the payment method already exists, we'll treat this as a successful operation
             toast({
               title: "Payment Method Already Configured",
-              description: `The ₦{newPaymentMethod.name} payment method is already set up in the system.`,
+              description: `The ${newPaymentMethod.name} payment method is already set up in the system.`,
               variant: "default",
             });
 
@@ -951,7 +950,7 @@ export function EditsManagement() {
 
   const handleDeletePaymentMethod = async (methodId: string) => {
     try {
-      await axiosInstance.delete(`/payment/₦{methodId}`);
+      await axiosInstance.delete(`/payment/${methodId}`);
 
       // Refresh payment methods list
       fetchPaymentMethods();
@@ -989,7 +988,7 @@ export function EditsManagement() {
         newActive: !method.active,
       });
 
-      await axiosInstance.patch(`/payment/₦{methodId}`, {
+      await axiosInstance.patch(`/payment/${methodId}`, {
         active: (!method.active).toString(), // Send as string to match backend expectation
       });
 
@@ -1107,7 +1106,7 @@ export function EditsManagement() {
                           onClick={() =>
                             handleEditPlan({
                               ...plan,
-                              amount: `₦₦{plan.price}`,
+                              amount: `₦${plan.price}`,
                             })
                           }
                         >
@@ -1886,7 +1885,7 @@ export function EditsManagement() {
                     const actualId = button.id;
                     return (
                       <Button
-                        key={`₦{button.id}-₦{index}`}
+                        key={`${button.id}-${index}`}
                         variant={
                           selectedEdit === actualId ? "default" : "outline"
                         }

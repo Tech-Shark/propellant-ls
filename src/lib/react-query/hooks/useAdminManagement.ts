@@ -73,7 +73,7 @@ export function useAdminList() {
   });
 }
 
-// Get admin dashboard stats
+    // Get admin dashboard stats
 export function useAdminStats() {
   return useQuery({
     queryKey: adminKeys.stats(),
@@ -88,36 +88,48 @@ export function useAdminStats() {
         if (DevSettings.enableApiLogs) console.log('Fetching admin dashboard stats...');
         
         try {
-          // Try to fetch the user stats from the backend
-          try {
-            // Build our stats endpoint based on API structure
-            const response = await axiosInstance.get('/users/admin/users/stats');
-            if (DevSettings.enableApiLogs) console.log('Admin dashboard stats response:', response);
-            return extractResponseData<AdminStats>(response);
-          } catch (firstEndpointError) {
-            console.warn('First endpoint failed:', firstEndpointError);
-            // Fallback: Try to construct admin stats from user list
-            const usersResponse = await axiosInstance.get('/users/admin/all');
-            if (DevSettings.enableApiLogs) console.log('Admin all users response:', usersResponse);
-            
-            const users = extractResponseData<any[]>(usersResponse);
-            
-            // Create stats from the user list
-            const adminStats: AdminStats = {
-              totalUsers: users.length || 0,
-              activeUsers: users.filter(u => u.isActive !== false).length || 0,
-              newUsers: users.filter(u => {
-                const createdAt = new Date(u.createdAt);
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                return createdAt > oneMonthAgo;
-              }).length || 0,
-              organizationUsers: users.filter(u => u.role === 'ORGANIZATION').length || 0,
-              talentUsers: users.filter(u => u.role === 'TALENT').length || 0
-            };
-            
-            return adminStats;
+          // Start with the most likely endpoint based on backend code structure
+          // NOTE: Since there's no specific stats endpoint in the backend,
+          // we'll try the users endpoint and calculate stats ourselves
+          const endpoints = [
+            '/users/admin/all'  // This is the actual endpoint from the backend
+          ];
+          
+          // Try each endpoint sequentially
+          for (const endpoint of endpoints) {
+            try {
+              console.log(`Trying endpoint: ${endpoint}`);
+              const response = await axiosInstance.get(endpoint);
+              if (DevSettings.enableApiLogs) console.log('Admin dashboard stats response:', response);
+              return extractResponseData<AdminStats>(response);
+            } catch (endpointError) {
+              console.warn(`Endpoint ${endpoint} failed:`, endpointError);
+              // Continue to next endpoint
+            }
           }
+          
+          // If all endpoints fail, fallback to getting all users and computing stats
+          console.warn('All stats endpoints failed, falling back to user list');
+          const usersResponse = await axiosInstance.get('/users/admin/all');
+          if (DevSettings.enableApiLogs) console.log('Admin all users response:', usersResponse);
+          
+          const users = extractResponseData<any[]>(usersResponse);
+          
+          // Create stats from the user list
+          const adminStats: AdminStats = {
+            totalUsers: users.length || 0,
+            activeUsers: users.filter(u => u.isActive !== false).length || 0,
+            newUsers: users.filter(u => {
+              const createdAt = new Date(u.createdAt);
+              const oneMonthAgo = new Date();
+              oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+              return createdAt > oneMonthAgo;
+            }).length || 0,
+            organizationUsers: users.filter(u => u.role === 'ORGANIZATION').length || 0,
+            talentUsers: users.filter(u => u.role === 'TALENT').length || 0
+          };
+          
+          return adminStats;
         } catch (apiError) {
           console.warn('API error, falling back to mock data:', apiError);
           return await simulateApiDelay(mockAdminStats);

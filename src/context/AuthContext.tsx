@@ -60,7 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user data from the API
   const fetchUser = async () => {
-    console.log("fetching user...");
+    // Only log in development
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Fetching user data...");
+    }
+
     try {
       const response = await axiosInstance.get("users", {
         headers: {
@@ -71,7 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response?.data?.data) {
-        console.log("User data refreshed:", response.data.data);
+        // Only log in development
+        if (process.env.NODE_ENV !== "production") {
+          console.log("User data refreshed successfully");
+        }
 
         try {
           localStorage.setItem("user", JSON.stringify(response.data.data));
@@ -90,7 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      // Only log error details in development
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Error fetching user data:", error);
+      } else {
+        console.error("Error fetching user data");
+      }
 
       // Special handling for mobile devices
       if (isMobileDevice() && !navigator.onLine) {
@@ -113,20 +125,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Create ref outside of the useEffect (this follows the Rules of Hooks)
+  const authInitializedRef = React.useRef(false);
+
   // Check if user is already logged in from localStorage
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
-      return;
-    }
-    const accessToken = getToken();
-    if (accessToken) {
-      fetchUser();
-    }
-  }, []);
+    // Prevent running this effect more than once
+    if (authInitializedRef.current) return;
 
-  // Function to handle user login
+    try {
+      authInitializedRef.current = true;
+      const storedUserStr = localStorage.getItem("user");
+
+      if (storedUserStr) {
+        const storedUser = JSON.parse(storedUserStr);
+        setUser(storedUser);
+      }
+
+      // Check token with refresh check enabled
+      const accessToken = getToken(true);
+      if (accessToken && !storedUserStr) {
+        fetchUser();
+      }
+
+      // Setup listener for token refresh events
+      const handleTokenRefreshNeeded = () => {
+        console.log("Token refresh needed, fetching new user data");
+        fetchUser();
+      };
+
+      window.addEventListener("tokenRefreshNeeded", handleTokenRefreshNeeded);
+
+      // Clean up event listener
+      return () => {
+        window.removeEventListener(
+          "tokenRefreshNeeded",
+          handleTokenRefreshNeeded
+        );
+      };
+    } catch (error) {
+      console.error("Error loading stored user data:", error);
+    }
+  }, []); // Function to handle user login
   const login = async (email: string, password: string) => {
     setIsLoading(true);
 
@@ -171,12 +211,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: (error) => {
           // Check for specific error conditions with user-friendly messages
           if (axios.isAxiosError(error)) {
+            // Only log detailed errors in development
+            if (process.env.NODE_ENV !== "production") {
+              console.log("Login error details:", {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+              });
+            } else {
+              console.error("Login failed:", error.message || "Unknown error");
+            }
+
             // Email verification needed
             if (error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED") {
               setUrl("/auth/verify-email");
               setIsVisible(true);
               setType("VERIFY_EMAIL");
-              return "Please verify your email";
+              return "Please verify your email to continue";
+            }
+
+            // Incorrect password - specific error from backend
+            if (error.response?.data?.message === "Incorrect Password") {
+              return "The password you entered is incorrect";
+            }
+
+            // Invalid credential - specific error from backend
+            if (error.response?.data?.message === "Invalid Credential") {
+              return "No account found with this email address";
+            }
+
+            // Handle CORS errors specifically (which commonly happen on mobile browsers)
+            if (
+              error.message.includes("CORS") ||
+              error.message.includes("Network Error")
+            ) {
+              // Only log details in development
+              if (process.env.NODE_ENV !== "production") {
+                console.error("CORS or network error:", error.message);
+              } else {
+                console.error("Network connectivity issue detected");
+              }
+              return "Connection issue. If you're on mobile, try using a different browser, clear your cache or switch to WiFi.";
             }
 
             // Mobile-specific network issues
@@ -189,11 +264,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return "Invalid email or password. Please try again.";
             }
 
-            console.log("Login error:", error);
+            // Always prefer the backend message if available
+            if (error.response?.data?.message) {
+              return error.response.data.message;
+            }
 
-            // Try to get meaningful error message
+            // Fallback to other error info
             return (
-              error.response?.data?.message ||
               (error as ExtendedAxiosError).friendlyMessage ||
               error.message ||
               "Login failed. Please try again."
@@ -243,7 +320,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.promise(registerPromise, {
         loading: "Loading...",
         success: (response) => {
-          console.log(response?.data);
+          // Only log in development
+          if (process.env.NODE_ENV !== "production") {
+            console.log("Registration successful");
+          }
           setUrl("/auth/verify-email");
           setIsVisible(true);
           setType("VERIFY_EMAIL");
@@ -252,7 +332,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         error: (error) => {
           if (axios.isAxiosError(error)) {
-            return error.response?.data.message;
+            // Handle CORS errors specifically for registration too
+            if (
+              error.message.includes("CORS") ||
+              error.message.includes("Network Error")
+            ) {
+              // Only log details in development
+              if (process.env.NODE_ENV !== "production") {
+                console.error(
+                  "CORS or network error during registration:",
+                  error.message
+                );
+              } else {
+                console.error("Network connectivity issue during registration");
+              }
+              return "Connection issue. If you're on mobile, try using a different browser or switch to WiFi.";
+            }
+
+            // Handle specific registration errors with clear messages
+            if (error.response?.data?.message?.includes("already exists")) {
+              return "An account with this email already exists. Please try logging in instead.";
+            }
+
+            return (
+              error.response?.data.message ||
+              "Registration failed. Please check your information and try again."
+            );
           } else {
             return "Something went wrong. Please try again later.";
           }

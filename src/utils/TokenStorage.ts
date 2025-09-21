@@ -8,12 +8,17 @@
  * - Token expiration handling
  * - Secure storage with encryption (basic)
  * - Automatic header generation for API requests
+ * - Session persistence across page reloads
+ * - Early token expiration detection
  */
 
 // Constants
 const TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken'; // For future refresh token implementation
 const TOKEN_EXPIRY_KEY = 'tokenExpiry';
+const TOKEN_ISSUED_AT_KEY = 'tokenIssuedAt';
 const DEFAULT_EXPIRY_DAYS = 30;
+const TOKEN_REFRESH_THRESHOLD_MINS = 5; // Refresh token if less than 5 mins left
 
 /**
  * Detect if the current device is a mobile device
@@ -33,10 +38,15 @@ export const isMobileDevice = (): boolean => {
 /**
  * Store token in localStorage with optional expiration
  * @param token JWT token string
+ * @param refreshToken Optional refresh token (for future implementation)
  * @param expiryDays Number of days until token expires (default: 30)
  * @returns boolean indicating if token was successfully stored
  */
-export const setToken = (token: string, expiryDays: number = DEFAULT_EXPIRY_DAYS): boolean => {
+export const setToken = (
+  token: string, 
+  refreshToken: string | null = null, 
+  expiryDays: number = DEFAULT_EXPIRY_DAYS
+): boolean => {
   try {
     // Check if localStorage is available
     if (typeof localStorage === 'undefined') {
@@ -50,13 +60,21 @@ export const setToken = (token: string, expiryDays: number = DEFAULT_EXPIRY_DAYS
       return false;
     }
     
-    // Calculate expiry date
+    // Calculate expiry date and store current time
+    const now = new Date();
+    const issuedAt = now.toISOString();
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + expiryDays);
     
-    // Store token and expiry
+    // Store tokens and metadata
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(TOKEN_EXPIRY_KEY, expiryDate.toISOString());
+    localStorage.setItem(TOKEN_ISSUED_AT_KEY, issuedAt);
+    
+    // Store refresh token if provided
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
     
     console.log('Token stored successfully, expires:', expiryDate.toLocaleString());
     return true;
@@ -68,9 +86,10 @@ export const setToken = (token: string, expiryDays: number = DEFAULT_EXPIRY_DAYS
 
 /**
  * Get token from localStorage if it exists and is not expired
+ * @param checkRefreshNeeded Set to true to check if token needs refreshing soon
  * @returns The stored token or null if not found or expired
  */
-export const getToken = (): string | null => {
+export const getToken = (checkRefreshNeeded: boolean = false): string | null => {
   try {
     // Check if localStorage is available (may not be in some private browsing modes)
     if (typeof localStorage === 'undefined') {
@@ -95,6 +114,23 @@ export const getToken = (): string | null => {
       return null;
     }
     
+    // Check if token needs refreshing soon (within threshold)
+    if (checkRefreshNeeded) {
+      // Calculate minutes remaining until expiry
+      const minutesRemaining = (expiry.getTime() - now.getTime()) / (1000 * 60);
+      
+      if (minutesRemaining <= TOKEN_REFRESH_THRESHOLD_MINS) {
+        // Dispatch an event that the token needs refreshing
+        try {
+          const refreshEvent = new CustomEvent('tokenRefreshNeeded');
+          window.dispatchEvent(refreshEvent);
+          console.log(`Token expires in ${minutesRemaining.toFixed(1)} minutes, refresh recommended`);
+        } catch (eventError) {
+          console.warn('Failed to dispatch token refresh event', eventError);
+        }
+      }
+    }
+    
     return token;
   } catch (error) {
     console.error('Error retrieving token:', error);
@@ -115,11 +151,50 @@ export const removeToken = (): boolean => {
     }
     
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(TOKEN_EXPIRY_KEY);
-    console.log('Token removed from storage');
+    localStorage.removeItem(TOKEN_ISSUED_AT_KEY);
+    console.log('Token and related data removed from storage');
     return true;
   } catch (error) {
     console.error('Error removing token:', error);
+    return false;
+  }
+};
+
+/**
+ * Get refresh token if available
+ * @returns The stored refresh token or null
+ */
+export const getRefreshToken = (): string | null => {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Error retrieving refresh token:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if token will expire soon and needs refreshing
+ * @returns boolean indicating if token should be refreshed
+ */
+export const needsTokenRefresh = (): boolean => {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    
+    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    if (!expiryStr) return false;
+    
+    const expiry = new Date(expiryStr);
+    const now = new Date();
+    
+    // Calculate minutes remaining until expiry
+    const minutesRemaining = (expiry.getTime() - now.getTime()) / (1000 * 60);
+    return minutesRemaining <= TOKEN_REFRESH_THRESHOLD_MINS;
+  } catch (error) {
+    console.error('Error checking token refresh status:', error);
     return false;
   }
 };

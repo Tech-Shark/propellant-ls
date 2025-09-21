@@ -4,7 +4,8 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Download, Palette, X } from "lucide-react";
 import { enhancedCVTemplates } from "./EnhancedCVTemplates";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { sanitizeHTML } from "@/utils/SafetyUtils";
 
 // Interface for propellant CV data
 interface PropellantCV {
@@ -130,7 +131,12 @@ export const CVTemplateModal: React.FC<CVTemplateModalProps> = ({
       };
 
       const element = document.createElement("div");
-      element.innerHTML = `<style>${template.styles}</style>${html}`;
+      // Import sanitizeHTML from our SafetyUtils
+      const { sanitizeHTML } = await import("@/utils/SafetyUtils");
+      const sanitizedHtml = sanitizeHTML(
+        `<style>${template.styles}</style>${html}`
+      );
+      element.innerHTML = sanitizedHtml;
       element.style.width = "8.27in";
       element.style.padding = "0.3in";
 
@@ -180,16 +186,18 @@ export const CVTemplateModal: React.FC<CVTemplateModalProps> = ({
                     className="w-full h-full scale-[0.25] origin-top-left"
                     style={{ transform: "scale(0.25) translate(-75%, -75%)" }}
                     dangerouslySetInnerHTML={{
-                      __html: `<style>${
-                        template.styles
-                      }</style>${template.generateHTML(
-                        personalInfo,
-                        workExperiences.slice(0, 1), // Show only first work experience for preview
-                        educations.slice(0, 1), // Show only first education for preview
-                        [],
-                        [],
-                        skills.slice(0, 3) // Show only first 3 skills for preview
-                      )}`,
+                      __html: sanitizeHTML(
+                        `<style>${
+                          template.styles
+                        }</style>${template.generateHTML(
+                          personalInfo,
+                          workExperiences.slice(0, 1), // Show only first work experience for preview
+                          educations.slice(0, 1), // Show only first education for preview
+                          [],
+                          [],
+                          skills.slice(0, 3) // Show only first 3 skills for preview
+                        )}`
+                      ),
                     }}
                   />
                 </div>
@@ -242,16 +250,18 @@ export const CVTemplateModal: React.FC<CVTemplateModalProps> = ({
                 {selectedTemplateObj && (
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: `<style>${
-                        selectedTemplateObj.styles
-                      }</style>${selectedTemplateObj.generateHTML(
-                        personalInfo,
-                        workExperiences,
-                        educations,
-                        certifications,
-                        projects,
-                        skills
-                      )}`,
+                      __html: sanitizeHTML(
+                        `<style>${
+                          selectedTemplateObj.styles
+                        }</style>${selectedTemplateObj.generateHTML(
+                          personalInfo,
+                          workExperiences,
+                          educations,
+                          certifications,
+                          projects,
+                          skills
+                        )}`
+                      ),
                     }}
                   />
                 )}

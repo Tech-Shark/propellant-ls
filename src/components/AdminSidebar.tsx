@@ -29,7 +29,7 @@ import { useAuth } from "@/context/AuthContext.tsx";
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/admin/dashboard",
+    url: "/admin",
     icon: Home,
   },
   {
@@ -46,6 +46,11 @@ const navigationItems = [
     title: "Verifications",
     url: "/admin/verifications",
     icon: Award,
+  },
+  {
+    title: "Credentials",
+    url: "/admin/credentials",
+    icon: FileText,
   },
   {
     title: "Content Moderation",

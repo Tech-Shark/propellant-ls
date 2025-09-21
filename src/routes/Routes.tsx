@@ -136,6 +136,15 @@ export const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
+      // Direct route for admin credentials
+      {
+        path: "admin/credentials",
+        element: (
+          <AdminRoute>
+            <CredentialVerification />
+          </AdminRoute>
+        ),
+      },
 
       // Protected but accessible to all authenticated users
       {
