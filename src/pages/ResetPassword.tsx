@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Users, Building2, Shield } from "lucide-react";
+import { ArrowLeft, Users, Building2, Shield, Eye, EyeOff } from "lucide-react";
 import Logo from "@/components/Logo.tsx";
 import { Link, useNavigate } from "react-router-dom";
 import { useOTPContext } from "@/context/OTPContext.tsx";
@@ -29,6 +29,9 @@ const ResetPassword = () => {
     password: "",
     confirmPassword: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -127,40 +130,66 @@ const ResetPassword = () => {
 
               <div className="space-y-2">
                 <label
-                  htmlFor="email"
+                  htmlFor="password"
                   className="text-sm font-medium text-slate-300"
                 >
                   New Password
                 </label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your new password"
-                  required
-                  className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter your new password"
+                    required
+                    className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <label
-                  htmlFor="email"
+                  htmlFor="confirmPassword"
                   className="text-sm font-medium text-slate-300"
                 >
                   Confirm Password
                 </label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm your new password"
-                  required
-                  className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm your new password"
+                    required
+                    className="bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white focus:outline-none"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button
