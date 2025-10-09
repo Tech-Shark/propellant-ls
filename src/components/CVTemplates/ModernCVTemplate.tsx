@@ -80,6 +80,7 @@ const defaultCV: CV = {
       location: "New York, NY",
       description:
         "Lead development of customer-facing web applications serving 50K+ users daily. Architect and implement microservices using Node.js and React. Collaborate with product team to define technical roadmap and mentor junior developers.",
+      achievements: []
     },
     {
       company: "StartupHub",
@@ -91,6 +92,7 @@ const defaultCV: CV = {
       location: "San Francisco, CA",
       description:
         "Built responsive web applications using React and Express.js. Implemented real-time features using WebSocket connections. Integrated third-party APIs and payment processing systems.",
+      achievements: []
     },
     {
       company: "CodeCraft Solutions",
@@ -102,6 +104,7 @@ const defaultCV: CV = {
       location: "Remote",
       description:
         "Developed modern, responsive user interfaces using React and Vue.js. Collaborated with UX/UI designers to implement pixel-perfect designs. Optimized application performance and accessibility.",
+      achievements: []
     },
   ],
   education: [

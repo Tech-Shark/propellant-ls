@@ -7,6 +7,10 @@ import { router } from "@/routes/Routes.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
 import { ReactQueryProvider } from "./lib/react-query";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { checkAndClearOldVersion } from "./utils/VersionManager";
+
+// Check version and clear old data if needed (before any other initialization)
+checkAndClearOldVersion();
 
 // Setup global error handling
 window.addEventListener("error", (event) => {

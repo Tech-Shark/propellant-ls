@@ -40,6 +40,7 @@ export interface UnifiedCVData {
     description: string | string[];
     isCurrentRole?: boolean;
     title?: string;
+    achievements?: string[];
   }>;
   
   // Structured education - maps to education in global CV

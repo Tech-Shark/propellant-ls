@@ -74,7 +74,7 @@ export function useVerificationStats() {
       // If mock data is enabled, return it directly
       if (DevSettings.useMockData) {
         if (DevSettings.enableApiLogs) console.log('Using mock verification stats data');
-        return await simulateApiDelay(mockVerificationStats);
+        return await simulateApiDelay(mockVerificationStats) as VerificationStats;
       }
       
       if (DevSettings.enableApiLogs) console.log('Fetching verification stats...');

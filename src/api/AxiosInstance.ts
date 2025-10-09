@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { getToken, removeToken, isMobileDevice, getAuthErrorMessage } from '@/utils/TokenStorage';
+import { getToken, removeToken, isMobileDevice } from '@/utils/TokenStorage';
+import { getErrorMessage } from '@/utils/ErrorHandler';
 
 // Define retry configuration type and values
 interface RetryConfig {
@@ -94,7 +95,8 @@ axiosInstance.interceptors.response.use(
         // Make sure we have a config object even in network errors
         if (!originalRequest && error.message) {
             console.error('Network error without config:', error.message);
-            error.friendlyMessage = getAuthErrorMessage(error);
+            const errorInfo = getErrorMessage(error);
+            error.friendlyMessage = errorInfo.friendlyMessage;
             return Promise.reject(error);
         }
         
@@ -105,9 +107,11 @@ axiosInstance.interceptors.response.use(
         
         // Prevent retrying on authentication errors - will just waste resources
         if (error.response?.status === 401) {
+            const errorInfo = getErrorMessage(error);
+            
             // If this is an authentication request that failed, don't retry it
             if (originalRequest.url?.includes('auth/login')) {
-                error.friendlyMessage = getAuthErrorMessage(error);
+                error.friendlyMessage = errorInfo.friendlyMessage;
                 return Promise.reject(error);
             }
             
@@ -125,7 +129,7 @@ axiosInstance.interceptors.response.use(
             }
             
             // Don't retry auth failures
-            error.friendlyMessage = getAuthErrorMessage(error);
+            error.friendlyMessage = errorInfo.friendlyMessage;
             return Promise.reject(error);
         }
         
@@ -154,7 +158,8 @@ axiosInstance.interceptors.response.use(
         }
         
         // Add user-friendly error message
-        error.friendlyMessage = getAuthErrorMessage(error);
+        const errorInfo = getErrorMessage(error);
+        error.friendlyMessage = errorInfo.friendlyMessage;
 
         return Promise.reject(error);
     }

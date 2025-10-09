@@ -124,7 +124,8 @@ export function convertToGlobalCV(unifiedData: UnifiedCVData): CV {
       description: typeof exp.description === 'string' ? exp.description : exp.description.join('\n'),
       location: exp.location || '',
       title: exp.title || exp.position,
-      isCurrentRole: exp.isCurrentRole || exp.endDate === 'Present'
+      isCurrentRole: exp.isCurrentRole || exp.endDate === 'Present',
+      achievements: exp.achievements || []
     })),
     
     education: unifiedData.education.map(edu => ({

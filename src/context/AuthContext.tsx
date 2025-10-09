@@ -10,6 +10,8 @@ import {
   removeToken,
   isMobileDevice,
 } from "@/utils/TokenStorage";
+import { handleAuthError } from "@/utils/ErrorHandler";
+import { checkAndClearOldVersion } from "@/utils/VersionManager";
 
 // Extended AxiosError type to include our custom friendlyMessage
 interface ExtendedAxiosError extends AxiosError {
@@ -50,6 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize the context with default values
   useEffect(() => {
+    // Check version and clear old data if needed
+    const versionChanged = checkAndClearOldVersion();
+    if (versionChanged) {
+      toast.info("App updated! Please log in again.", { duration: 4000 });
+      setIsLoading(false);
+      return;
+    }
+    
     // Check for existing session
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -209,76 +219,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return response?.data.message || "Login successful!";
         },
         error: (error) => {
-          // Check for specific error conditions with user-friendly messages
-          if (axios.isAxiosError(error)) {
-            // Only log detailed errors in development
-            if (process.env.NODE_ENV !== "production") {
-              console.log("Login error details:", {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-              });
-            } else {
-              console.error("Login failed:", error.message || "Unknown error");
-            }
-
-            // Email verification needed
-            if (error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED") {
-              setUrl("/auth/verify-email");
-              setIsVisible(true);
-              setType("VERIFY_EMAIL");
-              return "Please verify your email to continue";
-            }
-
-            // Incorrect password - specific error from backend
-            if (error.response?.data?.message === "Incorrect Password") {
-              return "The password you entered is incorrect";
-            }
-
-            // Invalid credential - specific error from backend
-            if (error.response?.data?.message === "Invalid Credential") {
-              return "No account found with this email address";
-            }
-
-            // Handle CORS errors specifically (which commonly happen on mobile browsers)
-            if (
-              error.message.includes("CORS") ||
-              error.message.includes("Network Error")
-            ) {
-              // Only log details in development
-              if (process.env.NODE_ENV !== "production") {
-                console.error("CORS or network error:", error.message);
-              } else {
-                console.error("Network connectivity issue detected");
-              }
-              return "Connection issue. If you're on mobile, try using a different browser, clear your cache or switch to WiFi.";
-            }
-
-            // Mobile-specific network issues
-            if (isMobileDevice() && !error.response) {
-              return "Network connection issue. Please check your mobile data or WiFi connection.";
-            }
-
-            // Invalid credentials
-            if (error.response?.status === 401) {
-              return "Invalid email or password. Please try again.";
-            }
-
-            // Always prefer the backend message if available
-            if (error.response?.data?.message) {
-              return error.response.data.message;
-            }
-
-            // Fallback to other error info
-            return (
-              (error as ExtendedAxiosError).friendlyMessage ||
-              error.message ||
-              "Login failed. Please try again."
-            );
-          } else {
-            console.error("Non-Axios login error:", error);
-            return "Something went wrong. Please try again later.";
+          // Email verification needed
+          if (axios.isAxiosError(error) && error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED") {
+            setUrl("/auth/verify-email");
+            setIsVisible(true);
+            setType("VERIFY_EMAIL");
+            return "Please verify your email to continue";
           }
+
+          // Use centralized error handler
+          handleAuthError(error, 'login');
+          
+          // Return the friendly message for toast
+          if (axios.isAxiosError(error)) {
+            return (error as ExtendedAxiosError).friendlyMessage || "Login failed. Please try again.";
+          }
+          return "Login failed. Please try again.";
         },
       });
 
@@ -331,36 +287,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return response?.data.message;
         },
         error: (error) => {
+          // Use centralized error handler
+          handleAuthError(error, 'signup');
+          
+          // Return specific message for toast
           if (axios.isAxiosError(error)) {
-            // Handle CORS errors specifically for registration too
-            if (
-              error.message.includes("CORS") ||
-              error.message.includes("Network Error")
-            ) {
-              // Only log details in development
-              if (process.env.NODE_ENV !== "production") {
-                console.error(
-                  "CORS or network error during registration:",
-                  error.message
-                );
-              } else {
-                console.error("Network connectivity issue during registration");
-              }
-              return "Connection issue. If you're on mobile, try using a different browser or switch to WiFi.";
-            }
-
-            // Handle specific registration errors with clear messages
             if (error.response?.data?.message?.includes("already exists")) {
               return "An account with this email already exists. Please try logging in instead.";
             }
-
-            return (
-              error.response?.data.message ||
-              "Registration failed. Please check your information and try again."
-            );
-          } else {
-            return "Something went wrong. Please try again later.";
+            return error.response?.data.message || "Registration failed. Please try again.";
           }
+          return "Registration failed. Please try again.";
         },
       });
 
@@ -377,11 +314,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear user data from state
       setUser(null);
 
-      // Try to clear localStorage data
+      // Try to clear localStorage data (but preserve version)
       try {
-        localStorage.removeItem("user");
+        const version = localStorage.getItem('app_version');
+        localStorage.clear();
+        if (version) {
+          localStorage.setItem('app_version', version);
+        }
       } catch (error) {
-        console.warn("Failed to remove user data from localStorage", error);
+        console.warn("Failed to clear localStorage", error);
       }
 
       // Remove token from storage
