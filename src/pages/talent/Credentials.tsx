@@ -53,6 +53,7 @@ import {
   getExplorerTransactionUrl,
   getExplorerNftUrl,
 } from "@/lib/utils";
+import { toastPromise, extractErrorMessage } from "@/utils/ToastHelpers";
 
 export default function Credentials() {
   const [isUploading, setIsUploading] = useState(false);
@@ -451,15 +452,15 @@ export default function Credentials() {
       formData.append("file", newCredential.file);
     }
 
-    toast.promise(
+    await toastPromise(
       axiosInstance.post("/credentials/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       }),
       {
-        loading: "Uploading...",
-        success: (response) => {
+        loadingMessage: "Uploading credential...",
+        successMessage: (response) => {
           console.log(response?.data.data);
           // Make sure credentials is an array before spreading
           setCredentials((prevCredentials) =>
@@ -484,19 +485,14 @@ export default function Credentials() {
             message: "",
             externalUrl: "",
           });
-          return response?.data.message;
-        },
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            console.log(error);
-            return error.response?.data.message;
-          } else {
-            return "Something went wrong. Please try again later.";
-          }
-        },
-        finally: () => {
           setIsUploading(false);
+          return response?.data.message || "Credential uploaded successfully!";
         },
+        errorMessage: (error) => {
+          setIsUploading(false);
+          return extractErrorMessage(error, "Failed to upload credential");
+        },
+        context: 'upload'
       }
     );
   };
@@ -529,15 +525,17 @@ export default function Credentials() {
             : cred
         )
       );
-      toast.success(response.data.message);
+      toast.success(response.data.message || "Visibility updated successfully");
     } catch (error) {
+      console.error("Visibility toggle error:", error);
+      
       if (axios.isAxiosError(error)) {
-        console.error(error);
-        toast.error(
-          error.response?.data.message || "Failed to update visibility"
-        );
+        const errorMessage = error.response?.data?.message || 
+                            (error as any).friendlyMessage || 
+                            "Failed to update visibility";
+        toast.error(errorMessage);
       } else {
-        toast.error("An unexpected error occurred");
+        toast.error("An unexpected error occurred while updating visibility");
       }
     } finally {
       setIsUpdating(false);

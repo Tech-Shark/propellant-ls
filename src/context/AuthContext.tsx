@@ -12,6 +12,7 @@ import {
 } from "@/utils/TokenStorage";
 import { handleAuthError } from "@/utils/ErrorHandler";
 import { checkAndClearOldVersion } from "@/utils/VersionManager";
+import { toastPromise, extractErrorMessage } from "@/utils/ToastHelpers";
 
 // Extended AxiosError type to include our custom friendlyMessage
 interface ExtendedAxiosError extends AxiosError {
@@ -196,9 +197,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       });
 
-      toast.promise(loginPromise, {
-        loading: "Logging in...",
-        success: (response) => {
+      await toastPromise(loginPromise, {
+        loadingMessage: "Logging in...",
+        successMessage: (response) => {
           if (!response?.data?.data?.accessToken) {
             console.error("No access token received from server");
             throw new Error("Login failed - no access token received");
@@ -218,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userRole = response?.data.data.role || "TALENT";
           return response?.data.message || "Login successful!";
         },
-        error: (error) => {
+        errorMessage: (error) => {
           // Email verification needed
           if (axios.isAxiosError(error) && error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED") {
             setUrl("/auth/verify-email");
@@ -226,16 +227,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setType("VERIFY_EMAIL");
             return "Please verify your email to continue";
           }
-
-          // Use centralized error handler
-          handleAuthError(error, 'login');
           
-          // Return the friendly message for toast
-          if (axios.isAxiosError(error)) {
-            return (error as ExtendedAxiosError).friendlyMessage || "Login failed. Please try again.";
-          }
-          return "Login failed. Please try again.";
+          return extractErrorMessage(error, "Login failed. Please try again.");
         },
+        context: 'login'
       });
 
       await loginPromise;
@@ -273,32 +268,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         referralCode,
       });
 
-      toast.promise(registerPromise, {
-        loading: "Loading...",
-        success: (response) => {
-          // Only log in development
-          if (process.env.NODE_ENV !== "production") {
-            console.log("Registration successful");
-          }
+      await toastPromise(registerPromise, {
+        loadingMessage: "Creating your account...",
+        successMessage: (response) => {
           setUrl("/auth/verify-email");
           setIsVisible(true);
           setType("VERIFY_EMAIL");
           status = true;
-          return response?.data.message;
+          return response?.data.message || "Account created! Please verify your email.";
         },
-        error: (error) => {
-          // Use centralized error handler
-          handleAuthError(error, 'signup');
-          
-          // Return specific message for toast
+        errorMessage: (error) => {
           if (axios.isAxiosError(error)) {
             if (error.response?.data?.message?.includes("already exists")) {
               return "An account with this email already exists. Please try logging in instead.";
             }
-            return error.response?.data.message || "Registration failed. Please try again.";
+            return extractErrorMessage(error, "Registration failed. Please try again.");
           }
           return "Registration failed. Please try again.";
         },
+        context: 'signup'
       });
 
       await registerPromise;

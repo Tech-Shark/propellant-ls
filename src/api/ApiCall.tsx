@@ -29,13 +29,26 @@ export const ApiCall = ({method, url, data}: {
                 return response?.data.message;
             },
             error: (error) => {
+                console.error("API call error:", error);
+                
                 if (axios.isAxiosError(error)) {
-                    console.log(error)
-                    return error.response?.data.message;
+                    // Get friendly error message
+                    const errorMessage = error.response?.data?.message || 
+                                        (error as any).friendlyMessage;
+                    
+                    if (errorMessage) {
+                        return errorMessage;
+                    }
+                    
+                    // Network error
+                    if (!error.response) {
+                        return "Network error. Please check your connection and try again.";
+                    }
+                    
+                    return "An error occurred. Please try again.";
                 }
-                else {
-                    return "Something went wrong. Please try again later.";
-                }
+                
+                return "Something went wrong. Please try again later.";
             },
             finally: () => {
                 setIsCalling(false);
