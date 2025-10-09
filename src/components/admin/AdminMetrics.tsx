@@ -1,24 +1,49 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  Award, 
-  FileText, 
-  Building2, 
-  TrendingUp, 
-  Clock, 
+import {
+  Users,
+  Award,
+  FileText,
+  Building2,
+  TrendingUp,
+  Clock,
   CheckCircle,
   AlertCircle,
   DollarSign,
   Activity,
   Shield,
-  Zap
+  Zap,
+  Loader2,
 } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line,
+} from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import axiosInstance from "@/api/AxiosInstance.ts";
-import {useEffect, useState} from "react";
+import { useState } from "react";
+import { useVerificationStats } from "@/lib/react-query/hooks";
+// Import admin hooks and types directly from their source file
+import {
+  useAdminStats,
+  useAdminList,
+  AdminStats,
+} from "@/lib/react-query/hooks/useAdminManagement";
 
 const mockData = [
   { month: "Jan", users: 1200, orgs: 45, badges: 340 },
@@ -35,15 +60,15 @@ const chartConfig = {
   badges: { label: "Badges", color: "#F59E0B" },
 };
 
-const MetricCard = ({ 
-  title, 
-  value, 
-  description, 
-  icon: Icon, 
-  trend, 
+const MetricCard = ({
+  title,
+  value,
+  description,
+  icon: Icon,
+  trend,
   color = "primary",
   onClick,
-  isSelected = false
+  isSelected = false,
 }: {
   title: string;
   value: string | number;
@@ -55,33 +80,57 @@ const MetricCard = ({
   isSelected?: boolean;
 }) => {
   const isMobile = useIsMobile();
-  
+
   const colorClasses = {
     primary: "text-blue-500 border-l-blue-500",
     secondary: "text-orange-500 border-l-orange-500",
     accent: "text-emerald-500 border-l-emerald-500",
-    destructive: "text-red-500 border-l-red-500"
+    destructive: "text-red-500 border-l-red-500",
   };
 
   const gradientClasses = {
     primary: "from-blue-500/10 to-blue-600/5",
     secondary: "from-orange-500/10 to-orange-600/5",
     accent: "from-emerald-500/10 to-emerald-600/5",
-    destructive: "from-red-500/10 to-red-600/5"
+    destructive: "from-red-500/10 to-red-600/5",
   };
 
   return (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-lg border-l-4 bg-gradient-to-br ${gradientClasses[color]} ${colorClasses[color]} ${isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''} ${isMobile ? 'h-auto' : ''}`}
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-lg border-l-4 bg-gradient-to-br ${
+        gradientClasses[color]
+      } ${colorClasses[color]} ${
+        isSelected ? "ring-2 ring-blue-500 shadow-lg" : ""
+      } ${isMobile ? "h-auto" : ""}`}
       onClick={onClick}
     >
-      <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? 'pb-2' : 'pb-2'}`}>
-        <CardTitle className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium`}>{title}</CardTitle>
-        <Icon className={`h-5 w-5 ${colorClasses[color].split(' ')[0]}`} />
+      <CardHeader
+        className={`flex flex-row items-center justify-between space-y-0 ${
+          isMobile ? "pb-2" : "pb-2"
+        }`}
+      >
+        <CardTitle
+          className={`${isMobile ? "text-sm" : "text-sm"} font-medium`}
+        >
+          {title}
+        </CardTitle>
+        <Icon className={`h-5 w-5 ${colorClasses[color].split(" ")[0]}`} />
       </CardHeader>
-      <CardContent className={isMobile ? 'pt-0' : ''}>
-        <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-neutral-100`}>{value}</div>
-        <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-1`}>{description}</p>
+      <CardContent className={isMobile ? "pt-0" : ""}>
+        <div
+          className={`${
+            isMobile ? "text-xl" : "text-2xl"
+          } font-bold text-neutral-100`}
+        >
+          {value}
+        </div>
+        <p
+          className={`${
+            isMobile ? "text-xs" : "text-xs"
+          } text-muted-foreground mt-1`}
+        >
+          {description}
+        </p>
         {/*{trend && (*/}
         {/*  <div className="flex items-center mt-2">*/}
         {/*    <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />*/}
@@ -98,51 +147,87 @@ interface AdminMetricsProps {
   selectedMetric: string | null;
 }
 
-export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProps) {
+export function AdminMetrics({
+  onMetricClick,
+  selectedMetric,
+}: AdminMetricsProps) {
   const isMobile = useIsMobile();
 
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [totalOrganizations, setTotalOrganizations] = useState(0);
-  const [pendingVerifications, setPendingVerifications] = useState(0);
+  // Fetch admin dashboard stats with React Query
+  const {
+    data: adminStats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: adminStatsError,
+  } = useAdminStats();
 
+  // Fetch admin users list with React Query
+  const {
+    data: adminList,
+    isLoading: adminsLoading,
+    isError: adminsError,
+    error: adminListError,
+  } = useAdminList();
 
-  useEffect(() => {
-    handleFetchAllUsers();
-    handleFetchAllOrganizations();
-    handleFetchPendingVerifications();
-  }, []);
+  // Fetch verification stats with React Query
+  const {
+    data: verificationStats,
+    isLoading: verificationsLoading,
+    isError: verificationsError,
+    error: verificationsErrorDetails,
+  } = useVerificationStats();
 
-  const handleFetchAllUsers = async () => {
-    try {
-      const response = await axiosInstance.get("/users/admin/all?isDeleted=false")
+  // Only log errors if they exist
+  if (adminStatsError) console.error("Admin Stats Error:", adminStatsError);
+  if (adminListError) console.error("Admin List Error:", adminListError);
+  if (verificationsErrorDetails)
+    console.error("Verifications Error:", verificationsErrorDetails);
 
-      setTotalUsers(response.data.data.meta.total);
-    } catch (error) {
-      console.log(error);
-    }
+  // Extract data from query results with type assertions
+  const totalUsers = (adminStats as AdminStats | undefined)?.totalUsers || 0;
+  const totalOrganizations =
+    (adminStats as AdminStats | undefined)?.organizationUsers || 0;
+  const pendingVerifications = verificationStats?.pendingVerifications || 0;
+
+  // Check if any data is still loading
+  const isLoading = statsLoading || adminsLoading || verificationsLoading;
+
+  // Display loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-32">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Loading dashboard data...</span>
+      </div>
+    );
   }
 
-  const handleFetchAllOrganizations = async () => {
-    try {
-      const response = await axiosInstance.get("/users/admin/all-admins");
-
-      setTotalOrganizations(response.data.data.data.meta.total);
-    } catch (error) {
-      console.log(error);
-    }
+  // Display error state if any query failed
+  if (statsError || adminsError || verificationsError) {
+    return (
+      <div className="bg-red-50 text-red-700 p-4 rounded-md flex flex-col">
+        <div className="flex items-center mb-2">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          <span className="font-medium">Failed to load dashboard data</span>
+        </div>
+        <div className="text-xs mt-2 bg-red-100 p-2 rounded">
+          <p className="mb-1">Possible issues:</p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Make sure you're logged in as an admin user</li>
+            <li>Check that the backend server is running</li>
+            <li>Verify your authentication token is valid</li>
+          </ul>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-2 py-1 bg-red-200 hover:bg-red-300 rounded text-red-800 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const handleFetchPendingVerifications = async () => {
-    try {
-      const response = await axiosInstance.get(
-          "/credentials/pending-verifications"
-      );
-      setPendingVerifications(response.data.data.meta.total);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  
   const metrics = [
     {
       id: "users",
@@ -151,7 +236,7 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
       description: "Active platform users",
       icon: Users,
       trend: "+12% from last month",
-      color: "primary" as const
+      color: "primary" as const,
     },
     {
       id: "organizations",
@@ -160,7 +245,7 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
       description: "Registered companies",
       icon: Building2,
       trend: "+8% from last month",
-      color: "accent" as const
+      color: "accent" as const,
     },
     // {
     //   id: "badges",
@@ -177,7 +262,7 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
       value: pendingVerifications,
       description: "Awaiting admin review",
       icon: Clock,
-      color: "destructive" as const
+      color: "destructive" as const,
     },
     // {
     //   id: "revenue",
@@ -218,7 +303,13 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <div className={`grid gap-3 lg:gap-4 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+      <div
+        className={`grid gap-3 lg:gap-4 ${
+          isMobile
+            ? "grid-cols-1 sm:grid-cols-2"
+            : "md:grid-cols-2 lg:grid-cols-3"
+        }`}
+      >
         {metrics.map((metric) => (
           <MetricCard
             key={metric.id}
@@ -237,24 +328,46 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
       {selectedMetric && (
         <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-purple-50/30">
           <CardHeader>
-            <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-              {metrics.find(m => m.id === selectedMetric)?.title} - Detailed View
+            <CardTitle
+              className={`${
+                isMobile ? "text-lg" : "text-xl"
+              } bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}
+            >
+              {metrics.find((m) => m.id === selectedMetric)?.title} - Detailed
+              View
             </CardTitle>
-            <CardDescription className={isMobile ? 'text-sm' : ''}>
+            <CardDescription className={isMobile ? "text-sm" : ""}>
               6-month trend analysis
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className={`${isMobile ? 'h-[250px]' : 'h-[300px]'}`}>
-              {selectedMetric === 'users' || selectedMetric === 'organizations' || selectedMetric === 'badges' ? (
+            <ChartContainer
+              config={chartConfig}
+              className={`${isMobile ? "h-[250px]" : "h-[300px]"}`}
+            >
+              {selectedMetric === "users" ||
+              selectedMetric === "organizations" ||
+              selectedMetric === "badges" ? (
                 <BarChart data={mockData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
                   <YAxis fontSize={isMobile ? 10 : 12} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar 
-                    dataKey={selectedMetric === 'users' ? 'users' : selectedMetric === 'organizations' ? 'orgs' : 'badges'} 
-                    fill={selectedMetric === 'users' ? '#3B82F6' : selectedMetric === 'organizations' ? '#10B981' : '#F59E0B'} 
+                  <Bar
+                    dataKey={
+                      selectedMetric === "users"
+                        ? "users"
+                        : selectedMetric === "organizations"
+                        ? "orgs"
+                        : "badges"
+                    }
+                    fill={
+                      selectedMetric === "users"
+                        ? "#3B82F6"
+                        : selectedMetric === "organizations"
+                        ? "#10B981"
+                        : "#F59E0B"
+                    }
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
@@ -264,12 +377,12 @@ export function AdminMetrics({ onMetricClick, selectedMetric }: AdminMetricsProp
                   <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
                   <YAxis fontSize={isMobile ? 10 : 12} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="users" 
-                    stroke="#3B82F6" 
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#3B82F6"
                     strokeWidth={3}
-                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: "#3B82F6", strokeWidth: 2, r: 4 }}
                   />
                 </LineChart>
               )}

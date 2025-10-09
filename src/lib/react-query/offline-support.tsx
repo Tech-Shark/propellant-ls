@@ -1,0 +1,75 @@
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { ReactNode } from "react";
+
+// Storage persister using localStorage
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "PROPELLANT_REACT_QUERY_CACHE",
+  // Optionally throttle saving to storage to prevent performance issues
+  throttleTime: 1000,
+});
+
+interface OfflineEnabledQueryProviderProps {
+  queryClient: QueryClient;
+  children: ReactNode;
+}
+
+/**
+ * A wrapper component that enables offline support for React Query
+ */
+export function OfflineEnabledQueryProvider({
+  queryClient,
+  children,
+}: OfflineEnabledQueryProviderProps) {
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        // Persist queries that are specifically marked for offline support
+        // This is more selective than persisting everything
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => {
+            // Only persist queries that have been marked with 'persisted: true'
+            return query.meta?.persisted === true;
+          },
+        },
+        // Maximum age of cache items to persist (7 days)
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      }}
+    >
+      {children}
+    </PersistQueryClientProvider>
+  );
+}
+
+/**
+ * Mark a query for offline persistence by adding the appropriate metadata
+ *
+ * Example usage:
+ * ```
+ * useQuery({
+ *   queryKey: ['important-data'],
+ *   queryFn: fetchImportantData,
+ *   ...persistQuery(),
+ * });
+ * ```
+ */
+export function persistQuery() {
+  return {
+    meta: {
+      persisted: true,
+    },
+  };
+}
+
+/**
+ * Custom hook to check if the app is currently offline
+ */
+export function useIsOffline() {
+  // Simple hook to check if the browser is online
+  const isOffline = !navigator.onLine;
+  return isOffline;
+}

@@ -39,6 +39,7 @@ import {
   Award,
   Building,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import { Credential, CredentialsData } from "@/utils/global";
 import { credentialTypes, credentialCategories } from "@/utils/constant";
@@ -47,6 +48,11 @@ import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
 import { CubeSpinner } from "react-spinners-kit";
 import { isPdfBySignature } from "@/utils/helperfunctions.ts";
+import {
+  getExplorerAddressUrl,
+  getExplorerTransactionUrl,
+  getExplorerNftUrl,
+} from "@/lib/utils";
 
 export default function Credentials() {
   const [isUploading, setIsUploading] = useState(false);
@@ -59,10 +65,297 @@ export default function Credentials() {
       axiosInstance
         .get("/credentials")
         .then((response) => {
-          setCredentials(response?.data.data.data);
+          // Log the entire response to understand its structure
+          console.log("Full API response:", response?.data);
+
+          // Deep inspect response structure for debugging
+          console.log("Response data keys:", Object.keys(response?.data || {}));
+          if (response?.data?.data) {
+            console.log(
+              "Response data.data keys:",
+              Object.keys(response?.data?.data || {})
+            );
+
+            // Check specific data structure for credentials path
+            if (response?.data?.data?.credentials) {
+              console.log(
+                "Credentials data type:",
+                typeof response.data.data.credentials
+              );
+              if (Array.isArray(response.data.data.credentials)) {
+                console.log(
+                  "Credentials array found! Length:",
+                  response.data.data.credentials.length
+                );
+
+                // Log important ID fields for debugging
+                if (response.data.data.credentials.length > 0) {
+                  const sample = response.data.data.credentials[0];
+                  console.log("ID Fields in first credential:", {
+                    _id: sample._id,
+                    credentialId: sample.credentialId,
+                    id: sample.id,
+                    blockchainCredentialId: sample.blockchainCredentialId,
+                  });
+                }
+
+                console.log(
+                  "First credential:",
+                  response.data.data.credentials[0]
+                );
+              } else {
+                console.log(
+                  "Credentials is not an array but:",
+                  response.data.data.credentials
+                );
+              }
+            }
+          }
+
+          // Try multiple paths to find credentials array based on API response structure
+          let credentialsData = null;
+
+          try {
+            // Check for wallet address in the API response
+            const checkForWalletAddress = (credentials) => {
+              if (!Array.isArray(credentials) || credentials.length === 0)
+                return false;
+
+              const sample = credentials[0];
+              const hasWalletAddress = !!(
+                sample.walletAddress ||
+                sample.userWalletAddress ||
+                sample.talentWalletAddress ||
+                sample.walletAddr
+              );
+
+              console.log("Wallet address check:", {
+                hasWalletAddress,
+                sample: {
+                  walletAddress: sample.walletAddress,
+                  userWalletAddress: sample.userWalletAddress,
+                  talentWalletAddress: sample.talentWalletAddress,
+                  walletAddr: sample.walletAddr,
+                },
+              });
+
+              return hasWalletAddress;
+            };
+
+            // CRITICAL FIX: Based on the API response structure in the console log,
+            // we need to explicitly check for the 'credentials' array in response.data.data
+            if (
+              response?.data?.data?.credentials &&
+              Array.isArray(response.data.data.credentials)
+            ) {
+              console.log(
+                "Found credentials in data.data.credentials path, count:",
+                response.data.data.credentials.length
+              );
+              credentialsData = response.data.data.credentials;
+              checkForWalletAddress(credentialsData);
+            }
+            // If credentials is not an array but contains an array of results
+            else if (
+              response?.data?.data?.credentials?.results &&
+              Array.isArray(response.data.data.credentials.results)
+            ) {
+              console.log(
+                "Found credentials in data.data.credentials.results path, count:",
+                response.data.data.credentials.results.length
+              );
+              credentialsData = response.data.data.credentials.results;
+            }
+            // Check other common API response structures
+            else if (
+              response?.data?.data?.data &&
+              Array.isArray(response.data.data.data)
+            ) {
+              console.log(
+                "Found credentials in data.data.data path, count:",
+                response.data.data.data.length
+              );
+              credentialsData = response.data.data.data;
+            } else if (
+              response?.data?.data &&
+              Array.isArray(response.data.data)
+            ) {
+              console.log(
+                "Found credentials in data.data path, count:",
+                response.data.data.length
+              );
+              credentialsData = response.data.data;
+            } else if (
+              response?.data?.credentials &&
+              Array.isArray(response.data.credentials)
+            ) {
+              console.log(
+                "Found credentials in data.credentials path, count:",
+                response.data.credentials.length
+              );
+              credentialsData = response.data.credentials;
+            } else if (Array.isArray(response?.data)) {
+              console.log(
+                "Found credentials directly in data path, count:",
+                response.data.length
+              );
+              credentialsData = response.data;
+            }
+            // If none of the above paths work, try to find any array in the response
+            else {
+              console.log("Searching for credentials array in the response...");
+
+              // Recursive function to find the first array in the response
+              const findFirstArray = (
+                obj: any,
+                path = ""
+              ): [any[] | null, string] => {
+                if (!obj || typeof obj !== "object") return [null, path];
+
+                if (Array.isArray(obj) && obj.length > 0) {
+                  return [obj, path];
+                }
+
+                for (const key in obj) {
+                  const newPath = path ? `${path}.${key}` : key;
+                  const [result, resultPath] = findFirstArray(
+                    obj[key],
+                    newPath
+                  );
+                  if (result) return [result, resultPath];
+                }
+
+                return [null, path];
+              };
+
+              const [foundArray, arrayPath] = findFirstArray(response.data);
+              if (foundArray) {
+                console.log(
+                  `Found an array at path: ${arrayPath}, count: ${foundArray.length}`
+                );
+                credentialsData = foundArray;
+              }
+            }
+          } catch (error) {
+            console.error("Error finding credentials in response:", error);
+          }
+
+          // Log the extracted credentials data for debugging
+          console.log("Extracted credentials data:", credentialsData);
+
+          if (Array.isArray(credentialsData)) {
+            // Process array of credentials
+            const processedCredentials = credentialsData.map((cred) => {
+              // Create a copy to avoid mutating the original response
+              const processedCred = { ...cred };
+
+              // CRITICAL FIX: Ensure each credential has the MongoDB _id field
+              // This ensures all our operations use the MongoDB _id consistently
+              if (!processedCred._id && processedCred.id) {
+                console.warn(
+                  `Credential missing _id field, using id field instead:`,
+                  {
+                    id: processedCred.id,
+                    credentialId: processedCred.credentialId,
+                  }
+                );
+                processedCred._id = processedCred.id;
+              }
+
+              // CRITICAL FIX: If still no _id but has credentialId, use that as fallback
+              // (though this should not happen with proper API response)
+              if (!processedCred._id && processedCred.credentialId) {
+                console.warn(
+                  `Credential missing both _id and id fields, falling back to credentialId:`,
+                  {
+                    credentialId: processedCred.credentialId,
+                  }
+                );
+                processedCred._id = processedCred.credentialId;
+              }
+
+              // Log the ID we're using for operations
+              console.log(
+                `Using MongoDB _id for credential operations: ${processedCred._id}`
+              );
+
+              // Normalize status from various possible fields
+              if (!processedCred.status) {
+                // Check all possible status fields in priority order
+                if (processedCred.verificationStatus) {
+                  processedCred.status = processedCred.verificationStatus;
+                } else if (processedCred.blockchainStatus === "MINTED") {
+                  processedCred.status = "VERIFIED";
+                } else if (processedCred.attestationStatus === "VERIFIED") {
+                  processedCred.status = "VERIFIED";
+                } else if (processedCred.verifiedAt) {
+                  processedCred.status = "VERIFIED";
+                } else if (
+                  processedCred.blockchainStatus === "PENDING_ISSUANCE" ||
+                  processedCred.blockchainStatus === "PENDING_BLOCKCHAIN"
+                ) {
+                  processedCred.status = "PENDING";
+                } else {
+                  // Default to PENDING if no recognizable status is found
+                  processedCred.status = "PENDING";
+                }
+              }
+
+              // Make sure wallet address is properly set by checking all possible fields
+              if (!processedCred.walletAddress) {
+                processedCred.walletAddress =
+                  processedCred.userWalletAddress ||
+                  processedCred.talentWalletAddress ||
+                  processedCred.walletAddr ||
+                  processedCred.owner ||
+                  null;
+
+                if (processedCred.walletAddress) {
+                  console.log(
+                    `Found wallet address in alternate field for credential ${processedCred._id}:`,
+                    processedCred.walletAddress
+                  );
+                }
+              }
+
+              return processedCred;
+            });
+
+            console.log(
+              "Processed credentials with normalized status and wallet addresses:",
+              processedCredentials.map((c) => ({
+                id: c._id,
+                title: c.title,
+                status: c.status,
+                hasWalletAddr: !!c.walletAddress,
+                hasNftTokenId: !!c.nftTokenId,
+                hasTxHash: !!c.transactionHash,
+              }))
+            );
+            setCredentials(processedCredentials);
+          } else if (credentialsData && typeof credentialsData === "object") {
+            // Handle case where API returns a single object instead of an array
+            console.log(
+              "Credentials data is a single object, not an array:",
+              credentialsData
+            );
+
+            // Convert single object to array
+            const processedCred = { ...credentialsData };
+            if (!processedCred.status) {
+              processedCred.status =
+                processedCred.verificationStatus || "PENDING";
+            }
+
+            setCredentials([processedCred]);
+          } else {
+            console.log("No valid credentials data found in response");
+            setCredentials([]);
+          }
         })
         .catch((error) => {
-          console.log("Error fetching credentials:", error);
+          console.error("Error fetching credentials:", error);
+          setCredentials([]);
         });
     };
 
@@ -107,9 +400,14 @@ export default function Credentials() {
     if (
       !newCredential.title ||
       !newCredential.type ||
-      !newCredential.category
+      !newCredential.category ||
+      !newCredential.issuingOrganization ||
+      !newCredential.issueDate ||
+      !newCredential.file
     ) {
-      toast.warning("Missing Information, Please fill in all required fields.");
+      toast.warning(
+        "Missing Information. Please fill in all required fields and upload a document."
+      );
       return;
     }
 
@@ -163,7 +461,12 @@ export default function Credentials() {
         loading: "Uploading...",
         success: (response) => {
           console.log(response?.data.data);
-          setCredentials([...credentials, response?.data.data]);
+          // Make sure credentials is an array before spreading
+          setCredentials((prevCredentials) =>
+            Array.isArray(prevCredentials)
+              ? [...prevCredentials, response?.data.data]
+              : [response?.data.data]
+          );
           // Clear form after successful upload
           setNewCredential({
             title: "",
@@ -207,13 +510,23 @@ export default function Credentials() {
     setIsUpdating(true);
 
     try {
+      // Always use MongoDB _id for backend operations
+      const mongoDbId = id;
+      console.log(
+        `Updating visibility for credential with MongoDB _id: ${mongoDbId}`
+      );
+
       const response = await axiosInstance.patch(
-        `/credentials/${id}/update`,
+        `/credentials/${mongoDbId}/update`,
         data
       );
+
       setCredentials((prev) =>
         prev.map((cred) =>
-          cred._id === id ? { ...cred, visibility: data.visibility } : cred
+          // Make sure we're comparing the same ID type that was passed in
+          cred._id === mongoDbId
+            ? { ...cred, visibility: data.visibility }
+            : cred
         )
       );
       toast.success(response.data.message);
@@ -231,29 +544,220 @@ export default function Credentials() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "VERIFIED":
-        return <CheckCircle className="w-4 h-4 text-emerald-400" />;
-      case "PENDING":
-        return <Clock className="w-4 h-4 text-orange-400" />;
-      case "REJECTED":
-        return <XCircle className="w-4 h-4 text-red-400" />;
-      default:
-        return null;
+  // Enhanced function to normalize and check status values
+  const normalizeStatus = (status: string | null | undefined): string => {
+    if (!status) return "PENDING";
+
+    const upperStatus = status.toUpperCase();
+
+    if (
+      upperStatus === "VERIFIED" ||
+      upperStatus.includes("VERIFY") ||
+      upperStatus === "MINTED" ||
+      upperStatus === "ISSUED"
+    ) {
+      return "VERIFIED";
+    } else if (upperStatus === "REJECTED" || upperStatus.includes("REJECT")) {
+      return "REJECTED";
+    } else {
+      return "PENDING"; // Default for any other status
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (status: string | null | undefined) => {
+    const normalizedStatus = normalizeStatus(status);
+
+    switch (normalizedStatus) {
       case "VERIFIED":
-        return "status-success";
+        return <CheckCircle className="w-4 h-4 text-emerald-500" />;
       case "PENDING":
-        return "status-warning";
+        return <Clock className="w-4 h-4 text-amber-500" />;
       case "REJECTED":
-        return "status-error";
+        return <XCircle className="w-4 h-4 text-red-500" />;
       default:
-        return "";
+        return <Clock className="w-4 h-4 text-amber-500" />; // Default to pending icon
+    }
+  };
+
+  const getStatusColor = (status: string | null | undefined) => {
+    const normalizedStatus = normalizeStatus(status);
+
+    switch (normalizedStatus) {
+      case "VERIFIED":
+        return "bg-emerald-500 text-white border-none hover:bg-emerald-600";
+      case "PENDING":
+        return "bg-amber-500/40 text-amber-200 border-amber-500/50 hover:bg-amber-500/50";
+      case "REJECTED":
+        return "bg-red-500/40 text-red-200 border-red-500/50 hover:bg-red-500/50";
+      default:
+        return "bg-amber-500/40 text-amber-200 border-amber-500/50 hover:bg-amber-500/50"; // Default to pending style
+    }
+  };
+
+  // Enhanced function to display status with better fallbacks
+  const getStatusDisplay = (credential: any) => {
+    // Check if credential is valid
+    if (!credential || typeof credential !== "object") {
+      console.error("Invalid credential object:", credential);
+      return <span className="text-amber-400">PENDING</span>;
+    }
+
+    // Enhanced ID debugging with special focus on wallet address
+    const hasWalletAddress = !!credential.walletAddress;
+    const walletAddress =
+      credential.walletAddress ||
+      credential.userWalletAddress ||
+      credential.talentWalletAddress ||
+      credential.walletAddr ||
+      credential.owner; // Also check 'owner' field used in org view
+
+    // Use a distinctive message to make it easy to find in logs
+    console.log("🔑 TALENT VIEW - WALLET DEBUG:", {
+      _id: credential._id,
+      credentialId: credential.credentialId,
+      title: credential.title,
+      blockchain: {
+        hasWalletAddress: hasWalletAddress,
+        walletAddressFound: !!walletAddress,
+        resolvedWalletAddress: walletAddress,
+        possibleWalletAddresses: {
+          walletAddress: credential.walletAddress,
+          userWalletAddress: credential.userWalletAddress,
+          talentWalletAddress: credential.talentWalletAddress,
+          walletAddr: credential.walletAddr,
+          owner: credential.owner,
+        },
+        transactionHash: credential.transactionHash,
+        nftTokenId: credential.nftTokenId,
+        nftContractAddress: import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
+      },
+    });
+
+    // Add wallet address to credential if found in another property
+    if (!hasWalletAddress && walletAddress) {
+      credential.walletAddress = walletAddress;
+      console.log(`Found wallet address in alternate field: ${walletAddress}`);
+    }
+
+    // Get status from multiple possible fields in the API response
+    let status = null;
+
+    // Check various status fields that might be present in the API response
+    if (credential.status) {
+      status = credential.status;
+      console.log("Using status field:", status);
+    } else if (credential.verificationStatus) {
+      status = credential.verificationStatus;
+      console.log("Using verificationStatus field:", status);
+    } else if (credential.blockchainStatus === "MINTED") {
+      status = "VERIFIED";
+      console.log("Using blockchainStatus (MINTED):", status);
+    } else if (credential.verifiedAt) {
+      status = "VERIFIED";
+      console.log("Using verifiedAt presence for status:", status);
+    } else if (credential.attestationStatus === "VERIFIED") {
+      status = "VERIFIED";
+      console.log("Using attestationStatus field:", status);
+    } else if (
+      credential.blockchainStatus === "PENDING_ISSUANCE" ||
+      credential.blockchainStatus === "PENDING_BLOCKCHAIN"
+    ) {
+      status = "PENDING";
+      console.log("Using blockchainStatus for PENDING:", status);
+    } else {
+      // Default to PENDING if no recognizable status is found
+      status = "PENDING";
+      console.log("No status field found, defaulting to:", status);
+    }
+
+    // Normalize status to uppercase for consistent comparison
+    const normalizedStatus = status ? status.toUpperCase() : "PENDING";
+    console.log("Normalized status:", normalizedStatus);
+
+    if (
+      normalizedStatus === "VERIFIED" ||
+      normalizedStatus.includes("VERIFY") ||
+      normalizedStatus === "ISSUED" || // Also check for ISSUED
+      normalizedStatus === "MINTED" // Also check for MINTED
+    ) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium text-slate-200">
+            {credential.verifyingOrganization ||
+              credential.verifyingEmail ||
+              credential.verifier ||
+              ""}
+          </span>
+          <span className="text-emerald-400 text-sm flex items-center gap-1">
+            Verified
+            {credential.transactionHash && (
+              <span
+                title="Verified on blockchain"
+                className="text-xs bg-blue-500/30 text-blue-300 px-1 rounded"
+              >
+                Chain
+              </span>
+            )}
+            {credential.nftTokenId && (
+              <span
+                title="NFT Token ID"
+                className="text-xs bg-blue-500/30 text-blue-300 px-1 rounded ml-1"
+              >
+                NFT #{credential.nftTokenId}
+              </span>
+            )}
+          </span>
+        </div>
+      );
+    } else if (
+      normalizedStatus === "PENDING" ||
+      normalizedStatus.includes("PENDING")
+    ) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium text-slate-200">
+            {credential.verifyingOrganization ||
+              credential.verifyingEmail ||
+              credential.verifier ||
+              ""}
+          </span>
+          <span className="text-amber-400 text-sm">Pending</span>
+        </div>
+      );
+    } else if (
+      normalizedStatus === "REJECTED" ||
+      normalizedStatus.includes("REJECT")
+    ) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium text-slate-200">
+            {credential.verifyingOrganization ||
+              credential.verifyingEmail ||
+              credential.verifier ||
+              ""}
+          </span>
+          <span className="text-red-400 text-sm">Rejected</span>
+        </div>
+      );
+    } else {
+      // Improved logging for unknown statuses
+      console.log(
+        "Unrecognized credential status:",
+        status,
+        "for credential:",
+        credential._id
+      );
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium text-slate-200">
+            {credential.verifyingOrganization ||
+              credential.verifyingEmail ||
+              credential.verifier ||
+              ""}
+          </span>
+          <span className="text-amber-400 text-sm">Pending</span>
+        </div>
+      ); // Default to PENDING instead of N/A
     }
   };
 
@@ -279,9 +783,13 @@ export default function Credentials() {
 
   // Calculate stats
   const verifiedCount =
-    credentials?.filter((c) => c.status === "VERIFIED").length || 0;
+    (Array.isArray(credentials)
+      ? credentials.filter((c) => c.status === "VERIFIED").length
+      : 0) || 0;
   const pendingCount =
-    credentials?.filter((c) => c.status === "PENDING").length || 0;
+    (Array.isArray(credentials)
+      ? credentials.filter((c) => c.status === "PENDING").length
+      : 0) || 0;
 
   return (
     <main className="flex-1 overflow-auto">
@@ -321,7 +829,10 @@ export default function Credentials() {
             </CardTitle>
             <CardDescription className="text-slate-400">
               Upload your certificates, courses, and credentials for
-              verification
+              verification.{" "}
+              <span className="text-red-400 font-medium">
+                Supporting document upload is required.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -345,7 +856,7 @@ export default function Credentials() {
               </div>
               <div>
                 <Label htmlFor="issuer" className="text-slate-300">
-                  Issuing Organization
+                  Issuing Organization *
                 </Label>
                 <Input
                   id="issuer"
@@ -417,7 +928,7 @@ export default function Credentials() {
               </div>
               <div>
                 <Label htmlFor="issueDate" className="text-slate-300">
-                  Issue Date
+                  Issue Date *
                 </Label>
                 <Input
                   id="issueDate"
@@ -577,8 +1088,11 @@ export default function Credentials() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="file" className="text-slate-300">
-                  Upload File
+                <Label
+                  htmlFor="file"
+                  className="text-slate-300 flex items-center gap-1"
+                >
+                  Upload File <span className="text-red-400">*</span>
                 </Label>
                 <div className="mt-2">
                   <input
@@ -587,23 +1101,32 @@ export default function Credentials() {
                     onChange={handleFileUpload}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     className="hidden"
+                    required
                   />
                   <Button
                     variant="outline"
                     onClick={() => document.getElementById("file")?.click()}
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                    className={`border-slate-600 text-slate-300 hover:bg-slate-800 ${
+                      !newCredential.file
+                        ? "border-red-500 hover:border-red-600"
+                        : ""
+                    }`}
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     {newCredential.file
                       ? newCredential.file.name
-                      : "Choose File"}
+                      : "Choose File (Required)"}
                   </Button>
                   <p className="text-xs text-slate-500 mt-1">
                     Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
                   </p>
+                  {!newCredential.file && (
+                    <p className="text-xs text-red-400 mt-1">
+                      Document upload is required for credential verification
+                    </p>
+                  )}
                 </div>
-              </div>
-
+              </div>{" "}
               <div className="flex flex-col space-y-3">
                 <Label htmlFor="visibility" className="text-slate-300">
                   Credential Visibility
@@ -668,185 +1191,273 @@ export default function Credentials() {
                   <TableHead className="text-slate-300">Date Issued</TableHead>
                   <TableHead className="text-slate-300">Expiry Date</TableHead>
                   <TableHead className="text-slate-300">Status</TableHead>
-                  <TableHead className="text-slate-300">Actions</TableHead>
+                  <TableHead className="text-slate-300">
+                    <div className="flex flex-col">
+                      <span>Actions</span>
+                      <span className="text-xs font-normal text-slate-400">
+                        Visibility, links, blockchain
+                      </span>
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {credentials && credentials.length > 0 ? (
-                  credentials.map((credential) => (
-                    <TableRow key={credential._id} className="border-slate-700">
-                      <TableCell>
-                        <div>
-                          <p className="text-white font-medium">
-                            {credential.title || credential.name}
-                          </p>
-                          <div className="flex items-center gap-2 text-sm text-slate-400">
-                            <span>
-                              Uploaded:{" "}
-                              {credential.createdAt
-                                ? new Date(
-                                    credential.createdAt
-                                  ).toLocaleDateString()
-                                : "-"}
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className="text-xs text-slate-300"
-                            >
-                              {getTypeDisplayName(
-                                credential.type ||
-                                  (credential as any).credentialType
-                              )}
-                            </Badge>
-                            {/* Always show category badge with N/A if no category from backend */}
-                            <Badge
-                              variant="outline"
-                              className="text-xs text-slate-300"
-                            >
-                              {getCategoryDisplayName(
-                                credential.category ||
-                                  (credential as any).credentialCategory ||
-                                  (credential as any).categoryId ||
-                                  "N/A"
-                              )}
-                            </Badge>
-                          </div>
-                          {credential.description && (
-                            <p className="text-sm text-slate-400 mt-1">
-                              {credential.description.length > 100
-                                ? credential.description.slice(0, 100) + "..."
-                                : credential.description}
+                {Array.isArray(credentials) && credentials.length > 0 ? (
+                  credentials.map((credential) => {
+                    // Make sure we prioritize MongoDB _id for all operations
+                    const mongoDbId = credential._id;
+                    console.log(
+                      `Rendering credential row with MongoDB _id: ${mongoDbId}`
+                    );
+
+                    return (
+                      <TableRow key={mongoDbId} className="border-slate-700">
+                        <TableCell>
+                          <div>
+                            <p className="text-white font-medium">
+                              {credential.title || credential.name}
                             </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {/* Backend doesn't send issuer data, so show N/A */}
-                        {credential.issuingOrganization ||
-                          (credential as any).issuer ||
-                          (credential as any).issuingOrganization ||
-                          "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-slate-300">
-                            {/* Backend doesn't send verifying organization data */}
-                            {(credential as any).verifyingOrganization ||
-                              (credential as any).verifier ||
-                              "N/A"}
-                          </p>
-                          {credential.verifiedAt &&
-                            credential.status === "VERIFIED" &&
-                            typeof credential.verifiedAt === "string" &&
-                            credential.verifiedAt !== "" && (
-                              <p className="text-sm text-emerald-400">
-                                Verified on{" "}
-                                {new Date(
-                                  credential.verifiedAt
-                                ).toLocaleDateString()}
+                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                              <span>
+                                Uploaded:{" "}
+                                {credential.createdAt
+                                  ? new Date(
+                                      credential.createdAt
+                                    ).toLocaleDateString()
+                                  : "-"}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="text-xs text-slate-300"
+                              >
+                                {getTypeDisplayName(
+                                  credential.type ||
+                                    (credential as any).credentialType
+                                )}
+                              </Badge>
+                              {/* Always show category badge with N/A if no category from backend */}
+                              <Badge
+                                variant="outline"
+                                className="text-xs text-slate-300"
+                              >
+                                {getCategoryDisplayName(
+                                  credential.category ||
+                                    (credential as any).credentialCategory ||
+                                    (credential as any).categoryId ||
+                                    "N/A"
+                                )}
+                              </Badge>
+                            </div>
+                            {credential.description && (
+                              <p className="text-sm text-slate-400 mt-1">
+                                {credential.description.length > 100
+                                  ? credential.description.slice(0, 100) + "..."
+                                  : credential.description}
                               </p>
                             )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {/* Backend doesn't send issue date, show creation date or N/A */}
-                        {(credential as any).issueDate
-                          ? new Date(
-                              (credential as any).issueDate
-                            ).toLocaleDateString()
-                          : (credential as any).issuedDate
-                          ? new Date(
-                              (credential as any).issuedDate
-                            ).toLocaleDateString()
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {/* Backend doesn't send expiry date */}
-                        {(credential as any).expiryDate
-                          ? new Date(
-                              (credential as any).expiryDate
-                            ).toLocaleDateString()
-                          : (credential as any).expirationDate
-                          ? new Date(
-                              (credential as any).expirationDate
-                            ).toLocaleDateString()
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(credential.status)}
-                          <Badge
-                            variant="secondary"
-                            className={`${
-                              credential.status === "VERIFIED"
-                                ? "bg-green-600 text-white border-green-500 shadow-lg"
-                                : getStatusColor(credential.status)
-                            }`}
-                          >
-                            {credential.status}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`${
-                              credential.visibility
-                                ? "bg-green-600 text-white"
-                                : "bg-slate-800 text-slate-400"
-                            } hover:text-white`}
-                            onClick={() =>
-                              toggleVisibility(credential._id, {
-                                visibility: !credential.visibility,
-                              })
-                            }
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {credential.url && (
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {/* Use issuingOrganization as issuer */}
+                          {credential.issuingOrganization ||
+                            (credential as any).issuer ||
+                            "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-slate-300">
+                              {/* Display verifying organization with improved styling */}
+                              {(credential as any).verifyingOrganization ||
+                                (credential as any).verifier ||
+                                "N/A"}
+                            </p>
+                            {credential.status === "VERIFIED" && (
+                              <p className="text-sm text-emerald-400">
+                                {credential.verifyingEmail || ""}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {/* Backend doesn't send issue date, show creation date or N/A */}
+                          {(credential as any).issueDate
+                            ? new Date(
+                                (credential as any).issueDate
+                              ).toLocaleDateString()
+                            : (credential as any).issuedDate
+                            ? new Date(
+                                (credential as any).issuedDate
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {/* Backend doesn't send expiry date */}
+                          {(credential as any).expiryDate
+                            ? new Date(
+                                (credential as any).expiryDate
+                              ).toLocaleDateString()
+                            : (credential as any).expirationDate
+                            ? new Date(
+                                (credential as any).expirationDate
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>{getStatusDisplay(credential)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
+                              className={`${
+                                credential.visibility
+                                  ? "bg-green-600 text-white"
+                                  : "bg-slate-800 text-slate-400"
+                              } hover:text-white`}
                               onClick={() =>
-                                window.open(credential.url, "_blank")
+                                toggleVisibility(mongoDbId, {
+                                  visibility: !credential.visibility,
+                                })
                               }
-                              className="text-blue-400 hover:text-blue-300"
                             >
-                              <Link2 className="w-4 h-4" />
+                              <Eye className="w-4 h-4" />
                             </Button>
-                          )}
-                          {credential.imageUrl && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={async () => {
-                                const imageUrl = credential.imageUrl;
-                                if (imageUrl) {
-                                  const isPdf = await isPdfBySignature(
-                                    imageUrl
-                                  );
-                                  if (isPdf) {
-                                    window.open(imageUrl, "_blank");
-                                    return;
-                                  }
-                                  setModalImage(imageUrl);
-                                } else {
-                                  toast.warning(
-                                    "No image available for this credential."
-                                  );
+                            {credential.url && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  window.open(credential.url, "_blank")
                                 }
-                              }}
-                              className="text-slate-400 hover:text-white"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                                className="text-blue-400 hover:text-blue-300"
+                              >
+                                <Link2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {credential.imageUrl && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  const imageUrl = credential.imageUrl;
+                                  if (imageUrl) {
+                                    const isPdf = await isPdfBySignature(
+                                      imageUrl
+                                    );
+                                    if (isPdf) {
+                                      window.open(imageUrl, "_blank");
+                                      return;
+                                    }
+                                    setModalImage(imageUrl);
+                                  } else {
+                                    toast.warning(
+                                      "No image available for this credential."
+                                    );
+                                  }
+                                }}
+                                className="text-slate-400 hover:text-white"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {/* Blockchain links for verified credentials */}
+                            {normalizeStatus(credential.status) ===
+                              "VERIFIED" && (
+                              <div className="flex items-center gap-2">
+                                {/* Wallet address link for viewing all NFTs - Made prominent and first priority */}
+                                {(credential.walletAddress ||
+                                  credential.userWalletAddress ||
+                                  credential.talentWalletAddress ||
+                                  credential.walletAddr ||
+                                  credential.owner) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Try to get wallet address from multiple possible fields
+                                      const walletAddr =
+                                        credential.walletAddress ||
+                                        credential.userWalletAddress ||
+                                        credential.talentWalletAddress ||
+                                        credential.walletAddr ||
+                                        credential.owner;
+                                      console.log(
+                                        "Opening wallet explorer for:",
+                                        walletAddr
+                                      );
+                                      window.open(
+                                        getExplorerAddressUrl(walletAddr),
+                                        "_blank"
+                                      );
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white border-none"
+                                    title="View all your NFTs in the blockchain explorer"
+                                  >
+                                    <span className="text-xs">View Wallet</span>
+                                  </Button>
+                                )}
+
+                                {/* NFT token link if token ID exists - Also prominent */}
+                                {credential.nftTokenId && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      console.log(
+                                        "Opening NFT explorer for token ID:",
+                                        credential.nftTokenId,
+                                        "Contract:",
+                                        import.meta.env
+                                          .VITE_NFT_CONTRACT_ADDRESS
+                                      );
+                                      window.open(
+                                        getExplorerNftUrl(
+                                          credential.nftTokenId,
+                                          import.meta.env
+                                            .VITE_NFT_CONTRACT_ADDRESS
+                                        ),
+                                        "_blank"
+                                      );
+                                    }}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white border-none"
+                                    title="View this specific NFT token"
+                                  >
+                                    <span className="text-xs">
+                                      View NFT #{credential.nftTokenId}
+                                    </span>
+                                  </Button>
+                                )}
+
+                                {/* Transaction link if hash exists - Less prominent */}
+                                {credential.transactionHash && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      console.log(
+                                        "Opening transaction explorer for:",
+                                        credential.transactionHash
+                                      );
+                                      window.open(
+                                        getExplorerTransactionUrl(
+                                          credential.transactionHash
+                                        ),
+                                        "_blank"
+                                      );
+                                    }}
+                                    className="text-slate-400 hover:text-slate-300"
+                                    title="View transaction details on blockchain"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span className="text-xs ml-1">Tx</span>
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell

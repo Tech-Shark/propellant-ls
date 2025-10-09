@@ -48,6 +48,7 @@ export interface User {
   updatedAt: string;
   totalReferrals?: number;
   referralCode?: string;
+  plan?: string;
 }
 
 // export interface TalentProfile extends User {

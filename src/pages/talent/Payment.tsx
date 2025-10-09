@@ -1,452 +1,793 @@
-import {useEffect, useState} from 'react';
-import {SidebarTrigger} from "@/components/ui/sidebar";
-import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Badge} from "@/components/ui/badge";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {CreditCard, Check, Star, Shield, Zap} from "lucide-react";
-import {PaymentMethod, TalentPayment} from "@/utils/global";
+import { useEffect, useState } from "react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { CreditCard, Check, Star, Shield, ArrowRight } from "lucide-react";
+import { PaymentMethod } from "@/utils/global";
 import axiosInstance from "@/api/AxiosInstance.ts";
-import {cardTypes} from "@/utils/constant.ts";
-import {toast} from "sonner";
-import {isAxiosError} from "axios";
+import { toast } from "sonner";
+import { isAxiosError } from "axios";
 
-const plans = [
-    {
-        id: 'free',
-        name: 'Free',
-        price: 0,
-        period: 'Forever',
-        features: [
-            'Basic profile creation',
-            'Upload up to 5 credentials',
-            'Basic CV generator',
-            '1 CV download per month',
-            'Email support'
-        ],
-        limitations: [
-            'Limited verification requests',
-            'No priority support',
-            'Basic analytics'
-        ],
-        buttonText: 'Current Plan',
-        isCurrentPlan: true
-    },
-    {
-        id: 'professional',
-        name: 'Professional',
-        price: 29,
-        period: 'per month',
-        features: [
-            'Enhanced profile with portfolio',
-            'Unlimited credential uploads',
-            'AI-powered CV optimization',
-            'Unlimited CV downloads',
-            'NFT skill badges',
-            'Priority verification',
-            'Advanced analytics',
-            'Priority support'
-        ],
-        buttonText: 'Upgrade Now',
-        isPopular: true
-    },
-    {
-        id: 'premium',
-        name: 'Premium',
-        price: 59,
-        period: 'per month',
-        features: [
-            'Everything in Professional',
-            'Personal brand building tools',
-            'Advanced recommendation engine',
-            'Multiple CV templates',
-            'Interview preparation tools',
-            'Career coaching sessions',
-            'Premium support',
-            'API access'
-        ],
-        buttonText: 'Upgrade Now'
-    }
+// Default plans to use as fallback if API fails
+const defaultPlans = [
+  {
+    id: "free",
+    name: "Free",
+    price: 0,
+    period: "Forever",
+    features: [
+      "Basic profile creation",
+      "Upload up to 5 credentials",
+      "Basic CV generator",
+      "1 CV download per month",
+      "Email support",
+    ],
+    limitations: [
+      "Limited verification requests",
+      "No priority support",
+      "Basic analytics",
+    ],
+    buttonText: "Current Plan",
+    isCurrentPlan: true,
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    price: 29,
+    period: "per month",
+    features: [
+      "Enhanced profile with portfolio",
+      "Unlimited credential uploads",
+      "AI-powered CV optimization",
+      "Unlimited CV downloads",
+      "NFT skill badges",
+      "Priority verification",
+      "Advanced analytics",
+      "Priority support",
+    ],
+    buttonText: "Upgrade Now",
+    isPopular: true,
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: 59,
+    period: "per month",
+    features: [
+      "Everything in Professional",
+      "Personal brand building tools",
+      "Advanced recommendation engine",
+      "Multiple CV templates",
+      "Interview preparation tools",
+      "Career coaching sessions",
+      "Premium support",
+      "API access",
+    ],
+    buttonText: "Upgrade Now",
+  },
 ];
 
 export default function Payment() {
-    const [selectedPlan, setSelectedPlan] = useState('free');
-    const [isUpgrading, setIsUpgrading] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('');
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const { fetchUser } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState("free");
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [plans, setPlans] = useState(defaultPlans);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
-    const [billingInfo, setBillingInfo] = useState<TalentPayment>({
-        "plan": selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM",
-        "cardType": "VISA",
-        "cardNumber": "",
-        "expiryDate": "",
-        "cvv": null,
-        "cardName": ""
-    })
+  // State for current user subscription
+  const [currentSubscription, setCurrentSubscription] = useState({
+    plan: "FREE",
+    status: "ACTIVE",
+    startDate: new Date().toISOString(),
+    endDate: null,
+  });
 
-    useEffect(() => {
-        const fetchPaymentMethods = async () => {
-            try {
-                const response = await axiosInstance.get('/payment');
-                console.log(response.data);
-                console.log(response.data.data);
-                setPaymentMethods(response.data.data);
-            } catch (error) {
-                console.error('Error fetching payment methods:', error);
-            }
-        };
+  // Function to fetch user info including subscription
+  const fetchUserInfo = async () => {
+    try {
+      const response = await axiosInstance.get("/users");
+      console.log("User info response:", response.data);
 
-        fetchPaymentMethods();
-    }, []);
+      if (response.data && response.data.data) {
+        const userData = response.data.data;
+        console.log("User data:", userData);
 
-    const handleUpgrade = (planId: string) => {
-        setSelectedPlan(planId.toUpperCase() as "PROFESSIONAL" | "PREMIUM");
-        setBillingInfo({
-            ...billingInfo,
-            plan: planId.toUpperCase() as "PROFESSIONAL" | "PREMIUM"
-        });
-    };
+        // Check if plan is directly on user object (current implementation)
+        if (userData.plan) {
+          console.log("Found user plan:", userData.plan);
 
-    const handlePayment = () => {
-        setIsUpgrading(true);
+          setCurrentSubscription({
+            plan: userData.plan || "FREE",
+            status: "ACTIVE",
+            startDate: userData.updatedAt || new Date().toISOString(),
+            endDate: null,
+          });
 
-        try {
-            const upgradePromise = axiosInstance.post("premium", {
-                plan: selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM" | "FREE",
-                cvv: Number(billingInfo.cvv),
-                ...billingInfo
-            })
-
-            toast.promise(upgradePromise, {
-                loading: 'Processing payment...',
-                success: (response) => {
-                    console.log(response.data);
-                    // setSelectedPlan(response.data.data.plan);
-                    // setBillingInfo({
-                    //     ...billingInfo,
-                    //     cardType: response.data.data.cardType,
-                    //     cardNumber: response.data.data.cardNumber,
-                    //     expiryDate: response.data.data.expiryDate,
-                    //     cvv: response.data.data.cvv,
-                    //     cardName: response.data.data.cardName
-                    // });
-                    return 'Payment successful! Your plan has been upgraded.';
-                },
-                error: (error) => {
-                    console.error(error);
-                    return `${error.response?.data.message || error.message || 'Payment failed. Please try again.'}`;
-                }
-            })
-        } catch (error) {
-            if (isAxiosError(error)) {
-                console.log(error.response);
-                toast.error(`${error.response?.data.message || error.message}`);
-            }
-        } finally {
-            setIsUpgrading(false);
+          // Update selected plan to match current plan
+          setSelectedPlan(userData.plan.toLowerCase());
         }
+        // Fallback to subscription object if present (future implementation)
+        else if (userData.subscription) {
+          setCurrentSubscription({
+            plan: userData.subscription.plan || "FREE",
+            status: userData.subscription.status || "ACTIVE",
+            startDate:
+              userData.subscription.createdAt || new Date().toISOString(),
+            endDate: userData.subscription.nextBillingDate || null,
+          });
+
+          // Update selected plan to match current subscription
+          if (userData.subscription.plan) {
+            setSelectedPlan(userData.subscription.plan.toLowerCase());
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      toast.error("Could not load your subscription details");
+    }
+  };
+
+  // Fetch user info when component mounts
+  useEffect(() => {
+    fetchUserInfo();
+
+    // Check if we're returning from a payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("payment") && urlParams.get("payment") === "success") {
+      toast.success("Payment successful! Your subscription has been updated.");
+      // Remove the query parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Fetch payment methods
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      try {
+        const response = await axiosInstance.get("/payment");
+        console.log("Payment methods response:", response.data);
+
+        if (response.data && response.data.data) {
+          setPaymentMethods(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+        toast.error("Could not load payment methods");
+      }
     };
 
-    return (
-        <main className="flex-1 overflow-auto">
-            {/* Header */}
-            <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-                <div className="flex items-center justify-between p-6">
-                    <div className="flex items-center gap-4">
-                        <SidebarTrigger className="text-slate-400 hover:text-white"/>
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Subscription & Billing</h1>
-                            <p className="text-slate-400">Manage your subscription and payment methods</p>
-                        </div>
+    fetchPaymentMethods();
+  }, []);
+
+  // Fetch subscription plans from settings
+  useEffect(() => {
+    const fetchSubscriptionPlans = async () => {
+      try {
+        setIsLoadingPlans(true);
+        const response = await axiosInstance.get("/settings");
+
+        // Handle both response formats
+        let settingsData;
+        if (response.data.data && response.data.data.app) {
+          settingsData = response.data.data;
+        } else {
+          settingsData = response.data || {};
+        }
+
+        // Check if we have subscription plans in the settings
+        if (
+          settingsData.app?.subscriptionPlans &&
+          Array.isArray(settingsData.app.subscriptionPlans) &&
+          settingsData.app.subscriptionPlans.length > 0
+        ) {
+          // Transform API subscription plans to match our UI format
+          const formattedPlans = settingsData.app.subscriptionPlans.map(
+            (plan, index) => {
+              // Start with a base plan from defaults to ensure we have all fields
+              const basePlan =
+                defaultPlans[index % defaultPlans.length] || defaultPlans[0];
+
+              return {
+                id:
+                  plan.name?.toLowerCase()?.replace(/\s+/g, "") ||
+                  `plan-${index}`,
+                name: plan.name || `Plan ${index + 1}`,
+                price: plan.price || 0,
+                period: "per month",
+                features: plan.features || [],
+                buttonText: index === 0 ? "Current Plan" : "Upgrade Now",
+                isCurrentPlan: index === 0,
+                isPopular: index === 1, // Mark second plan as popular
+              };
+            }
+          );
+
+          console.log(
+            "Using subscription plans from settings:",
+            formattedPlans
+          );
+          setPlans(formattedPlans);
+        } else {
+          console.log(
+            "No subscription plans found in settings, using defaults"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching subscription plans from settings:",
+          error
+        );
+        toast.error("Could not load subscription plans, using defaults");
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
+
+    fetchSubscriptionPlans();
+  }, []);
+
+  const handleUpgrade = (planId: string) => {
+    const upperPlanId = planId.toUpperCase() as
+      | "PROFESSIONAL"
+      | "PREMIUM"
+      | "FREE";
+    console.log(`Selected plan: ${upperPlanId}`);
+    setSelectedPlan(upperPlanId);
+
+    // Provide user feedback
+    toast(`${planId} plan selected`, {
+      description:
+        "Review plan details and click 'Continue to Payment' to proceed",
+    });
+
+    // Scroll to payment section for better UX
+    setTimeout(() => {
+      const paymentSection = document.querySelector("#payment-information");
+      if (paymentSection) {
+        paymentSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+  };
+
+  const handlePayment = async () => {
+    setIsUpgrading(true);
+
+    try {
+      // Refresh user data before initiating payment
+      await fetchUser();
+
+      // Log payment initialization for debugging
+      console.log(`Initiating payment for plan: ${selectedPlan.toUpperCase()}`);
+
+      // The backend only needs the plan information
+      const response = await axiosInstance.post("/premium", {
+        plan: selectedPlan.toUpperCase() as "PROFESSIONAL" | "PREMIUM" | "FREE",
+      });
+
+      // Log full response for debugging
+      console.log("Premium API response:", response);
+
+      // Handle different response formats
+      if (response.data) {
+        console.log("Response data type:", typeof response.data);
+        console.log("Response data:", response.data);
+
+        // Case 1: Direct URL string response
+        if (
+          typeof response.data === "string" &&
+          response.data.startsWith("http")
+        ) {
+          console.log("Opening payment URL in new window:", response.data);
+          window.open(response.data, "_blank");
+          return;
+        }
+
+        // Case 2: URL in data property as string (THIS IS THE ACTUAL FORMAT FROM YOUR SERVER)
+        if (
+          response.data.data &&
+          typeof response.data.data === "string" &&
+          response.data.data.startsWith("http")
+        ) {
+          console.log(
+            "Opening payment URL from data property in new window:",
+            response.data.data
+          );
+          window.open(response.data.data, "_blank");
+          return;
+        }
+
+        // Case 3: URL in paymentUrl property
+        if (
+          response.data.paymentUrl &&
+          response.data.paymentUrl.startsWith("http")
+        ) {
+          console.log(
+            "Opening payment URL from paymentUrl property in new window:",
+            response.data.paymentUrl
+          );
+          window.open(response.data.paymentUrl, "_blank");
+          return;
+        }
+
+        // Case 4: URL in url property
+        if (response.data.url && response.data.url.startsWith("http")) {
+          console.log(
+            "Opening payment URL from url property in new window:",
+            response.data.url
+          );
+          window.open(response.data.url, "_blank");
+          return;
+        }
+
+        // Case 5: Direct Paystack format
+        if (
+          response.data.authorization_url &&
+          response.data.authorization_url.startsWith("http")
+        ) {
+          console.log(
+            "Opening authorization_url in new window:",
+            response.data.authorization_url
+          );
+          window.open(response.data.authorization_url, "_blank");
+          return;
+        }
+
+        // Case 6: Nested Paystack format
+        if (
+          response.data.data &&
+          response.data.data.authorization_url &&
+          response.data.data.authorization_url.startsWith("http")
+        ) {
+          console.log(
+            "Opening nested authorization_url in new window:",
+            response.data.data.authorization_url
+          );
+          window.open(response.data.data.authorization_url, "_blank");
+          return;
+        }
+
+        // Case 6: FREE plan or already on this plan
+        if (
+          selectedPlan.toUpperCase() === "FREE" ||
+          (response.data.message && response.data.message.includes("already"))
+        ) {
+          console.log("Free plan selected or already on this plan");
+          toast.success(
+            selectedPlan.toUpperCase() === "FREE"
+              ? "Successfully switched to Free plan"
+              : "You are already subscribed to this plan"
+          );
+          return;
+        }
+
+        // Case 7: Unexpected response format but not an error
+        if (response.data.success === true || response.status === 200) {
+          console.log("Payment process seems successful but no URL returned");
+          toast.success("Subscription updated successfully!");
+          return;
+        }
+
+        // Default case: No recognizable response format
+        console.warn("Unrecognized response format:", response.data);
+        toast.error("Unexpected response from server. Please try again.");
+      }
+    } catch (error) {
+      console.error("Payment initialization error:", error);
+
+      // Enhanced error logging
+      if (isAxiosError(error)) {
+        console.error("Error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+
+        // If we have a specific error message from the API, show it
+        if (error.response?.data?.message) {
+          const errorMessage = error.response.data.message;
+
+          // If it's about already being on this plan, treat as success
+          if (errorMessage.includes("already")) {
+            toast.success("You are already subscribed to this plan");
+          } else {
+            toast.error(errorMessage);
+          }
+        } else {
+          toast.error(error.message || "Payment failed. Please try again.");
+        }
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  return (
+    <main className="flex-1 overflow-auto">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
+        <div className="flex items-center justify-between p-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="text-slate-400 hover:text-white" />
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                Subscription & Billing
+              </h1>
+              <p className="text-slate-400">
+                Manage your subscription and payment methods
+              </p>
+            </div>
+          </div>
+
+          <Badge
+            variant="secondary"
+            className={
+              currentSubscription.plan === "FREE"
+                ? "bg-emerald-600/20 text-emerald-400 border-emerald-600/30"
+                : "bg-blue-600/20 text-blue-400 border-blue-600/30"
+            }
+          >
+            {currentSubscription.plan.charAt(0).toUpperCase() +
+              currentSubscription.plan.slice(1).toLowerCase()}{" "}
+            Plan Active
+          </Badge>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-8">
+        {/* Current Subscription */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Current Subscription</CardTitle>
+            <CardDescription className="text-slate-400">
+              Your active subscription details
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
+              <div>
+                <h3 className="text-lg font-semibold text-white">
+                  {currentSubscription.plan.charAt(0).toUpperCase() +
+                    currentSubscription.plan.slice(1).toLowerCase()}{" "}
+                  Plan
+                </h3>
+                <p className="text-slate-400">
+                  Active since{" "}
+                  {new Date(currentSubscription.startDate).toLocaleDateString()}
+                </p>
+                {currentSubscription.endDate && (
+                  <p className="text-slate-400">
+                    Next billing date:{" "}
+                    {new Date(currentSubscription.endDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-white">
+                  ₦
+                  {plans.find(
+                    (p) =>
+                      p.id.toUpperCase() ===
+                      currentSubscription.plan.toUpperCase()
+                  )?.price || 0}
+                </p>
+                <p className="text-slate-400">
+                  {currentSubscription.plan === "FREE"
+                    ? "Forever"
+                    : "per month"}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={
+                    currentSubscription.status === "ACTIVE"
+                      ? "bg-emerald-600/20 text-emerald-400 border-emerald-600/30"
+                      : "bg-amber-600/20 text-amber-400 border-amber-600/30"
+                  }
+                >
+                  {currentSubscription.status}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pricing Plans */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Upgrade Your Plan</CardTitle>
+            <CardDescription className="text-slate-400">
+              Choose a plan that fits your professional needs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingPlans ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-slate-600 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-400">Loading subscription plans...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {plans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className={`relative p-6 rounded-lg border transition-all duration-300 ${
+                      plan.isPopular
+                        ? "border-blue-500 bg-blue-500/10"
+                        : plan.isCurrentPlan
+                        ? "border-emerald-500 bg-emerald-500/10"
+                        : "border-slate-700 bg-slate-800/50"
+                    }`}
+                  >
+                    {plan.isPopular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-blue-600 text-white">
+                          <Star className="w-3 h-3 mr-1" />
+                          Most Popular
+                        </Badge>
+                      </div>
+                    )}
+
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-bold text-white">
+                        {plan.name}
+                      </h3>
+                      <div className="mt-2">
+                        <span className="text-3xl font-bold text-white">
+                          ₦{plan.price}
+                        </span>
+                        <span className="text-slate-400 ml-1">
+                          /{plan.period}
+                        </span>
+                      </div>
                     </div>
 
-                    <Badge variant="secondary" className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30">
-                        Free Plan Active
-                    </Badge>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center gap-2 text-slate-300"
+                        >
+                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      onClick={() =>
+                        !plan.isCurrentPlan && handleUpgrade(plan.id)
+                      }
+                      disabled={plan.isCurrentPlan}
+                      className={`w-full ${
+                        plan.isPopular
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : plan.isCurrentPlan
+                          ? "bg-emerald-600"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      } text-white flex items-center gap-2`}
+                    >
+                      {selectedPlan === plan.id.toUpperCase() && (
+                        <Check className="w-4 h-4" />
+                      )}
+                      {selectedPlan === plan.id.toUpperCase()
+                        ? "Selected Plan"
+                        : plan.buttonText}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Information */}
+        {selectedPlan !== "free" && (
+          <Card
+            id="payment-information"
+            className="bg-slate-900 border-slate-700"
+          >
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-blue-400" />
+                Payment Information
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Review your selected plan and continue to payment
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {/* Selected Plan Summary */}
+              <div className="p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Plan Summary
+                </h3>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-300">Selected Plan:</span>
+                  <span className="text-white font-medium">
+                    {selectedPlan.toUpperCase()}
+                  </span>
                 </div>
-            </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-300">Amount:</span>
+                  <span className="text-white font-medium">
+                    ₦
+                    {plans.find(
+                      (p) => p.id.toUpperCase() === selectedPlan.toUpperCase()
+                    )?.price || "N/A"}
+                    /month
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-300">Payment Provider:</span>
+                  <span className="text-white font-medium capitalize">
+                    {paymentMethods.length > 0
+                      ? paymentMethods[0].name
+                      : "Default Gateway"}
+                  </span>
+                </div>
+              </div>
 
-            <div className="p-6 space-y-8">
-                {/* Current Subscription */}
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white">Current Subscription</CardTitle>
-                        <CardDescription className="text-slate-400">
-                            Your active subscription details
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
-                            <div>
-                                <h3 className="text-lg font-semibold text-white">Free Plan</h3>
-                                <p className="text-slate-400">Active since January 2024</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-white">$0</p>
-                                <p className="text-slate-400">Forever</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+              {/* Previously commented out payment method selection */}
+              {/*<div>*/}
+              {/*    <Label className="text-slate-300">Payment Method</Label>*/}
+              {/*    <Select value={paymentMethod} onValueChange={setPaymentMethod}>*/}
+              {/*        <SelectTrigger className="bg-slate-800 border-slate-600 text-white mt-2">*/}
+              {/*            <SelectValue placeholder="Select payment method"/>*/}
+              {/*        </SelectTrigger>*/}
+              {/*        <SelectContent className="bg-slate-800 border-slate-600">*/}
+              {/*            {*/}
+              {/*                paymentMethods.map((method) => (*/}
+              {/*                    <SelectItem*/}
+              {/*                        key={method._id}*/}
+              {/*                        value={method._id}*/}
+              {/*                        className="text-white hover:bg-slate-700"*/}
+              {/*                    >*/}
+              {/*                        {method.name}*/}
+              {/*                    </SelectItem>*/}
+              {/*                ))*/}
+              {/*            }*/}
+              {/*        </SelectContent>*/}
+              {/*    </Select>*/}
+              {/*</div>*/}
 
-                {/* Pricing Plans */}
-                <Card className="bg-slate-900 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white">Upgrade Your Plan</CardTitle>
-                        <CardDescription className="text-slate-400">
-                            Choose a plan that fits your professional needs
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {plans.map((plan) => (
-                                <div
-                                    key={plan.id}
-                                    className={`relative p-6 rounded-lg border transition-all duration-300 ${
-                                        plan.isPopular
-                                            ? 'border-blue-500 bg-blue-500/10'
-                                            : plan.isCurrentPlan
-                                                ? 'border-emerald-500 bg-emerald-500/10'
-                                                : 'border-slate-700 bg-slate-800/50'
-                                    }`}
-                                >
-                                    {plan.isPopular && (
-                                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                                            <Badge className="bg-blue-600 text-white">
-                                                <Star className="w-3 h-3 mr-1"/>
-                                                Most Popular
-                                            </Badge>
-                                        </div>
-                                    )}
+              <div className="space-y-4">
+                <div className="p-6 bg-slate-800 rounded-lg text-slate-300 text-center">
+                  <p className="mb-4">
+                    You'll be redirected to our secure payment provider to
+                    complete your payment.
+                  </p>
+                  <p>
+                    After completing payment, you'll be automatically returned
+                    to your account with your new plan activated.
+                  </p>
+                </div>
 
-                                    <div className="text-center mb-6">
-                                        <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                                        <div className="mt-2">
-                                            <span className="text-3xl font-bold text-white">${plan.price}</span>
-                                            <span className="text-slate-400 ml-1">/{plan.period}</span>
-                                        </div>
-                                    </div>
+                <div className="flex items-center gap-3 p-4 bg-blue-900/30 border border-blue-800 rounded-lg">
+                  <div className="p-2 bg-blue-800 rounded-full">
+                    <Shield className="w-5 h-5 text-blue-200" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-blue-200">
+                      Secure Payment
+                    </h4>
+                    <p className="text-sm text-blue-300">
+                      Your payment will be processed securely by our payment
+                      provider
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                                    <ul className="space-y-3 mb-6">
-                                        {plan.features.map((feature, index) => (
-                                            <li key={index} className="flex items-center gap-2 text-slate-300">
-                                                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0"/>
-                                                <span className="text-sm">{feature}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+              <div className="flex items-center gap-2 p-4 bg-slate-800 rounded-lg">
+                <Shield className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm text-slate-300">
+                  Your payment information is encrypted and secure
+                </span>
+              </div>
 
-                                    <Button
-                                        onClick={() => !plan.isCurrentPlan && handleUpgrade(plan.id)}
-                                        disabled={plan.isCurrentPlan}
-                                        className={`w-full ${
-                                            plan.isPopular
-                                                ? 'bg-blue-600 hover:bg-blue-700'
-                                                : plan.isCurrentPlan
-                                                    ? 'bg-emerald-600'
-                                                    : 'bg-slate-700 hover:bg-slate-600'
-                                        } text-white flex items-center gap-2`}
-                                    >
-                                        {
-                                            plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM" === selectedPlan && (
-                                                <Check className="w-4 h-4"/>
-                                            )
-                                        }
-                                        {
-                                            plan.id.toUpperCase() as "PROFESSIONAL" | "PREMIUM" === selectedPlan ? "Selected Plan" :
-                                                plan.buttonText
-                                        }
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Payment Information */}
-                {selectedPlan !== 'free' && (
-                    <Card className="bg-slate-900 border-slate-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center gap-2">
-                                <CreditCard className="w-5 h-5 text-blue-400"/>
-                                Payment Information
-                            </CardTitle>
-                            <CardDescription className="text-slate-400">
-                                Enter your payment details to complete the subscription
-                            </CardDescription>
-                        </CardHeader>
-
-                        <CardContent className="space-y-6">
-                            {/*<div>*/}
-                            {/*    <Label className="text-slate-300">Payment Method</Label>*/}
-                            {/*    <Select value={paymentMethod} onValueChange={setPaymentMethod}>*/}
-                            {/*        <SelectTrigger className="bg-slate-800 border-slate-600 text-white mt-2">*/}
-                            {/*            <SelectValue placeholder="Select payment method"/>*/}
-                            {/*        </SelectTrigger>*/}
-                            {/*        <SelectContent className="bg-slate-800 border-slate-600">*/}
-                            {/*            {*/}
-                            {/*                paymentMethods.map((method) => (*/}
-                            {/*                    <SelectItem*/}
-                            {/*                        key={method._id}*/}
-                            {/*                        value={method._id}*/}
-                            {/*                        className="text-white hover:bg-slate-700"*/}
-                            {/*                    >*/}
-                            {/*                        {method.name}*/}
-                            {/*                    </SelectItem>*/}
-                            {/*                ))*/}
-                            {/*            }*/}
-                            {/*        </SelectContent>*/}
-                            {/*    </Select>*/}
-                            {/*</div>*/}
-
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div>
-                                        <Label className="text-slate-300">Card Type</Label>
-                                        <Select value={billingInfo.cardType}
-                                                onValueChange={(value) => setBillingInfo({
-                                                    ...billingInfo,
-                                                    cardType: value
-                                                })}>
-                                            <SelectTrigger
-                                                className="bg-slate-800 border-slate-600 text-white mt-2">
-                                                <SelectValue placeholder="Select country"/>
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-slate-800 border-slate-600">
-                                                {
-                                                    cardTypes.map(
-                                                        (cardType) => (
-                                                            <SelectItem
-                                                                key={cardType.id}
-                                                                value={cardType.value}
-                                                                className="text-white hover:bg-slate-700"
-                                                            >
-                                                                {cardType.name}
-                                                            </SelectItem>
-                                                        ))
-                                                }
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-slate-300">Card Number</Label>
-                                        <Input
-                                            value={billingInfo.cardNumber}
-                                            onChange={(e) => setBillingInfo({
-                                                ...billingInfo,
-                                                cardNumber: e.target.value
-                                            })}
-                                            placeholder="1234 5678 9012 3456"
-                                            className="bg-slate-800 border-slate-600 text-white mt-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-slate-300">Cardholder Name</Label>
-                                        <Input
-                                            value={billingInfo.cardName}
-                                            onChange={(e) => setBillingInfo({...billingInfo, cardName: e.target.value})}
-                                            placeholder="John Doe"
-                                            className="bg-slate-800 border-slate-600 text-white mt-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-slate-300">Expiry Date</Label>
-                                        <Input
-                                            value={billingInfo.expiryDate}
-                                            onChange={(e) => setBillingInfo({
-                                                ...billingInfo,
-                                                expiryDate: e.target.value
-                                            })}
-                                            placeholder="MM/YY"
-                                            className="bg-slate-800 border-slate-600 text-white mt-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-slate-300">CVV</Label>
-                                        <Input
-                                            type="password"
-                                            value={billingInfo.cvv}
-                                            onChange={(e) => setBillingInfo({...billingInfo, cvv: Number(e.target.value)})}
-                                            placeholder="123"
-                                            className="bg-slate-800 border-slate-600 text-white mt-2"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 p-4 bg-slate-800 rounded-lg">
-                                <Shield className="w-5 h-5 text-emerald-400"/>
-                                <span className="text-sm text-slate-300">
-                                    Your payment information is encrypted and secure
-                                </span>
-                            </div>
-
-                            <Button
-                                disabled={isUpgrading}
-                                onClick={handlePayment} className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                                <Zap className="w-4 h-4 mr-2"/>
-                                Complete Payment
-                            </Button>
-                        </CardContent>
-                    </Card>
+              <Button
+                disabled={isUpgrading}
+                onClick={handlePayment}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isUpgrading ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Continue to Payment
+                  </>
                 )}
-            </div>
-        </main>
-    );
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </main>
+  );
 }
 
 const plan = [
-    {
-        id: 1,
-        name: "Free",
-        price: 0,
-        features: [
-            "Basic profile creation",
-            "Upload up to 5 credentials",
-            "Basic CV generator",
-            "1 CV download per month",
-            "Email support"
-        ],
-        isCurrentPlan: true
-    },
-    {
-        id: 2,
-        name: "Professional",
-        price: 1,
-        period: "per month",
-        features: [
-            "Enhanced profile with portfolio",
-            "Unlimited credential uploads",
-            "AI-powered CV optimization",
-            "Unlimited CV downloads",
-            "NFT skill badges",
-            "Priority verification",
-            "Advanced analytics",
-            "Priority support"
-        ],
-        isCurrentPlan: false
-    },
-    {
-        id: 3,
-        name: "Premium",
-        price: 59,
-        period: "per month",
-        features: [
-            "Everything in Professional",
-            "Personal brand building tools",
-            "Advanced recommendation engine",
-            "Multiple CV templates",
-            "Interview preparation tools",
-            "Career coaching sessions",
-            "Premium support",
-            "API access"
-        ],
-        isCurrentPlan:  false
-    }
-]
+  {
+    id: 1,
+    name: "Free",
+    price: 0,
+    features: [
+      "Basic profile creation",
+      "Upload up to 5 credentials",
+      "Basic CV generator",
+      "1 CV download per month",
+      "Email support",
+    ],
+    isCurrentPlan: true,
+  },
+  {
+    id: 2,
+    name: "Professional",
+    price: 1,
+    period: "per month",
+    features: [
+      "Enhanced profile with portfolio",
+      "Unlimited credential uploads",
+      "AI-powered CV optimization",
+      "Unlimited CV downloads",
+      "NFT skill badges",
+      "Priority verification",
+      "Advanced analytics",
+      "Priority support",
+    ],
+    isCurrentPlan: false,
+  },
+  {
+    id: 3,
+    name: "Premium",
+    price: 59,
+    period: "per month",
+    features: [
+      "Everything in Professional",
+      "Personal brand building tools",
+      "Advanced recommendation engine",
+      "Multiple CV templates",
+      "Interview preparation tools",
+      "Career coaching sessions",
+      "Premium support",
+      "API access",
+    ],
+    isCurrentPlan: false,
+  },
+];

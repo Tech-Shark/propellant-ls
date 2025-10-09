@@ -1,7 +1,5 @@
 import {
-  Badge,
   Home,
-  Users,
   FileText,
   Award,
   Settings,
@@ -13,7 +11,8 @@ import {
   CreditCard,
   ArrowLeft,
   Wallet,
-  UserPlus, LogOut,
+  UserPlus,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,8 +27,8 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
-import logo from "../../public/logo.png";
-import {useAuth} from "@/context/AuthContext.tsx";
+import { useAuth } from "@/context/AuthContext.tsx";
+import Logo from "@/components/Logo.tsx";
 
 const navigationItems = [
   {
@@ -99,13 +98,7 @@ export function TalentSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white">
-            <img
-              src={logo}
-              alt="Propellant Logo"
-              className="w-8 h-8 object-contain"
-            />
-          </div>
+          <Logo size="sm" />
           <div>
             <h2 className="font-bold text-sidebar-foreground">Propellant</h2>
             <p className="text-xs text-sidebar-foreground/70">Talent Portal</p>
@@ -167,8 +160,8 @@ export function TalentSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button
-                      onClick={logout}
-                      className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
+                    onClick={logout}
+                    className="flex items-center gap-3 text-red-400 hover:bg-red-500/20 hover:border-red-500/30"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Log out</span>
