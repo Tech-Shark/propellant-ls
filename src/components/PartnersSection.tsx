@@ -53,18 +53,18 @@ export function PartnersSection() {
           {PARTNERS.map((partner, index) => (
             <div
               key={`partner-1-${index}`}
-              className="flex-shrink-0 w-40 h-20 bg-slate-800/50 rounded-lg border border-slate-700 flex items-center justify-center hover:bg-slate-800 hover:border-slate-600 transition-all duration-300"
+              className="flex-shrink-0 w-40 h-20 flex items-center justify-center transition-all duration-300"
             >
               <img
                 src={partner.logo}
                 alt={partner.name}
-                className="max-w-[120px] max-h-[60px] object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                className="max-w-[120px] max-h-[60px] object-contain opacity-50 hover:opacity-100 transition-opacity duration-300"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium">${partner.name}</span>`;
+                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium opacity-50">${partner.name}</span>`;
                   }
                 }}
               />
@@ -74,18 +74,18 @@ export function PartnersSection() {
           {PARTNERS.map((partner, index) => (
             <div
               key={`partner-2-${index}`}
-              className="flex-shrink-0 w-40 h-20 bg-slate-800/50 rounded-lg border border-slate-700 flex items-center justify-center hover:bg-slate-800 hover:border-slate-600 transition-all duration-300"
+              className="flex-shrink-0 w-40 h-20 flex items-center justify-center transition-all duration-300"
             >
               <img
                 src={partner.logo}
                 alt={partner.name}
-                className="max-w-[120px] max-h-[60px] object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                className="max-w-[120px] max-h-[60px] object-contain opacity-50 hover:opacity-100 transition-opacity duration-300"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium">${partner.name}</span>`;
+                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium opacity-50">${partner.name}</span>`;
                   }
                 }}
               />
