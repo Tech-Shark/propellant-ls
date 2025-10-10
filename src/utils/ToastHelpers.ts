@@ -150,21 +150,33 @@ export const showInfo = (message: string, duration = 3000) => {
 
 /**
  * Extract error message from any error type
+ * NEVER returns empty strings - always provides meaningful feedback
  */
 export const extractErrorMessage = (error: any, fallback = 'An error occurred'): string => {
+  // Check for null/undefined error
+  if (!error) {
+    return fallback;
+  }
+  
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || 
+    const message = error.response?.data?.message || 
            (error as any).friendlyMessage || 
-           error.message || 
-           fallback;
+           error.message;
+    
+    // Ensure we never return empty strings
+    if (message && message.trim() !== '') {
+      return message;
+    }
+    return fallback;
   }
   
   if (error instanceof Error) {
-    return error.message || fallback;
+    const message = error.message;
+    return (message && message.trim() !== '') ? message : fallback;
   }
   
   if (typeof error === 'string') {
-    return error;
+    return (error.trim() !== '') ? error : fallback;
   }
   
   return fallback;

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo.tsx";
 import { Link } from "react-router-dom";
+import { PartnersSection } from "@/components/PartnersSection";
 import {
   Dialog,
   DialogContent,
@@ -368,6 +369,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Partners Section */}
+      <PartnersSection />
 
       {/* Features Toggle */}
       <section id="features" className="py-20 px-4">

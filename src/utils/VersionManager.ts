@@ -5,7 +5,7 @@
  * This ensures users always have the latest version without stale data issues.
  */
 
-const APP_VERSION = '2.0.0'; // Increment this when you want to force clear old data
+const APP_VERSION = '2.1.0'; // Increment this when you want to force clear old data
 const VERSION_KEY = 'app_version';
 
 /**
@@ -51,8 +51,22 @@ const clearOldData = (): void => {
     const cookies = document.cookie.split(';');
     cookies.forEach(cookie => {
       const cookieName = cookie.split('=')[0].trim();
+      // Clear cookie with multiple path and domain combinations to ensure complete cleanup
       document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
     });
+    
+    // Clear cookie fallbacks from all storage
+    try {
+      const allLocalStorageKeys = Object.keys(localStorage);
+      allLocalStorageKeys.forEach(key => {
+        if (key.startsWith('cookie_fallback_') && !keysToPreserve.includes(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (error) {
+      console.error('Error clearing cookie fallbacks:', error);
+    }
     
     console.log('Old data cleared successfully');
   } catch (error) {
