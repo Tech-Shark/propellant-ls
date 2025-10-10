@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ReactNode, useState } from "react";
 import { OfflineEnabledQueryProvider } from "./offline-support";
+import { toast } from "sonner";
 
 // Create a client
 // Instead of creating the client directly, we'll create it inside the component
@@ -14,7 +15,26 @@ const defaultQueryClientOptions = {
       gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      retry: 1,
+      retry: (failureCount: number, error: any) => {
+        // Don't retry on 4xx errors (client errors)
+        if (error?.response?.status >= 400 && error?.response?.status < 500) {
+          return false;
+        }
+        // Retry up to 1 time for 5xx errors (server errors) and network errors
+        return failureCount < 1;
+      },
+      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: false, // Don't retry mutations by default
+      onError: (error: any) => {
+        console.error("Mutation error:", error);
+        // Global error handler for mutations
+        const message = error?.response?.data?.message || error?.message || "An error occurred";
+        toast.error("Operation failed", {
+          description: message,
+        });
+      },
     },
   },
 };

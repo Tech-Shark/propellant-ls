@@ -297,9 +297,14 @@ const Index = () => {
                     src="/Propellant-file.png"
                     alt="Video thumbnail"
                     className="w-full h-full object-cover opacity-90"
+                    loading="lazy"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
+                      target.style.display = 'none';
+                      // Show a fallback background instead
+                      if (target.parentElement) {
+                        target.parentElement.style.background = 'linear-gradient(135deg, rgb(51 65 85) 0%, rgb(15 23 42) 100%)';
+                      }
                     }}
                   />
                 </div>

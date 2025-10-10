@@ -40,17 +40,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       // Mark that we've attempted verification
       verificationAttempted.current = true;
 
-      // Quick check if we have a token before attempting any verification
-      if (!hasToken()) {
-        setIsVerifying(false);
-        return;
-      }
+      try {
+        // Quick check if we have a token before attempting any verification
+        if (!hasToken()) {
+          setIsVerifying(false);
+          return;
+        }
 
-      // If we don't have user data but have a token, try to fetch user data
-      if (!user && hasToken()) {
-        await fetchUser();
+        // If we don't have user data but have a token, try to fetch user data
+        if (!user && hasToken()) {
+          await fetchUser();
+        }
+      } catch (error) {
+        console.error("Error verifying authentication:", error);
+        // On error, still mark as complete to avoid infinite loading
+        toast.error("Authentication check failed. Please try logging in again.");
+      } finally {
+        setIsVerifying(false);
       }
-      setIsVerifying(false);
     };
 
     // Run verification immediately

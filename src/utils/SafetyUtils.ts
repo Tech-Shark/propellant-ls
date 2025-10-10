@@ -91,9 +91,78 @@ export const handleFormValidationErrors = (error: any): void => {
  * @returns Boolean indicating if user is on mobile
  */
 export const isMobileDevice = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
+  try {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  } catch (error) {
+    console.error("Error detecting mobile device:", error);
+    return false;
+  }
+};
+
+/**
+ * Check if storage (localStorage/sessionStorage) is available
+ */
+export const isStorageAvailable = (type: "localStorage" | "sessionStorage" = "localStorage"): boolean => {
+  try {
+    const storage = type === "localStorage" ? window.localStorage : window.sessionStorage;
+    const testKey = "__storage_test__";
+    storage.setItem(testKey, "test");
+    storage.removeItem(testKey);
+    return true;
+  } catch (error) {
+    console.warn(`${type} is not available:`, error);
+    return false;
+  }
+};
+
+/**
+ * Check if the app is online
+ */
+export const isOnline = (): boolean => {
+  try {
+    return navigator.onLine;
+  } catch (error) {
+    console.error("Error checking online status:", error);
+    return true; // Assume online if check fails
+  }
+};
+
+/**
+ * Add online/offline event listeners
+ */
+export const addConnectionListeners = (
+  onOnline?: () => void,
+  onOffline?: () => void
+): (() => void) => {
+  const handleOnline = () => {
+    toast.success("Connection restored", {
+      description: "You're back online!",
+    });
+    onOnline?.();
+  };
+
+  const handleOffline = () => {
+    toast.error("Connection lost", {
+      description: "Please check your internet connection.",
+    });
+    onOffline?.();
+  };
+
+  try {
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Return cleanup function
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  } catch (error) {
+    console.error("Error adding connection listeners:", error);
+    return () => {}; // Return no-op cleanup
+  }
 };
 
 /**
@@ -119,5 +188,8 @@ export default {
   showFriendlyError,
   handleFormValidationErrors,
   isMobileDevice,
+  isStorageAvailable,
+  isOnline,
+  addConnectionListeners,
   throttle
 };
