@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getToken, removeToken, isMobileDevice } from '@/utils/TokenStorage';
 import { getErrorMessage } from '@/utils/ErrorHandler';
+import logger from '@/utils/Logger';
 
 // Define retry configuration type and values
 interface RetryConfig {
@@ -47,39 +48,19 @@ axiosInstance.interceptors.request.use(
         if (accessToken) {
             config.headers['Authorization'] = `Bearer ${accessToken}`;
             
-            // Only log auth headers in development
-            if (process.env.NODE_ENV !== 'production') {
-                console.log('Auth token found and set in request header');
-            }
+            // SECURITY FIX: Use logger instead of console.log
+            logger.debug('Auth token found and set in request header');
         } else if (!isAuthRequest) {
             // Only warn for non-auth requests that should have a token
-            console.warn('No auth token found! Authentication may fail.');
+            logger.warn('No auth token found! Authentication may fail.');
         }
         
-        // Only log headers in development
-        if (process.env.NODE_ENV !== 'production') {
-            // Log all request headers for debugging but sanitize Authorization
-            const sanitizedHeaders = {...config.headers};
-            if (sanitizedHeaders.Authorization) {
-                sanitizedHeaders.Authorization = 'Bearer [REDACTED]';
-            }
-            console.log('Request headers:', sanitizedHeaders);
-            
-            // For POST requests, log the request body (excluding sensitive data for security)
-            if (config.method?.toLowerCase() === 'post' && config.data && !config.url?.includes('login')) {
-                // Don't log sensitive data like passwords
-                console.log('Request to:', config.url);
-                const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
-                
-                // Create a safe copy of the data for logging (exclude passwords)
-                const safeData = {...data};
-                if (safeData.password) safeData.password = '********';
-                if (safeData.token) safeData.token = '[REDACTED]';
-                if (safeData.accessToken) safeData.accessToken = '[REDACTED]';
-                if (safeData.refreshToken) safeData.refreshToken = '[REDACTED]';
-                console.log('Request data (sanitized):', safeData);
-            }
-        }
+        // SECURITY FIX: Use logger for request logging
+        logger.apiRequest(
+            config.method || 'GET',
+            config.url || '',
+            config.data
+        );
         
         return config;
     },
@@ -94,7 +75,7 @@ axiosInstance.interceptors.response.use(
         
         // Make sure we have a config object even in network errors
         if (!originalRequest && error.message) {
-            console.error('Network error without config:', error.message);
+            logger.error('Network error without config:', error.message);
             const errorInfo = getErrorMessage(error);
             error.friendlyMessage = errorInfo.friendlyMessage;
             return Promise.reject(error);
@@ -141,8 +122,8 @@ axiosInstance.interceptors.response.use(
         if (shouldRetry) {
             originalRequest._retryCount++;
             
-            // Log the retry attempt
-            console.log(`Retrying request (${originalRequest._retryCount}/${retryConfig.retries}): ${originalRequest.url}`);
+            // SECURITY FIX: Use logger for retry logging
+            logger.debug(`Retrying request (${originalRequest._retryCount}/${retryConfig.retries}): ${originalRequest.url}`);
             
             // Wait before retrying (exponential backoff)
             const backoffDelay = retryConfig.retryDelay * Math.pow(2, originalRequest._retryCount - 1);
@@ -174,7 +155,7 @@ const clearSessionAndRedirect = (silentRedirect = false) => {
         // Prevent multiple redirects within a short timeframe (1 second)
         const now = Date.now();
         if (now - lastRedirectTimestamp < 1000) {
-            console.log('Redirect prevented: too soon after last redirect');
+            logger.debug('Redirect prevented: too soon after last redirect');
             return;
         }
         lastRedirectTimestamp = now;
@@ -182,7 +163,7 @@ const clearSessionAndRedirect = (silentRedirect = false) => {
         // Public routes don't need to redirect
         const publicRoutes = ['/login', '/forgot-password', '/reset-password', '/privacypolicy'];
         if (publicRoutes.some(route => window.location.pathname.includes(route))) {
-            console.log('Already on a public route, skipping redirect');
+            logger.debug('Already on a public route, skipping redirect');
             return;
         }
         
@@ -198,7 +179,7 @@ const clearSessionAndRedirect = (silentRedirect = false) => {
         }
         
         // Log the redirection
-        console.log(silentRedirect ? 
+        logger.info(silentRedirect ? 
             'Redirecting to login page (silent)...' : 
             'Session expired or invalid. Redirecting to login page...');
         
@@ -208,7 +189,7 @@ const clearSessionAndRedirect = (silentRedirect = false) => {
                 sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
             }
         } catch (e) {
-            console.warn('Failed to save redirect URL:', e);
+            logger.warn('Failed to save redirect URL:', e);
         }
         
         // Redirect immediately for silent redirects, with delay for visible ones
@@ -220,7 +201,7 @@ const clearSessionAndRedirect = (silentRedirect = false) => {
             }
         }, delay);
     } catch (error) {
-        console.error('Error during session cleanup:', error);
+        logger.error('Error during session cleanup:', error);
         // Force redirect even if there's an error
         if (!window.location.pathname.includes('/login')) {
             window.location.href = '/login';

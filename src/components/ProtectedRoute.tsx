@@ -1,9 +1,14 @@
+/**
+ * SECURITY WARNING: Client-side role checks are UI-only!
+ * Backend MUST validate roles on ALL API endpoints.
+ */
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { hasToken } from "@/utils/TokenStorage";
 import { UserRole } from "@/types/user";
 import { toast } from "sonner";
+import logger from "@/utils/Logger";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -52,7 +57,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           await fetchUser();
         }
       } catch (error) {
-        console.error("Error verifying authentication:", error);
+        logger.error("Error verifying authentication:", error);
         // On error, still mark as complete to avoid infinite loading
         toast.error("Authentication check failed. Please try logging in again.");
       } finally {

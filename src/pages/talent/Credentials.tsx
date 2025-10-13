@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import logger from "@/utils/Logger";
 import {
   Card,
   CardContent,
@@ -66,52 +67,8 @@ export default function Credentials() {
       axiosInstance
         .get("/credentials")
         .then((response) => {
-          // Log the entire response to understand its structure
-          console.log("Full API response:", response?.data);
-
-          // Deep inspect response structure for debugging
-          console.log("Response data keys:", Object.keys(response?.data || {}));
-          if (response?.data?.data) {
-            console.log(
-              "Response data.data keys:",
-              Object.keys(response?.data?.data || {})
-            );
-
-            // Check specific data structure for credentials path
-            if (response?.data?.data?.credentials) {
-              console.log(
-                "Credentials data type:",
-                typeof response.data.data.credentials
-              );
-              if (Array.isArray(response.data.data.credentials)) {
-                console.log(
-                  "Credentials array found! Length:",
-                  response.data.data.credentials.length
-                );
-
-                // Log important ID fields for debugging
-                if (response.data.data.credentials.length > 0) {
-                  const sample = response.data.data.credentials[0];
-                  console.log("ID Fields in first credential:", {
-                    _id: sample._id,
-                    credentialId: sample.credentialId,
-                    id: sample.id,
-                    blockchainCredentialId: sample.blockchainCredentialId,
-                  });
-                }
-
-                console.log(
-                  "First credential:",
-                  response.data.data.credentials[0]
-                );
-              } else {
-                console.log(
-                  "Credentials is not an array but:",
-                  response.data.data.credentials
-                );
-              }
-            }
-          }
+          // SECURITY FIX: Use logger instead of console.log to prevent information disclosure
+          logger.apiResponse("/credentials", response?.data);
 
           // Try multiple paths to find credentials array based on API response structure
           let credentialsData = null;
@@ -130,14 +87,10 @@ export default function Credentials() {
                 sample.walletAddr
               );
 
-              console.log("Wallet address check:", {
+              // SECURITY FIX: Use logger instead of console.log
+              logger.debug("Wallet address check:", {
                 hasWalletAddress,
-                sample: {
-                  walletAddress: sample.walletAddress,
-                  userWalletAddress: sample.userWalletAddress,
-                  talentWalletAddress: sample.talentWalletAddress,
-                  walletAddr: sample.walletAddr,
-                },
+                hasField: !!(sample.walletAddress || sample.userWalletAddress),
               });
 
               return hasWalletAddress;

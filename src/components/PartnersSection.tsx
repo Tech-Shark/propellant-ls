@@ -64,7 +64,11 @@ export function PartnersSection() {
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium opacity-50">${partner.name}</span>`;
+                    // SECURITY FIX: Use textContent instead of innerHTML to prevent XSS
+                    const span = document.createElement('span');
+                    span.className = 'text-slate-400 text-sm font-medium opacity-50';
+                    span.textContent = partner.name; // Safe - auto-escaped
+                    parent.appendChild(span);
                   }
                 }}
               />
@@ -85,7 +89,11 @@ export function PartnersSection() {
                   target.style.display = 'none';
                   const parent = target.parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-slate-400 text-sm font-medium opacity-50">${partner.name}</span>`;
+                    // SECURITY FIX: Use textContent instead of innerHTML to prevent XSS
+                    const span = document.createElement('span');
+                    span.className = 'text-slate-400 text-sm font-medium opacity-50';
+                    span.textContent = partner.name; // Safe - auto-escaped
+                    parent.appendChild(span);
                   }
                 }}
               />

@@ -14,6 +14,8 @@ import { Download } from "lucide-react";
 import { toast } from "react-hot-toast";
 import CVRenderer from "./CVRenderer";
 import { generateCV } from "./CVTemplateEngine";
+import { sanitizeHTML } from "@/utils/SafetyUtils";
+import logger from "@/utils/Logger";
 
 interface CVDownloadModalProps {
   isOpen: boolean;
@@ -54,9 +56,9 @@ const CVDownloadModal: React.FC<CVDownloadModalProps> = ({
         selectedTemplate // Template ID
       );
 
-      // Create a temporary container for rendering
+      // SECURITY FIX: Sanitize HTML before rendering to prevent XSS
       const container = document.createElement("div");
-      container.innerHTML = html;
+      container.innerHTML = sanitizeHTML(html);
 
       // Use html2pdf.js to export as PDF
       html2pdf()
@@ -75,11 +77,11 @@ const CVDownloadModal: React.FC<CVDownloadModalProps> = ({
         })
         .catch((error) => {
           toast.error("Failed to download CV");
-          console.error("PDF generation error:", error);
+          logger.error("PDF generation error:", error);
         });
     } catch (error) {
       toast.error("Error generating CV PDF");
-      console.error("CV generation error:", error);
+      logger.error("CV generation error:", error);
     }
   };
 

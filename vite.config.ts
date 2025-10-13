@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 3000,
+    port: 8080, // SECURITY: Changed from 3000 to 8080 as per requirements
   },
   plugins: [
     react(),
@@ -16,6 +16,16 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // SECURITY FIX: Strip console.log statements from production builds
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production', // Remove console.* in production
+        drop_debugger: true,
+      },
     },
   },
 }));

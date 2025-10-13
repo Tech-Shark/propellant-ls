@@ -33,6 +33,8 @@ import {
 } from "@/components/CVTemplates/CVTemplateEngine";
 import { CVTemplateModal } from "@/components/CVTemplates/CVTemplateModal";
 import html2pdf from "html2pdf.js";
+import { sanitizeHTML } from "@/utils/SafetyUtils";
+import logger from "@/utils/Logger";
 
 // Helper function to validate URLs
 const isValidURL = (url: string): boolean => {
@@ -440,14 +442,8 @@ export default function CVBuilder() {
         experiences: formattedExperiences,
       };
 
-      // Log what we're sending (for debugging) - exact format that should match Postman
-      console.log(
-        "Sending data for optimization:",
-        JSON.stringify(apiFormattedData, null, 2)
-      );
-
-      // Also log in a format that's easy to copy-paste for Postman testing
-      console.log("POSTMAN FORMAT:", JSON.stringify(apiFormattedData));
+      // SECURITY FIX: Use logger instead of console.log
+      logger.debug("Sending data for optimization:", apiFormattedData);
 
       // Validate the data structure before sending
       const validateData = () => {
@@ -1347,8 +1343,9 @@ export default function CVBuilder() {
         jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
       };
 
+      // SECURITY FIX: Sanitize HTML before rendering to prevent XSS
       const element = document.createElement("div");
-      element.innerHTML = html;
+      element.innerHTML = sanitizeHTML(html);
       element.style.width = "8.27in";
       element.style.padding = "0.3in";
 
@@ -1356,7 +1353,7 @@ export default function CVBuilder() {
 
       toast.success("Your CV has been downloaded successfully!");
     } catch (error) {
-      console.error("Download error:", error);
+      logger.error("Download error:", error);
       toast.error(
         "We couldn't download your CV. Please try again or check your browser settings."
       );
