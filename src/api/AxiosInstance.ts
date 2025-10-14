@@ -42,17 +42,19 @@ axiosInstance.interceptors.request.use(
         // Skip token check for authentication requests
         const isAuthRequest = config.url?.includes('auth/') || false;
         
-        // Check token with refresh check for non-auth requests
+        // With cookie-based auth, we don't need to set the Authorization header
+        // The cookies will be sent automatically with the request
+        // But we'll check if we have a token in localStorage for backward compatibility
         const accessToken = getToken(!isAuthRequest);
         
         if (accessToken) {
+            // Note: With HTTP-only cookies, this is redundant but kept for compatibility
+            // with any existing server endpoints still using bearer token auth
             config.headers['Authorization'] = `Bearer ${accessToken}`;
-            
-            // SECURITY FIX: Use logger instead of console.log
-            logger.debug('Auth token found and set in request header');
-        } else if (!isAuthRequest) {
-            // Only warn for non-auth requests that should have a token
-            logger.warn('No auth token found! Authentication may fail.');
+            logger.debug('Auth token found and set in request header (for backward compatibility)');
+        } else if (!isAuthRequest && !document.cookie.includes('access_token')) {
+            // Only warn if we have neither a token nor a cookie
+            logger.warn('No auth token or cookie found! Authentication may fail.');
         }
         
         // SECURITY FIX: Use logger for request logging
