@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CreateOrganizationModal } from "./CreateOrganizationModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ export function UserManagement() {
     isDeleted: "false",
     search: "",
   });
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 
   // Combine params with roleFilter
   const queryParams = {
@@ -72,6 +74,7 @@ export function UserManagement() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useAdminUsers(queryParams);
 
   // Extract users and pagination data
@@ -185,10 +188,17 @@ export function UserManagement() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>
-            Manage all platform users and their permissions
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>
+                Manage all platform users and their permissions
+              </CardDescription>
+            </div>
+            <Button onClick={() => setShowCreateOrgModal(true)}>
+              Create Organization Account
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -388,6 +398,12 @@ export function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      <CreateOrganizationModal
+        open={showCreateOrgModal}
+        onOpenChange={setShowCreateOrgModal}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }
