@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   LogOut,
   Award,
+  Video,
 } from "lucide-react";
 import Logo from "@/components/Logo.tsx";
 import {
@@ -48,6 +49,12 @@ const navigationItems = [
     title: "Credential Verification",
     url: "/organization/credentials",
     icon: Award,
+  },
+  {
+    title: "Interviews",
+    url: "#",
+    icon: Video,
+    comingSoon: true,
   },
   // {
   //   title: "Messages",
@@ -121,11 +128,23 @@ export function OrganizationSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                  <SidebarMenuButton asChild={!item.comingSoon}>
+                    {item.comingSoon ? (
+                      <div className="flex items-center gap-3 cursor-not-allowed opacity-60">
+                        <item.icon className="w-4 h-4" />
+                        <span>
+                          {item.title}{" "}
+                          <span className="text-xs text-muted-foreground">
+                            (coming soon)
+                          </span>
+                        </span>
+                      </div>
+                    ) : (
+                      <Link to={item.url} className="flex items-center gap-3">
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
