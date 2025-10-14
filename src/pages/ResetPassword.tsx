@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import React, { useState } from "react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import { resetPasswordSchema } from "@/utils/validation/schemas";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -45,6 +46,20 @@ const ResetPassword = () => {
     e.preventDefault();
 
     if (loading) {
+      return;
+    }
+
+    // Validate password fields with Zod schema
+    const validationResult = resetPasswordSchema.safeParse({
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    });
+
+    if (!validationResult.success) {
+      // Show validation errors
+      validationResult.error.errors.forEach((err) => {
+        toast.error(err.message);
+      });
       return;
     }
 

@@ -16,6 +16,9 @@ import { Label } from "@/components/ui/label";
 import { useOTPContext } from "@/context/OTPContext.tsx";
 import PhoneInputComponent from "@/components/PhoneInputComponent.tsx";
 import Logo from "@/components/Logo.tsx";
+import { loginSchema, registerSchema } from "@/utils/validation/schemas";
+import { z } from "zod";
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -49,6 +52,24 @@ const Login = () => {
 
     try {
       if (isSignUp) {
+        // Validate registration data with Zod schema
+        const validationResult = registerSchema.safeParse({
+          phone: formatedPhoneNumber,
+          email,
+          password,
+          termsAndConditionsAccepted,
+          role: role.toUpperCase() as UserRole,
+          referralCode: referralCode && referralCode.trim() || "",
+        });
+
+        if (!validationResult.success) {
+          // Show validation errors
+          validationResult.error.errors.forEach((err) => {
+            toast.error(err.message);
+          });
+          return;
+        }
+
         const status = await register(
           formatedPhoneNumber,
           email,
@@ -62,6 +83,17 @@ const Login = () => {
           setIsSignUp(false);
         }
       } else {
+        // Validate login data with Zod schema
+        const validationResult = loginSchema.safeParse({ email, password });
+
+        if (!validationResult.success) {
+          // Show validation errors
+          validationResult.error.errors.forEach((err) => {
+            toast.error(err.message);
+          });
+          return;
+        }
+
         const { status, userRole } = await login(email, password);
 
         if (status) {

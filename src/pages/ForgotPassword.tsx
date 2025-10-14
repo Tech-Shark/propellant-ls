@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import React, { useEffect } from "react";
 import axiosInstance from "@/api/AxiosInstance.ts";
 import axios from "axios";
+import { forgotPasswordSchema } from "@/utils/validation/schemas";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -32,6 +33,17 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (loading) {
+      return;
+    }
+
+    // Validate email with Zod schema
+    const validationResult = forgotPasswordSchema.safeParse({ email });
+
+    if (!validationResult.success) {
+      // Show validation errors
+      validationResult.error.errors.forEach((err) => {
+        toast.error(err.message);
+      });
       return;
     }
 
