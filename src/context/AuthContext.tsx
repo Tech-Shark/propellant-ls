@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       return;
     }
-    
+
     // Check for existing session
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -78,9 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const response = await axiosInstance.get("users", {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+        // With HTTP-only cookies, we don't need to set the Authorization header
+        // The cookies will be sent automatically with the request
         // Shorter timeout for profile fetch to improve mobile experience
         timeout: isMobileDevice() ? 15000 : 30000,
       });
@@ -221,16 +220,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         errorMessage: (error) => {
           // Email verification needed
-          if (axios.isAxiosError(error) && error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED") {
+          if (
+            axios.isAxiosError(error) &&
+            error.response?.data?.appErrorCode === "EMAIL_NOT_VERIFIED"
+          ) {
             setUrl("/auth/verify-email");
             setIsVisible(true);
             setType("VERIFY_EMAIL");
             return "Please verify your email to continue";
           }
-          
+
           return extractErrorMessage(error, "Login failed. Please try again.");
         },
-        context: 'login'
+        context: "login",
       });
 
       await loginPromise;
@@ -275,18 +277,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsVisible(true);
           setType("VERIFY_EMAIL");
           status = true;
-          return response?.data.message || "Account created! Please verify your email.";
+          return (
+            response?.data.message ||
+            "Account created! Please verify your email."
+          );
         },
         errorMessage: (error) => {
           if (axios.isAxiosError(error)) {
             if (error.response?.data?.message?.includes("already exists")) {
               return "An account with this email already exists. Please try logging in instead.";
             }
-            return extractErrorMessage(error, "Registration failed. Please try again.");
+            return extractErrorMessage(
+              error,
+              "Registration failed. Please try again."
+            );
           }
           return "Registration failed. Please try again.";
         },
-        context: 'signup'
+        context: "signup",
       });
 
       await registerPromise;
@@ -304,10 +312,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Try to clear localStorage data (but preserve version)
       try {
-        const version = localStorage.getItem('app_version');
+        const version = localStorage.getItem("app_version");
         localStorage.clear();
         if (version) {
-          localStorage.setItem('app_version', version);
+          localStorage.setItem("app_version", version);
         }
       } catch (error) {
         console.warn("Failed to clear localStorage", error);
