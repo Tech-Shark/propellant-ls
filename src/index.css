@@ -105,7 +105,9 @@
 }
 
 .animate-scroll-left {
-  animation: scroll-left 30s linear infinite;
+  animation: scroll-left 40s linear infinite;
+  display: flex;
+  width: max-content;
 }
 
 @layer base {

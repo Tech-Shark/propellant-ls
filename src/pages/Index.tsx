@@ -171,7 +171,7 @@ const Index = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link to="/login">
+            <Link to="/login" className="hidden md:block">
               <Button
                 variant="ghost"
                 className="text-slate-300 hover:text-white"
